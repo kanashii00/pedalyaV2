@@ -49,31 +49,66 @@ class BicycleController extends Controller
         return response()->view('admin.bicycles.show', compact('bicycle'));
     }
 
+    public function create(): Response
+    {
+        $nextSerial = $this->generateSerialNumber();
+        $nextQr     = $this->generateQrCode();
+
+        return response()->view('admin.bicycles.create', compact('nextSerial', 'nextQr'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'serialNumber'  => ['required', 'string', 'max:255', 'unique:bicycles,serialNumber'],
-            'model'         => ['nullable', 'string', 'max:255'],
-            'hourlyRate'    => ['required', 'numeric', 'min:0'],
-            'description'   => ['nullable', 'string', 'max:1000'],
+            'name'              => ['required', 'string', 'max:255'],
+            'model'             => ['nullable', 'string', 'max:255'],
+            'hourlyRate'        => ['required', 'numeric', 'min:0'],
+            'description'       => ['nullable', 'string', 'max:1000'],
+            'currentLat'        => ['nullable', 'numeric'],
+            'currentLng'        => ['nullable', 'numeric'],
         ]);
 
+        $serialNumber = $this->generateSerialNumber();
+        $qrCode       = $this->generateQrCode();
+
         $bicycle = Bicycle::create([
-            'name'          => $validated['name'],
-            'serialNumber'  => $validated['serialNumber'],
-            'model'         => $validated['model'] ?? null,
-            'description'   => $validated['description'] ?? null,
-            'hourlyRate'    => $validated['hourlyRate'],
-            'status'        => Bicycle::STATUS_AVAILABLE,
-            'batteryLevel'  => 100,
-            'lockStatus'    => 'locked',
-            'addedBy'       => auth()->id(),
+            'name'              => $validated['name'],
+            'serialNumber'      => $serialNumber,
+            'model'             => $validated['model'] ?? 'Beach Cruiser',
+            'description'       => $validated['description'] ?? null,
+            'hourlyRate'        => $validated['hourlyRate'],
+            'status'            => Bicycle::STATUS_AVAILABLE,
+            'batteryLevel'      => 100,
+            'lockStatus'        => 'locked',
+            'condition'         => 'good',
+            'qrCode'            => $qrCode,
+            'currentLat'        => $validated['currentLat'] ?? null,
+            'currentLng'        => $validated['currentLng'] ?? null,
+            'addedBy'           => auth()->id(),
         ]);
 
         AuditLog::record('bicycle_created', auth()->id(), ['bicycleId' => $bicycle->id]);
 
-        return back()->with('success', 'Bicycle added successfully.');
+        return redirect()->route('admin.bicycles.index')->with('success', 'Bicycle "' . $bicycle->name . '" (' . $serialNumber . ') added successfully.');
+    }
+
+    private function generateSerialNumber(): string
+    {
+        $year  = date('Y');
+        $count = Bicycle::where('serialNumber', 'like', "PDY-{$year}-%")->count();
+        $seq   = str_pad($count + 1, 5, '0', STR_PAD_LEFT);
+
+        return "PDY-{$year}-{$seq}";
+    }
+
+    private function generateQrCode(): string
+    {
+        do {
+            $hex = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+            $qr  = "QR-PDY-{$hex}";
+        } while (Bicycle::where('qrCode', $qr)->exists());
+
+        return $qr;
     }
 
     public function update(Request $request, int $id): RedirectResponse

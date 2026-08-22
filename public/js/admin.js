@@ -68,14 +68,37 @@
     }
   });
 
-  /* Expandable nav groups */
-  $$('.admin-nav[data-collapsible] .admin-nav__link').forEach(link => {
-    link.addEventListener('click', () => {
-      const parent = link.closest('.admin-nav');
+  /* Expandable nav groups — only the group header button toggles */
+  $$('.admin-nav[data-collapsible] > .admin-nav__link').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parent = btn.closest('.admin-nav');
       if (shell.classList.contains('sidebar-collapsed')) setCollapsed(false);
       parent.classList.toggle('admin-nav--open');
     });
   });
+
+  /* Ensure exactly one sidebar link is active, matching the current URL.
+     Belt-and-suspenders alongside the server-side $isActive logic. */
+  function syncActiveFromUrl() {
+    const links = $$('.admin-nav__link[href]');
+    if (!links.length) return;
+    const cur = location.pathname + location.search;
+    let match = null;
+    for (const l of links) {
+      const u = new URL(l.href);
+      if ((u.pathname + u.search) === cur) { match = l; break; }
+    }
+    if (!match) return;
+    links.forEach(l => {
+      const on = l === match;
+      l.classList.toggle('active', on);
+      l.setAttribute('aria-current', on ? 'page' : 'false');
+    });
+    const parent = match.closest('.admin-nav[data-collapsible]');
+    if (parent) parent.classList.add('admin-nav--open');
+  }
+  syncActiveFromUrl();
+  window.addEventListener('hashchange', syncActiveFromUrl);
 
   /* ---------- Live clock ---------- */
   const clock = $('#adminClock');

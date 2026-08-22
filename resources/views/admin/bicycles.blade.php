@@ -8,11 +8,6 @@
             <h1>Bicycles</h1>
             <p>Manage your bicycle fleet</p>
         </div>
-        <div class="admin-pagehead__actions">
-            <button class="btn-admin btn-admin--primary" type="button" onclick="PedalyaModal.open('addBicycleModal')">
-                <i class="bi bi-plus-lg me-1"></i>Add Bicycle
-            </button>
-        </div>
     </div>
 @endsection
 
@@ -92,7 +87,7 @@
                                     onclick="PedalyaModal.open('editBicycleModal{{ $bike->id }}')" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <form action="{{ route('admin.bicycles.lock', $bike->id) }}" method="POST" class="d-inline">
+                            <form action="{{ route('admin.bicycles.lock', $bike->id) }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="action" value="{{ ($bike->lockStatus === 'locked') ? 'unlock' : 'lock' }}">
                                 <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm"
@@ -100,7 +95,7 @@
                                     <i class="bi bi-{{ ($bike->lockStatus === 'locked') ? 'unlock' : 'lock' }}"></i>
                                 </button>
                             </form>
-                            <form action="{{ route('admin.bicycles.destroy', $bike->id) }}" method="POST" class="d-inline">
+                            <form action="{{ route('admin.bicycles.destroy', $bike->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm" title="Delete"
@@ -191,66 +186,6 @@
         @if(method_exists($bicycles, 'links'))
             {{ $bicycles->withQueryString()->links() }}
         @endif
-    </div>
-</div>
-
-{{-- Add Bicycle Modal --}}
-<div class="admin-modal" id="addBicycleModal">
-    <div class="admin-modal__backdrop" data-modal-close></div>
-    <div class="admin-modal__dialog admin-modal__dialog--lg">
-        <form action="{{ route('admin.bicycles.store') }}" method="POST">
-            @csrf
-            <div class="admin-modal__head">
-                <h3><i class="bi bi-bicycle me-2"></i>Add New Bicycle</h3>
-                <button type="button" class="admin-icon-btn" data-modal-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <div class="admin-modal__body">
-                <div class="admin-form">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Model</label>
-                            <input type="text" name="model" class="form-control" value="{{ old('model') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Serial Number <span class="text-danger">*</span></label>
-                            <input type="text" name="serialNumber" class="form-control" value="{{ old('serialNumber') }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Hourly Rate ($) <span class="text-danger">*</span></label>
-                            <input type="number" name="hourlyRate" class="form-control" value="{{ old('hourlyRate') }}" step="0.01" min="0" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Latitude</label>
-                            <input type="number" name="currentLat" class="form-control" value="{{ old('currentLat') }}" step="any">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Longitude</label>
-                            <input type="number" name="currentLng" class="form-control" value="{{ old('currentLng') }}" step="any">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Battery Level (%)</label>
-                            <input type="number" name="batteryLevel" class="form-control" value="{{ old('batteryLevel', 100) }}" min="0" max="100">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">QR Code</label>
-                            <input type="text" name="qrCode" class="form-control" value="{{ old('qrCode') }}">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-modal__foot">
-                <button type="button" class="btn-admin btn-admin--secondary" data-modal-close>Cancel</button>
-                <button type="submit" class="btn-admin btn-admin--primary"><i class="bi bi-plus-lg me-1"></i>Add Bicycle</button>
-            </div>
-        </form>
     </div>
 </div>
 @endsection
