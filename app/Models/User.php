@@ -20,16 +20,19 @@ class User extends Authenticatable
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
     public const STATUS_SUSPENDED = 'suspended';
+    public const STATUS_BLACKLISTED = 'blacklisted';
 
     protected $table = 'users';
 
     protected $fillable = [
         'name',
+        'studentId',
         'email',
         'password',
         'role',
         'status',
         'verified',
+        'blacklistReason',
         'idUploaded',
         'idVerification',
         'profilePicture',

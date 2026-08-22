@@ -46,6 +46,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Bicycle management
     Route::get('/bicycles', [AdminBicycle::class, 'index'])->name('bicycles.index');
+    Route::get('/bicycles/create', [AdminBicycle::class, 'create'])->name('bicycles.create');
     Route::get('/bicycles/{id}', [AdminBicycle::class, 'show'])->name('bicycles.show');
     Route::post('/bicycles', [AdminBicycle::class, 'store'])->name('bicycles.store');
     Route::put('/bicycles/{id}', [AdminBicycle::class, 'update'])->name('bicycles.update');
@@ -55,8 +56,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Rider management
     Route::get('/riders', [AdminRider::class, 'index'])->name('riders.index');
+    Route::get('/riders/create', [AdminRider::class, 'create'])->name('riders.create');
+    Route::post('/riders', [AdminRider::class, 'store'])->name('riders.store');
     Route::put('/riders/{id}/verify', [AdminRider::class, 'verify'])->name('riders.verify');
     Route::put('/riders/{id}/status', [AdminRider::class, 'updateStatus'])->name('riders.status');
+    Route::get('/verified-customers', [AdminRider::class, 'verified'])->name('riders.verified');
+    Route::get('/blacklisted-customers', [AdminRider::class, 'blacklisted'])->name('riders.blacklisted');
+    Route::put('/blacklisted-customers/{id}', [AdminRider::class, 'updateBlacklist'])->name('riders.blacklist.update');
 
     // Automated ID scanner
     Route::get('/id-scans', [AdminIdScan::class, 'index'])->name('id-scans.index');

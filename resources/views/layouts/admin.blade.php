@@ -36,11 +36,11 @@
             'icon' => 'bi-people',
             'items' => [
                 ['title' => 'Customer List', 'icon' => 'bi-person-lines-fill', 'route' => 'admin.riders.index', 'active' => ['admin.riders.index']],
-                ['title' => 'Register Customer', 'icon' => 'bi-person-plus', 'route' => 'admin.riders.index', 'active' => ['admin.riders.index'], 'query' => '?action=register'],
+                ['title' => 'Register Customer', 'icon' => 'bi-person-plus', 'route' => 'admin.riders.create', 'active' => ['admin.riders.create']],
                 ['title' => 'Automated ID Scanner', 'icon' => 'bi-person-badge', 'route' => 'admin.id-scans.create', 'active' => ['admin.id-scans.create'], 'badge' => $pendingScans, 'badgeType' => 'warning'],
                 ['title' => 'ID Scan Records', 'icon' => 'bi-files', 'route' => 'admin.id-scans.index', 'active' => ['admin.id-scans.index']],
-                ['title' => 'Verified Customers', 'icon' => 'bi-patch-check', 'route' => 'admin.riders.index', 'active' => ['admin.riders.index'], 'query' => '?filter=verified'],
-                ['title' => 'Blacklisted Customers', 'icon' => 'bi-x-octagon', 'route' => 'admin.riders.index', 'active' => ['admin.riders.index'], 'query' => '?filter=blacklisted'],
+                ['title' => 'Verified Customers', 'icon' => 'bi-patch-check', 'route' => 'admin.riders.verified', 'active' => ['admin.riders.verified']],
+                ['title' => 'Blacklisted Customers', 'icon' => 'bi-x-octagon', 'route' => 'admin.riders.blacklisted', 'active' => ['admin.riders.blacklisted']],
             ],
         ],
         [
@@ -48,7 +48,7 @@
             'icon' => 'bi-bicycle',
             'items' => [
                 ['title' => 'Bicycle Inventory', 'icon' => 'bi-bicycle', 'route' => 'admin.bicycles.index', 'active' => ['admin.bicycles.index']],
-                ['title' => 'Add Bicycle', 'icon' => 'bi-plus-circle', 'route' => 'admin.bicycles.index', 'active' => ['admin.bicycles.index'], 'query' => '?action=add'],
+                ['title' => 'Add Bicycle', 'icon' => 'bi-plus-circle', 'route' => 'admin.bicycles.create', 'active' => ['admin.bicycles.create']],
                 ['title' => 'Bicycle Status', 'icon' => 'bi-speedometer', 'route' => 'admin.bicycles.index', 'active' => ['admin.bicycles.index'], 'query' => '?filter=status'],
                 ['title' => 'Maintenance Schedule', 'icon' => 'bi-tools', 'route' => 'admin.maintenance.index', 'active' => ['admin.maintenance.*'], 'badge' => $pendingMaint],
             ],
@@ -111,12 +111,53 @@
         ],
     ];
 
-    $isActive = function ($item) use ($currentSection) {
-        // Skip groups that don't have 'active' (they're parent groups)
+    // Flatten all leaf nav links for sibling detection (excludes parent group items)
+    $allNavLinks = [];
+    foreach ($navGroups as $group) {
+        foreach ($group['items'] as $item) {
+            if (isset($item['items'])) {
+                foreach ($item['items'] as $subItem) { $allNavLinks[] = $subItem; }
+            } else {
+                $allNavLinks[] = $item;
+            }
+        }
+    }
+
+    $isActive = function ($item) use ($currentSection, $allNavLinks) {
         if (!isset($item['active'])) return false;
+
         $routeMatch = collect($item['active'])->contains(fn ($p) => request()->routeIs($p));
         if (!$routeMatch) return false;
-        return !isset($item['section']) || $currentSection === $item['section'];
+
+        // Section check (monitoring sub-items: map / gps / locks / devices)
+        if (isset($item['section']) && $currentSection !== $item['section']) return false;
+
+        // Item declares specific query params → every key-value must match
+        if (isset($item['query'])) {
+            $expected = [];
+            parse_str(ltrim($item['query'], '?'), $expected);
+            foreach ($expected as $k => $v) {
+                if ((string) request()->query($k) !== (string) $v) return false;
+            }
+            return true;
+        }
+
+        // Default item (no query) → active only when NO sibling with the same
+        // route patterns has its query params satisfied by the current request.
+        $patterns = $item['active'];
+        foreach ($allNavLinks as $sibling) {
+            if ($sibling === $item) continue;
+            if (!isset($sibling['query'])) continue;
+            if (($sibling['active'] ?? []) !== $patterns) continue;
+            $siblingParams = [];
+            parse_str(ltrim($sibling['query'], '?'), $siblingParams);
+            $allMatch = true;
+            foreach ($siblingParams as $k => $v) {
+                if ((string) request()->query($k) !== (string) $v) { $allMatch = false; break; }
+            }
+            if ($allMatch) return false;
+        }
+        return true;
     };
 
     $currentPage = null;
