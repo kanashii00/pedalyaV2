@@ -444,8 +444,8 @@
 @section('page-header')
 <div class="admin-pagehead">
     <div class="admin-pagehead__title">
-        <h1>Rentals</h1>
-        <p>Track rides, payments and settlements across all bicycles</p>
+        <h1>Active Rentals</h1>
+        <p>Track ongoing rides, payments and settlements across all bicycles</p>
     </div>
 </div>
 @endsection
@@ -468,11 +468,9 @@
                 <label for="rvStatus">Status</label>
                 <div class="rv-filter-ctrl">
                     <select name="status" id="rvStatus">
-                        <option value="">All Statuses</option>
+                        <option value="">All Active</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                         <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Overdue</option>
                     </select>
                 </div>

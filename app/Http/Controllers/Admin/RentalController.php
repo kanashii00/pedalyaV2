@@ -25,7 +25,8 @@ class RentalController extends Controller
 
     public function index(Request $request): Response
     {
-        $query = Rental::with(['bicycle', 'rider']);
+        $query = Rental::with(['bicycle', 'rider'])
+            ->whereIn('status', [Rental::STATUS_ACTIVE, Rental::STATUS_PENDING, Rental::STATUS_OVERDUE]);
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -53,6 +54,44 @@ class RentalController extends Controller
         $ridersList = User::where('role', User::ROLE_RIDER)->orderBy('name')->get();
 
         return response()->view('admin.rentals', compact('rentals', 'bicyclesList', 'ridersList'));
+    }
+
+    public function history(Request $request): Response
+    {
+        $query = Rental::with(['bicycle', 'rider'])
+            ->whereIn('status', [
+                Rental::STATUS_COMPLETED,
+                Rental::STATUS_CANCELLED,
+                Rental::STATUS_RETURNED,
+                Rental::STATUS_EXPIRED,
+            ]);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('created_at', '<=', $request->input('date_to'));
+        }
+
+        if ($request->filled('bicycle_id')) {
+            $query->where('bicycleId', $request->input('bicycle_id'));
+        }
+
+        if ($request->filled('rider_id')) {
+            $query->where('riderId', $request->input('rider_id'));
+        }
+
+        $rentals = $query->latest()->paginate(20);
+
+        $bicyclesList = Bicycle::orderBy('name')->get();
+        $ridersList = User::where('role', User::ROLE_RIDER)->orderBy('name')->get();
+
+        return response()->view('admin.rentals-history', compact('rentals', 'bicyclesList', 'ridersList'));
     }
 
     public function show(int $id): Response

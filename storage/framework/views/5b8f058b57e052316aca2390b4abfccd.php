@@ -57,8 +57,8 @@
             'label' => 'Rental Management',
             'icon' => 'bi-key',
             'items' => [
-                ['title' => 'Active Rentals', 'icon' => 'bi-play-circle', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=active'],
-                ['title' => 'Rental History', 'icon' => 'bi-clock-history', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=history'],
+                ['title' => 'Active Rentals', 'icon' => 'bi-play-circle', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index']],
+                ['title' => 'Rental History', 'icon' => 'bi-clock-history', 'route' => 'admin.rentals.history', 'active' => ['admin.rentals.history']],
                 ['title' => 'Returns', 'icon' => 'bi-arrow-return-left', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=returns'],
                 ['title' => 'Rental Requests', 'icon' => 'bi-inbox', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=pending'],
             ],
