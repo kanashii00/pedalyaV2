@@ -51,7 +51,7 @@ class BicycleController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $validated = $request->validate([
-            'status' => 'nullable|string|in:available,rented,maintenance,locked,removed',
+            'status' => 'nullable|string|in:available,rented,maintenance,removed',
             'model'  => 'nullable|string',
             'search' => 'nullable|string',
             'per_page' => 'nullable|integer|min:1|max:100',
@@ -133,7 +133,7 @@ class BicycleController extends Controller
             'currentLat'   => 'nullable|numeric|between:-90,90',
             'currentLng'   => 'nullable|numeric|between:-180,180',
             'batteryLevel' => 'nullable|numeric|between:0,100',
-            'status'       => 'nullable|string|in:available,rented,maintenance,locked,removed',
+            'status'       => 'nullable|string|in:available,rented,maintenance,removed',
         ]);
 
         $bicycle->update($validated);

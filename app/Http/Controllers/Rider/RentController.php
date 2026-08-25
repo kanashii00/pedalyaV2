@@ -28,16 +28,30 @@ class RentController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'bicycleId' => ['required', 'integer', 'exists:bicycles,id'],
+            'bicycleId'       => ['required', 'integer', 'exists:bicycles,id'],
+            'paymentMethod'   => ['required', 'string', 'in:cash,gcash'],
+            'durationHours'   => ['required', 'integer', 'min:1', 'max:8'],
+            'paymentReference'=> ['required_if:paymentMethod,gcash', 'nullable', 'string', 'max:100'],
         ]);
 
         $user = $request->user();
 
         try {
-            $this->rentalService->startRental($user, $request->bicycleId);
+            $this->rentalService->startRental(
+                $user,
+                $request->bicycleId,
+                $request->paymentMethod,
+                (int) $request->durationHours,
+                $request->paymentMethod === 'gcash' ? $request->paymentReference : null,
+            );
+
+            if ($request->paymentMethod === 'gcash') {
+                return redirect()->route('rider.rentals.index')
+                    ->with('success', 'Rental submitted! Your payment is pending verification. You will be notified once approved.');
+            }
 
             return redirect()->route('rider.dashboard')
-                ->with('success', 'Rental started successfully.');
+                ->with('success', 'Rental started successfully. Pay at the station upon return.');
         } catch (\Exception $e) {
             return back()->withErrors(['bicycleId' => $e->getMessage()]);
         }

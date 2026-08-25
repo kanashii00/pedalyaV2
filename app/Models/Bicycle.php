@@ -13,11 +13,15 @@ class Bicycle extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /** Rental / operational state of the bicycle. */
     public const STATUS_AVAILABLE = 'available';
     public const STATUS_RENTED = 'rented';
     public const STATUS_MAINTENANCE = 'maintenance';
-    public const STATUS_LOCKED = 'locked';
     public const STATUS_REMOVED = 'removed';
+
+    /** Physical smart-lock state (independent of status). */
+    public const LOCK_LOCKED = 'locked';
+    public const LOCK_UNLOCKED = 'unlocked';
 
     protected $table = 'bicycles';
 

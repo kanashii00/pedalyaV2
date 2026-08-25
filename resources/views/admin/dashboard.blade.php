@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
         charts.push(new Chart(fleetCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Available', 'Rented', 'Maintenance', 'Locked'],
+                labels: ['Available', 'Rented', 'Maintenance', 'Removed'],
                 datasets: [{
                     data: [
                         {{ $stats['bicycles']['available'] ?? 0 }},

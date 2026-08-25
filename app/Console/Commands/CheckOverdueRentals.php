@@ -35,9 +35,10 @@ class CheckOverdueRentals extends Command
             ]);
 
             if ($rental->bicycle) {
+                // The rental is still ongoing so the bicycle remains Rented;
+                // only the physical smart lock is engaged to secure it.
                 $rental->bicycle->update([
-                    'status' => Bicycle::STATUS_LOCKED,
-                    'lockStatus' => 'locked',
+                    'lockStatus' => Bicycle::LOCK_LOCKED,
                 ]);
             }
 

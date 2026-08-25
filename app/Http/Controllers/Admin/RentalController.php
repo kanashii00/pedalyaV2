@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Bicycle;
+use App\Models\Payment;
 use App\Models\Rental;
 use App\Models\User;
+use App\Services\IoTService;
 use App\Services\NotificationService;
+use App\Services\RentalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,7 +18,9 @@ use Illuminate\Http\Response;
 class RentalController extends Controller
 {
     public function __construct(
-        private NotificationService $notificationService
+        private NotificationService $notificationService,
+        private IoTService $iotService,
+        private RentalService $rentalService
     ) {}
 
     public function index(Request $request): Response
@@ -74,12 +79,16 @@ class RentalController extends Controller
         ]);
 
         if ($bicycle) {
+            // Rental approved: bicycle becomes Rented and the smart lock is
+            // Unlocked because the rider is now authorized to use it.
             $bicycle->update([
                 'status' => Bicycle::STATUS_RENTED,
                 'currentRider' => $rental->riderId,
                 'currentRentalId' => $rental->rentalId,
-                'lockStatus' => 'unlocked',
+                'lockStatus' => Bicycle::LOCK_UNLOCKED,
             ]);
+
+            $this->iotService->sendCommand($bicycle->id, 'unlock', [], auth()->user());
         }
 
         AuditLog::record('rental_approved', auth()->id(), [
@@ -97,6 +106,105 @@ class RentalController extends Controller
         );
 
         return back()->with('success', 'Rental approved successfully.');
+    }
+
+    public function verifyGcashPayment(Request $request, int $id): RedirectResponse
+    {
+        $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
+
+        if ($rental->status !== 'pending' || $rental->paymentMethod !== 'gcash') {
+            return back()->withErrors(['rental' => 'This rental is not a pending GCash payment.']);
+        }
+
+        $bicycle = $rental->bicycle;
+
+        $rental->update([
+            'status' => 'active',
+            'paymentStatus' => 'paid',
+            'approvedBy' => auth()->id(),
+            'approvedAt' => now(),
+        ]);
+
+        if ($bicycle) {
+            // Payment verified: bicycle becomes Rented and the smart lock is
+            // Unlocked because the rider is now authorized to use it.
+            $bicycle->update([
+                'status' => Bicycle::STATUS_RENTED,
+                'currentRider' => $rental->riderId,
+                'currentRentalId' => $rental->rentalId,
+                'lockStatus' => Bicycle::LOCK_UNLOCKED,
+            ]);
+
+            $this->iotService->sendCommand($bicycle->id, 'unlock', [], auth()->user());
+        }
+
+        $rental->rider->increment('totalRentals');
+
+        Payment::where('rentalId', $rental->id)
+            ->where('paymentMethod', 'gcash')
+            ->update([
+                'status' => 'paid',
+                'paidAt' => now(),
+            ]);
+
+        AuditLog::record('gcash_payment_verified', auth()->id(), [
+            'rentalId' => $rental->rentalId,
+            'amount' => $rental->totalFee,
+            'paymentMethod' => 'gcash',
+        ]);
+
+        $this->notificationService->create(
+            $rental->riderId,
+            'Payment Verified',
+            "Your GCash payment for rental {$rental->rentalId} has been verified. Your rental is now active!",
+            'rental_status',
+            ['rentalId' => $rental->rentalId]
+        );
+
+        return back()->with('success', 'GCash payment verified. Rental activated.');
+    }
+
+    public function endRide(Request $request, int $id): RedirectResponse
+    {
+        $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
+
+        if (! in_array($rental->status, [Rental::STATUS_ACTIVE, Rental::STATUS_OVERDUE], true)) {
+            return back()->withErrors(['rental' => 'Only active or overdue rides can be ended.']);
+        }
+
+        $rider = User::find($rental->riderId);
+        if (! $rider) {
+            return back()->withErrors(['rental' => 'The rider account for this rental no longer exists.']);
+        }
+
+        try {
+            // Records the end time, computes the final fee from the elapsed
+            // duration, completes the rental, and returns the bicycle to
+            // Available with its smart lock re-secured.
+            $result = $this->rentalService->returnRental(
+                $rental,
+                $rider,
+                null,
+                null,
+                $rental->paymentMethod,
+                $rental->paymentReference,
+                'Ride ended by administrator'
+            );
+        } catch (\Throwable $e) {
+            return back()->withErrors(['rental' => $e->getMessage()]);
+        }
+
+        AuditLog::record('rental_ended_by_admin', auth()->id(), [
+            'rentalId' => $rental->rentalId,
+            'totalFee' => $result['fees']['totalFee'],
+            'durationMinutes' => $result['fees']['durationMinutes'],
+        ]);
+
+        return back()->with(
+            'success',
+            'Ride ended successfully. Final fee: ₱'.number_format($result['fees']['totalFee'], 2)
+            .' · Bicycle "'.($rental->bicycle->name ?? $rental->bicycleId).'" is now available.'
+        );
     }
 
     public function cancel(Request $request, int $id): RedirectResponse
@@ -117,12 +225,16 @@ class RentalController extends Controller
 
         $bicycle = $rental->bicycle;
         if ($bicycle && $bicycle->currentRentalId === $rental->rentalId) {
+            // Rental cancelled: bicycle becomes Available and the smart lock
+            // is Locked again since nobody is authorized to use it.
             $bicycle->update([
                 'status' => Bicycle::STATUS_AVAILABLE,
                 'currentRider' => null,
                 'currentRentalId' => null,
-                'lockStatus' => 'locked',
+                'lockStatus' => Bicycle::LOCK_LOCKED,
             ]);
+
+            $this->iotService->sendCommand($bicycle->id, 'lock', [], auth()->user());
         }
 
         AuditLog::record('rental_cancelled', auth()->id(), [
