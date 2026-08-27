@@ -3,9 +3,6 @@
 @section('title', 'Dashboard Overview — Pedalya Admin')
 
 @section('actions')
-    <a href="{{ route('admin.id-scans.create') }}" class="btn-admin btn-admin--secondary btn-admin--sm">
-        <i class="bi bi-person-badge"></i> Scan ID
-    </a>
     <a href="{{ route('admin.bicycles.index') }}?action=add" class="btn-admin btn-admin--secondary btn-admin--sm">
         <i class="bi bi-plus-circle"></i> Add Bicycle
     </a>

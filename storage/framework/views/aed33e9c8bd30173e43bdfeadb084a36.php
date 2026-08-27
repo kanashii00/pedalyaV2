@@ -324,7 +324,7 @@ function renderTypedTable(type, records) {
 }
 
 function renderRentalTable(records) {
-    var html = '<div class="table-responsive"><table class="table admin-table"><thead><tr>'
+    var html = '<div class="table-responsive"><table class="admin-table"><thead><tr>'
         + '<th>Rental ID</th><th>Rider</th><th>Bicycle</th><th>Start</th><th>End</th>'
         + '<th>Duration</th><th>Fee</th><th>Status</th><th>Payment</th>'
         + '</tr></thead><tbody>';
@@ -356,7 +356,7 @@ function renderRentalTable(records) {
 }
 
 function renderRevenueTable(records) {
-    var html = '<div class="table-responsive"><table class="table admin-table"><thead><tr>'
+    var html = '<div class="table-responsive"><table class="admin-table"><thead><tr>'
         + '<th>Period</th><th>Rentals</th><th>Total Revenue</th><th>Avg Revenue</th><th>Duration (min)</th>'
         + '</tr></thead><tbody>';
     records.forEach(function (r) {
@@ -373,7 +373,7 @@ function renderRevenueTable(records) {
 }
 
 function renderIncidentTable(records) {
-    var html = '<div class="table-responsive"><table class="table admin-table"><thead><tr>'
+    var html = '<div class="table-responsive"><table class="admin-table"><thead><tr>'
         + '<th>ID</th><th>Type</th><th>Severity</th><th>Bicycle</th><th>Description</th>'
         + '<th>Status</th><th>Acknowledged</th><th>Timestamp</th>'
         + '</tr></thead><tbody>';

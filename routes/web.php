@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\AuditController as AdminAudit;
 use App\Http\Controllers\Admin\BicycleController as AdminBicycle;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\GeofenceController as AdminGeofence;
-use App\Http\Controllers\Admin\IdScanController as AdminIdScan;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenance;
 use App\Http\Controllers\Admin\MonitoringController as AdminMonitoring;
 use App\Http\Controllers\Admin\NotificationController as AdminNotifications;
@@ -46,6 +45,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Bicycle management
     Route::get('/bicycles', [AdminBicycle::class, 'index'])->name('bicycles.index');
+    Route::get('/bicycles/status', [AdminMonitoring::class, 'bicycleStatusIndex'])->name('bicycles.status');
     Route::get('/bicycles/create', [AdminBicycle::class, 'create'])->name('bicycles.create');
     Route::get('/bicycles/{id}', [AdminBicycle::class, 'show'])->name('bicycles.show');
     Route::post('/bicycles', [AdminBicycle::class, 'store'])->name('bicycles.store');
@@ -63,14 +63,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/verified-customers', [AdminRider::class, 'verified'])->name('riders.verified');
     Route::get('/blacklisted-customers', [AdminRider::class, 'blacklisted'])->name('riders.blacklisted');
     Route::put('/blacklisted-customers/{id}', [AdminRider::class, 'updateBlacklist'])->name('riders.blacklist.update');
-
-    // Automated ID scanner
-    Route::get('/id-scans', [AdminIdScan::class, 'index'])->name('id-scans.index');
-    Route::get('/id-scans/scan', [AdminIdScan::class, 'create'])->name('id-scans.create');
-    Route::post('/id-scans', [AdminIdScan::class, 'store'])->name('id-scans.store');
-    Route::get('/id-scans/{id}', [AdminIdScan::class, 'show'])->name('id-scans.show');
-    Route::put('/id-scans/{id}/review', [AdminIdScan::class, 'review'])->name('id-scans.review');
-    Route::get('/id-scans/{id}/image/{side}', [AdminIdScan::class, 'serveImage'])->name('id-scans.image');
 
     // Rental management
     Route::get('/rentals', [AdminRental::class, 'index'])->name('rentals.index');

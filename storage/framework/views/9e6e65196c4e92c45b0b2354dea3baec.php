@@ -7,13 +7,16 @@
     use App\Models\Accident;
     use App\Models\Bicycle;
     use App\Models\MaintenanceRecord;
+    use App\Models\User;
 
     $unreadNotifs = auth()->user()->notifications()->where('read', false)->count();
     $recentNotifs = auth()->user()->notifications()->with('bicycle')->latest()->take(6)->get();
     $unackTheft = Accident::where('type', 'theft')->where('acknowledged', false)->count();
     $unackAccidents = Accident::where('acknowledged', false)->count();
     $pendingMaint = MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
-    $pendingScans = \App\Models\IdScan::where('status', 'pending')->count();
+    $blacklistedCount = User::where('role', User::ROLE_RIDER)
+        ->whereIn('status', [User::STATUS_BLACKLISTED, User::STATUS_SUSPENDED])
+        ->count();
 
     $iotOnline = Bicycle::where('lastHeartbeat', '>=', now()->subMinutes(5))->count();
     $gpsOnline = Bicycle::where('lastGpsUpdate', '>=', now()->subMinutes(5))->count();
@@ -37,10 +40,8 @@
             'items' => [
                 ['title' => 'Customer List', 'icon' => 'bi-person-lines-fill', 'route' => 'admin.riders.index', 'active' => ['admin.riders.index']],
                 ['title' => 'Register Customer', 'icon' => 'bi-person-plus', 'route' => 'admin.riders.create', 'active' => ['admin.riders.create']],
-                ['title' => 'Automated ID Scanner', 'icon' => 'bi-person-badge', 'route' => 'admin.id-scans.create', 'active' => ['admin.id-scans.create'], 'badge' => $pendingScans, 'badgeType' => 'warning'],
-                ['title' => 'ID Scan Records', 'icon' => 'bi-files', 'route' => 'admin.id-scans.index', 'active' => ['admin.id-scans.index']],
                 ['title' => 'Verified Customers', 'icon' => 'bi-patch-check', 'route' => 'admin.riders.verified', 'active' => ['admin.riders.verified']],
-                ['title' => 'Blacklisted Customers', 'icon' => 'bi-x-octagon', 'route' => 'admin.riders.blacklisted', 'active' => ['admin.riders.blacklisted']],
+                ['title' => 'Blacklisted Customers', 'icon' => 'bi-x-octagon', 'route' => 'admin.riders.blacklisted', 'active' => ['admin.riders.blacklisted'], 'badge' => $blacklistedCount, 'badgeType' => 'danger'],
             ],
         ],
         [
@@ -49,7 +50,7 @@
             'items' => [
                 ['title' => 'Bicycle Inventory', 'icon' => 'bi-bicycle', 'route' => 'admin.bicycles.index', 'active' => ['admin.bicycles.index']],
                 ['title' => 'Add Bicycle', 'icon' => 'bi-plus-circle', 'route' => 'admin.bicycles.create', 'active' => ['admin.bicycles.create']],
-                ['title' => 'Bicycle Status', 'icon' => 'bi-speedometer', 'route' => 'admin.bicycles.index', 'active' => ['admin.bicycles.index'], 'query' => '?filter=status'],
+                ['title' => 'Bicycle Status', 'icon' => 'bi-speedometer', 'route' => 'admin.bicycles.status', 'active' => ['admin.bicycles.status']],
                 ['title' => 'Maintenance Schedule', 'icon' => 'bi-tools', 'route' => 'admin.maintenance.index', 'active' => ['admin.maintenance.*'], 'badge' => $pendingMaint],
             ],
         ],
