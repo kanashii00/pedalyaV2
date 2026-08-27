@@ -20,6 +20,7 @@ class RentalResource extends JsonResource
             'riderEmail'        => $this->riderEmail,
             'status'            => $this->status,
             'startTime'         => $this->startTime,
+            'expectedEndTime'   => $this->expectedEndTime,
             'endTime'           => $this->endTime,
             'startLocation'     => $this->startLocation,
             'endLocation'       => $this->endLocation,

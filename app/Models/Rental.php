@@ -29,6 +29,7 @@ class Rental extends Model
         'status',
         'startTime',
         'endTime',
+        'expectedEndTime',
         'startLocation',
         'endLocation',
         'ratePerHour',
@@ -54,6 +55,7 @@ class Rental extends Model
         return [
             'startTime' => 'datetime',
             'endTime' => 'datetime',
+            'expectedEndTime' => 'datetime',
             'startLocation' => 'array',
             'endLocation' => 'array',
             'approvedAt' => 'datetime',

@@ -92,14 +92,45 @@ class RiderController extends Controller
             'reason'   => ['nullable', 'string', 'max:500'],
         ]);
 
-        $rider->update([
-            'verified' => $validated['approved'],
-            'idVerification' => [
-                'approved' => $validated['approved'],
-                'reason' => $validated['reason'] ?? null,
-                'verified_at' => now()->toISOString(),
-            ],
-        ]);
+       $idVerification = $rider->idVerification ?? [];
+
+$idVerification = array_merge($idVerification, [
+    'status' => $validated['approved']
+        ? 'approved'
+        : 'rejected',
+    'approved' => $validated['approved'],
+    'reason' => $validated['reason'] ?? null,
+    'verified_at' => now()->toISOString(),
+]);
+
+$rider->update([
+    'verified' => $validated['approved'],
+    'idVerification' => $idVerification,
+]);
+
+$notificationService = app(\App\Services\NotificationService::class);
+
+if ($validated['approved']) {
+    $notificationService->create(
+        $rider->id,
+        'Identity Verification Approved',
+        'Your identity verification has been approved. You can now start renting bicycles.',
+        'verification_approved'
+    );
+} else {
+    $message = 'Your identity verification was rejected. Please upload another valid ID.';
+
+    if (!empty($validated['reason'])) {
+        $message .= ' Reason: ' . $validated['reason'];
+    }
+
+    $notificationService->create(
+        $rider->id,
+        'Identity Verification Rejected',
+        $message,
+        'verification_rejected'
+    );
+}
 
         AuditLog::record('rider_verification_' . ($validated['approved'] ? 'approved' : 'rejected'), auth()->id(), [
             'riderId' => $rider->id,

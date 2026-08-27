@@ -11,56 +11,128 @@ use Illuminate\Support\Facades\DB;
 class RentalService
 {
     protected NotificationService $notificationService;
+    protected IoTService $iotService;
 
-    public function __construct(NotificationService $notificationService)
-    {
+    public function __construct(
+        NotificationService $notificationService,
+        IoTService $iotService
+    ) {
         $this->notificationService = $notificationService;
+        $this->iotService = $iotService;
     }
 
-    public function startRental(User $user, int $bicycleId): Rental
-    {
-        if (!$user->verified) {
-            throw new \Exception('User must be verified to start a rental.');
-        }
+   public function startRental(
+    User $user,
+    int $bicycleId,
+    int $durationMinutes = 30
+): Rental {
+    if (!$user->verified) {
+        throw new \Exception(
+            'User must be verified to start a rental.'
+        );
+    }
 
-        $activeRental = Rental::where('riderId', $user->id)
-            ->whereIn('status', ['active', 'pending'])
-            ->first();
+    $activeRental = Rental::where('riderId', $user->id)
+        ->whereIn('status', [
+            'active',
+            'pending',
+            'overdue',
+        ])
+        ->first();
 
-        if ($activeRental) {
-            throw new \Exception('User already has an active rental.');
-        }
+    if ($activeRental) {
+        throw new \Exception(
+            'User already has an active rental.'
+        );
+    }
 
-        $bicycle = Bicycle::findOrFail($bicycleId);
+    $bicycle = Bicycle::findOrFail($bicycleId);
 
-        if ($bicycle->status !== 'available') {
-            throw new \Exception('Bicycle is not available for rental.');
-        }
+    if ($bicycle->status !== 'available') {
+        throw new \Exception(
+            'Bicycle is not available for rental.'
+        );
+    }
 
-        if ($bicycle->batteryLevel < 20) {
-            throw new \Exception('Bicycle battery level is too low to rent.');
-        }
+    if ($bicycle->batteryLevel < 20) {
+        throw new \Exception(
+            'Bicycle battery level is too low to rent.'
+        );
+    }
 
-        return DB::transaction(function () use ($user, $bicycle) {
+    return DB::transaction(
+        function () use (
+            $user,
+            $bicycle,
+            $durationMinutes
+        ) {
+            $startTime = Carbon::now();
+
+            $expectedEndTime = $startTime
+                ->copy()
+                ->addMinutes($durationMinutes);
+
             $rental = Rental::create([
-                'rentalId' => $this->generateRentalId(),
-                'riderId' => $user->id,
-                'riderName' => $user->name,
-                'riderEmail' => $user->email,
-                'bicycleId' => $bicycle->id,
-                'bicycleName' => $bicycle->name,
-                'bicycleSerial' => $bicycle->serialNumber,
-                'startTime' => Carbon::now(),
-                'startLocation' => ['lat' => $bicycle->currentLat, 'lng' => $bicycle->currentLng],
-                'status' => 'active',
-                'ratePerHour' => $bicycle->hourlyRate ?? 15.00,
+                'rentalId' =>
+                    $this->generateRentalId(),
+
+                'riderId' =>
+                    $user->id,
+
+                'riderName' =>
+                    $user->name,
+
+                'riderEmail' =>
+                    $user->email,
+
+                'bicycleId' =>
+                    $bicycle->id,
+
+                'bicycleName' =>
+                    $bicycle->name,
+
+                'bicycleSerial' =>
+                    $bicycle->serialNumber,
+
+                'startTime' =>
+                    $startTime,
+
+                'expectedEndTime' =>
+                    $expectedEndTime,
+
+                'startLocation' => [
+                    'lat' => $bicycle->currentLat,
+                    'lng' => $bicycle->currentLng,
+                ],
+
+                'status' =>
+                    'active',
+
+                'ratePerHour' =>
+                    $bicycle->hourlyRate ?? 15.00,
             ]);
 
             $bicycle->update([
-                'status' => 'rented',
-                'currentRider' => $user->id,
-                'currentRentalId' => $rental->id,
+                'status' =>
+                    'rented',
+
+                'currentRider' =>
+                    $user->id,
+
+                'currentRentalId' =>
+                    $rental->id,
             ]);
+
+            $this->iotService->sendCommand(
+    $bicycle->id,
+    'unlock',
+    [
+        'reason' => 'rental_started',
+        'rental_id' => $rental->id,
+        'rental_code' => $rental->rentalId,
+    ],
+    $user
+);
 
             $user->increment('totalRentals');
 
@@ -72,8 +144,9 @@ class RentalService
             );
 
             return $rental;
-        });
-    }
+        }
+    );
+}
 
     public function returnRental(
         Rental $rental,
@@ -84,10 +157,11 @@ class RentalService
         ?string $paymentReference,
         ?string $notes
     ): array {
-        if ($rental->status !== 'active') {
-            throw new \Exception('Rental is not active.');
-        }
-
+      if (!in_array($rental->status, ['active', 'overdue'], true)) {
+    throw new \Exception(
+        'Only active or overdue rentals can be returned.'
+    );
+}
         $endTime = Carbon::now();
         $fees = $this->calculateFees(
             $rental->startTime,
@@ -110,17 +184,29 @@ class RentalService
                 'status' => 'completed',
             ]);
 
-            $bicycle = Bicycle::find($rental->bicycleId);
-            if ($bicycle) {
-                $bicycle->update([
-                    'status' => 'available',
-                    'currentLat' => $returnLat,
-                    'currentLng' => $returnLng,
-                    'currentRider' => null,
-                    'currentRentalId' => null,
-                    'totalRentals' => $bicycle->totalRentals + 1,
-                ]);
-            }
+  $bicycle = Bicycle::find($rental->bicycleId);
+
+if ($bicycle) {
+    $bicycle->update([
+        'status' => 'available',
+        'currentLat' => $returnLat,
+        'currentLng' => $returnLng,
+        'currentRider' => null,
+        'currentRentalId' => null,
+        'totalRentals' => $bicycle->totalRentals + 1,
+    ]);
+
+    $this->iotService->sendCommand(
+        $bicycle->id,
+        'lock',
+        [
+            'reason' => 'rental_returned',
+            'rental_id' => $rental->id,
+            'rental_code' => $rental->rentalId,
+        ],
+        $user
+    );
+}
 
             $user->increment('totalSpent', $fees['totalFee']);
 
@@ -187,6 +273,17 @@ class RentalService
 
         return $rental->fresh();
     }
+
+    public function markExpiredRentalsOverdue(): int
+{
+    return Rental::where('status', 'active')
+        ->whereNotNull('expectedEndTime')
+        ->where('expectedEndTime', '<=', Carbon::now())
+        ->update([
+            'status' => 'overdue',
+            'overdueAt' => Carbon::now(),
+        ]);
+}
 
     public function calculateFees(string $startTime, ?string $endTime, float $ratePerHour): array
     {
