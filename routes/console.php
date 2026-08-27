@@ -10,5 +10,8 @@ Artisan::command('inspire', function () {
 
 // IoT / safety automation
 Schedule::command('rentals:check-overdue')->everyMinute()->withoutOverlapping();
+Schedule::command('rentals:check-grace-locks')
+    ->everyMinute()
+    ->withoutOverlapping();
 Schedule::command('devices:check-inactive')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('gps:cleanup --days=90')->daily();

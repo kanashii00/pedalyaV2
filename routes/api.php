@@ -1,12 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Api\BicycleController as ApiBicycle;
 use App\Http\Controllers\Api\RentalController as ApiRental;
 use App\Http\Controllers\Api\GpsController as ApiGps;
 use App\Http\Controllers\Api\IoTController as ApiIoT;
 use App\Http\Controllers\Api\NotificationController as ApiNotification;
 use App\Http\Controllers\Api\AuthController as ApiAuth;
+use App\Http\Controllers\Api\PasswordResetController;
 
 // Health check
 Route::get('/health', fn () => response()->json([
@@ -17,6 +19,11 @@ Route::get('/health', fn () => response()->json([
 // Public auth
 Route::post('/auth/login', [ApiAuth::class, 'login'])->middleware('throttle:10,1');
 Route::post('/auth/register', [ApiAuth::class, 'register'])->middleware('throttle:5,1');
+Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendCode'])
+    ->middleware('throttle:5,1');
+
+Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassword'])
+    ->middleware('throttle:5,1');
 
 // Device-authenticated routes (IoT devices / ESP32)
 Route::middleware('device.auth')->group(function () {
@@ -34,7 +41,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Auth
     Route::get('/auth/profile', [ApiAuth::class, 'profile']);
     Route::put('/auth/profile', [ApiAuth::class, 'updateProfile']);
+    Route::put('/auth/password', [ApiAuth::class, 'changePassword']);
+    Route::post('/auth/id-verification', [ApiAuth::class, 'uploadIdVerification']);
     Route::post('/auth/logout', [ApiAuth::class, 'logout']);
+    
 
     // Bicycles
     Route::get('/bicycles/nearby', [ApiBicycle::class, 'nearby']);
@@ -70,4 +80,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/notifications/unread-count', [ApiNotification::class, 'unreadCount']);
     Route::put('/notifications/{id}/read', [ApiNotification::class, 'markRead']);
     Route::put('/notifications/read-all', [ApiNotification::class, 'markAllRead']);
+});
+
+Route::get('/test', function () {
+    return response()->json([
+        'success' => true,
+        'message' => 'Pedalya API is working!',
+        'database' => DB::connection()->getDatabaseName(),
+        'users_count' => DB::table('users')->count(),
+    ]);
 });

@@ -14,124 +14,189 @@ class RentalService
     protected NotificationService $notificationService;
     protected IoTService $iotService;
 
-    public function __construct(NotificationService $notificationService, IoTService $iotService)
-    {
+    public function __construct(
+        NotificationService $notificationService,
+        IoTService $iotService
+    ) {
         $this->notificationService = $notificationService;
         $this->iotService = $iotService;
     }
 
-    public function startRental(
-        User $user,
-        int $bicycleId,
-        string $paymentMethod = 'cash',
-        int $durationHours = 1,
-        ?string $paymentReference = null
-    ): Rental {
-        if (!$user->verified) {
-            throw new \Exception('User must be verified to start a rental.');
-        }
+public function startRental(
+    User $user,
+    int $bicycleId,
+    int $durationMinutes = 30,
+    string $paymentMethod = 'cash',
+    ?string $paymentReference = null
+): Rental {
+    if (!$user->verified) {
+        throw new \Exception(
+            'User must be verified to start a rental.'
+        );
+    }
 
-        $activeRental = Rental::where('riderId', $user->id)
-            ->whereIn('status', ['active', 'pending'])
-            ->first();
+    $activeRental = Rental::where('riderId', $user->id)
+        ->whereIn('status', [
+            'active',
+            'pending',
+            'overdue',
+        ])
+        ->first();
 
-        if ($activeRental) {
-            throw new \Exception('User already has an active rental.');
-        }
+    if ($activeRental) {
+        throw new \Exception(
+            'User already has an active rental.'
+        );
+    }
 
-        $bicycle = Bicycle::findOrFail($bicycleId);
+    $bicycle = Bicycle::findOrFail($bicycleId);
 
-        if ($bicycle->status !== 'available') {
-            throw new \Exception('Bicycle is not available for rental.');
-        }
+    if ($bicycle->status !== Bicycle::STATUS_AVAILABLE) {
+        throw new \Exception(
+            'Bicycle is not available for rental.'
+        );
+    }
 
-        if ($bicycle->batteryLevel < 20) {
-            throw new \Exception('Bicycle battery level is too low to rent.');
-        }
+    if ($bicycle->batteryLevel < 20) {
+        throw new \Exception(
+            'Bicycle battery level is too low to rent.'
+        );
+    }
 
-        $ratePerHour = $bicycle->hourlyRate ?? 15.00;
-        $totalFee = $ratePerHour * $durationHours;
-        $isGcash = $paymentMethod === 'gcash';
+    $ratePerHour = $bicycle->hourlyRate ?? 15.00;
 
-        $rental = DB::transaction(function () use (
-            $user, $bicycle, $paymentMethod, $durationHours,
-            $paymentReference, $ratePerHour, $totalFee, $isGcash
-        ) {
-            $rental = Rental::create([
-                'rentalId' => $this->generateRentalId(),
-                'riderId' => $user->id,
-                'riderName' => $user->name,
-                'riderEmail' => $user->email,
-                'bicycleId' => $bicycle->id,
-                'bicycleName' => $bicycle->name,
-                'bicycleSerial' => $bicycle->serialNumber,
-                'startTime' => Carbon::now(),
-                'startLocation' => ['lat' => $bicycle->currentLat, 'lng' => $bicycle->currentLng],
-                'status' => $isGcash ? 'pending' : 'active',
-                'ratePerHour' => $ratePerHour,
-                'totalFee' => $totalFee,
-                'durationMinutes' => $durationHours * 60,
-                'durationFormatted' => $durationHours . 'h 0m',
-                'chargedHours' => $durationHours,
-                'paymentMethod' => $paymentMethod,
-                'paymentReference' => $paymentReference,
-                'paymentStatus' => $isGcash ? 'pending_verification' : 'paid',
+    $durationHours = $durationMinutes / 60;
+    $chargedHours = max((int) ceil($durationHours), 1);
+    $totalFee = round($ratePerHour * $chargedHours, 2);
+
+    $hours = intdiv($durationMinutes, 60);
+    $minutes = $durationMinutes % 60;
+    $durationFormatted = "{$hours}h {$minutes}m";
+
+    $isGcash = $paymentMethod === 'gcash';
+
+    $rental = DB::transaction(function () use (
+        $user,
+        $bicycle,
+        $durationMinutes,
+        $paymentMethod,
+        $paymentReference,
+        $ratePerHour,
+        $chargedHours,
+        $totalFee,
+        $durationFormatted,
+        $isGcash
+    ) {
+        $startTime = Carbon::now();
+
+        $expectedEndTime = $startTime
+            ->copy()
+            ->addMinutes($durationMinutes);
+
+        $rental = Rental::create([
+            'rentalId' => $this->generateRentalId(),
+
+            'riderId' => $user->id,
+            'riderName' => $user->name,
+            'riderEmail' => $user->email,
+
+            'bicycleId' => $bicycle->id,
+            'bicycleName' => $bicycle->name,
+            'bicycleSerial' => $bicycle->serialNumber,
+
+            'startTime' => $startTime,
+            'expectedEndTime' => $expectedEndTime,
+
+            'startLocation' => [
+                'lat' => $bicycle->currentLat,
+                'lng' => $bicycle->currentLng,
+            ],
+
+            'status' => $isGcash ? 'pending' : 'active',
+
+            'ratePerHour' => $ratePerHour,
+            'totalFee' => $totalFee,
+
+            'durationMinutes' => $durationMinutes,
+            'durationFormatted' => $durationFormatted,
+            'chargedHours' => $chargedHours,
+
+            'paymentMethod' => $paymentMethod,
+            'paymentReference' => $paymentReference,
+            'paymentStatus' => $isGcash
+                ? 'pending_verification'
+                : 'paid',
+        ]);
+
+        if (!$isGcash) {
+            $bicycle->update([
+                'status' => Bicycle::STATUS_RENTED,
+                'currentRider' => $user->id,
+                'currentRentalId' => $rental->id,
             ]);
 
-            if (!$isGcash) {
-                // Rental is now active: bicycle becomes Rented and the smart
-                // lock is Unlocked because the rider is authorized to use it.
-                $bicycle->update([
-                    'status' => Bicycle::STATUS_RENTED,
-                    'currentRider' => $user->id,
-                    'currentRentalId' => $rental->id,
-                    'lockStatus' => Bicycle::LOCK_UNLOCKED,
-                ]);
-
-                $user->increment('totalRentals');
-            }
-
-            if ($isGcash) {
-                Payment::create([
-                    'rentalId' => $rental->id,
-                    'userId' => $user->id,
-                    'bicycleId' => $bicycle->id,
-                    'paymentReference' => $paymentReference ?? 'GC-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8)),
-                    'paymentMethod' => 'gcash',
-                    'amount' => $totalFee,
-                    'convenienceFee' => 0,
-                    'totalAmount' => $totalFee,
-                    'currency' => 'PHP',
-                    'status' => 'pending',
-                    'paymentDetails' => [
-                        'rental_id' => $rental->rentalId,
-                        'duration_hours' => $durationHours,
-                        'bicycle_name' => $bicycle->name,
-                        'bicycle_serial' => $bicycle->serialNumber,
-                    ],
-                ]);
-            }
-
-            $this->notificationService->create(
-                $user->id,
-                $isGcash ? 'GCash Payment Submitted' : 'Rental Started',
-                $isGcash
-                    ? "Your rental {$rental->rentalId} is pending payment verification. Please wait for admin approval."
-                    : "Your rental {$rental->rentalId} has started. Pay ₱{$totalFee} upon return. Enjoy your ride!",
-                'rental_started'
-            );
-
-            return $rental;
-        });
-
-        // Queue the physical unlock command for the ESP32 smart lock
-        // (after commit, so no command is queued if the rental fails).
-        if (!$isGcash) {
-            $this->iotService->sendCommand($bicycle->id, 'unlock', [], $user);
+            $user->increment('totalRentals');
         }
 
+        if ($isGcash) {
+            Payment::create([
+                'rentalId' => $rental->id,
+                'userId' => $user->id,
+                'bicycleId' => $bicycle->id,
+
+                'paymentReference' =>
+                    $paymentReference
+                    ?? 'GC-' . strtoupper(
+                        substr(bin2hex(random_bytes(4)), 0, 8)
+                    ),
+
+                'paymentMethod' => 'gcash',
+                'amount' => $totalFee,
+                'convenienceFee' => 0,
+                'totalAmount' => $totalFee,
+                'currency' => 'PHP',
+                'status' => 'pending',
+
+                'paymentDetails' => [
+                    'rental_id' => $rental->rentalId,
+                    'duration_minutes' => $durationMinutes,
+                    'bicycle_name' => $bicycle->name,
+                    'bicycle_serial' => $bicycle->serialNumber,
+                ],
+            ]);
+        }
+
+        $this->notificationService->create(
+            $user->id,
+            $isGcash
+                ? 'GCash Payment Submitted'
+                : 'Rental Started',
+            $isGcash
+                ? "Your rental {$rental->rentalId} is pending payment verification. Please wait for admin approval."
+                : "Your rental {$rental->rentalId} has started. Pay ₱{$totalFee} upon return. Enjoy your ride!",
+            'rental_started'
+        );
+
         return $rental;
+    });
+
+    // Queue unlock only after the rental transaction succeeds.
+    // The actual lockStatus changes only after the device acknowledges it.
+    if (!$isGcash) {
+        $this->iotService->sendCommand(
+            $bicycle->id,
+            'unlock',
+            [
+                'reason' => 'rental_started',
+                'rental_id' => $rental->id,
+                'rental_code' => $rental->rentalId,
+            ],
+            $user
+        );
     }
+
+    return $rental;
+}
 
     public function returnRental(
         Rental $rental,
@@ -142,10 +207,11 @@ class RentalService
         ?string $paymentReference,
         ?string $notes
     ): array {
-        if (!in_array($rental->status, ['active', 'overdue'], true)) {
-            throw new \Exception('Only active or overdue rentals can be ended.');
-        }
-
+      if (!in_array($rental->status, ['active', 'overdue'], true)) {
+    throw new \Exception(
+        'Only active or overdue rentals can be returned.'
+    );
+}
         $endTime = Carbon::now();
         $fees = $this->calculateFees(
             $rental->startTime,
@@ -198,12 +264,11 @@ class RentalService
     /**
      * Automated status update rule.
      *
-     * When a rental's status is "Completed" and its payment status is
-     * "Paid", the corresponding bicycle must be released: its status
-     * becomes "Available" and its lock action controls are updated —
-     * lockStatus set to Locked and a physical lock command queued for
-     * the ESP32 smart lock (deferred until any open DB transaction
-     * commits, so nothing is sent if the surrounding work rolls back).
+ * When a rental's status is "Completed" and its payment status is
+* "Paid", the corresponding bicycle is released and its status
+* becomes "Available". A physical lock command is queued for the
+* ESP32 after the database transaction commits. The lockStatus is
+* updated only after the device acknowledges the lock command.
      *
      * The rule is idempotent: an already-settled bicycle is left
      * untouched and no duplicate lock command is queued.
@@ -231,12 +296,11 @@ class RentalService
             return false;
         }
 
-        $attributes = array_merge([
-            'status' => Bicycle::STATUS_AVAILABLE,
-            'currentRider' => null,
-            'currentRentalId' => null,
-            'lockStatus' => Bicycle::LOCK_LOCKED,
-        ], $extraAttributes);
+       $attributes = array_merge([
+    'status' => Bicycle::STATUS_AVAILABLE,
+    'currentRider' => null,
+    'currentRentalId' => null,
+], $extraAttributes);
 
         $bicycle->fill($attributes);
 
@@ -316,6 +380,17 @@ class RentalService
 
         return $rental->fresh();
     }
+
+    public function markExpiredRentalsOverdue(): int
+{
+    return Rental::where('status', 'active')
+        ->whereNotNull('expectedEndTime')
+        ->where('expectedEndTime', '<=', Carbon::now())
+        ->update([
+            'status' => 'overdue',
+            'overdueAt' => Carbon::now(),
+        ]);
+}
 
     public function calculateFees(string $startTime, ?string $endTime, float $ratePerHour): array
     {

@@ -94,30 +94,34 @@ class RentalController extends Controller
         return new RentalResource($rental);
     }
 
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'bicycle_id' => 'required|exists:bicycles,id',
-        ]);
+public function store(Request $request): JsonResponse
+{
+    $validated = $request->validate([
+        'bicycle_id' => 'required|integer|exists:bicycles,id',
+        'duration_minutes' => 'required|integer|min:30|max:480',
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        try {
-            $rental = $this->rentalService->startRental(
-                $user,
-                $validated['bicycle_id']
-            );
+    try {
+        $rental = $this->rentalService->startRental(
+            $user,
+            $validated['bicycle_id'],
+            $validated['duration_minutes']
+        );
 
-            return response()->json([
-                'message' => 'Rental started successfully',
-                'rental'  => new RentalResource($rental->load(['bicycle', 'rider'])),
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 422);
-        }
+        return response()->json([
+            'message' => 'Rental started successfully',
+            'rental' => new RentalResource(
+                $rental->load(['bicycle', 'rider'])
+            ),
+        ], 201);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => $e->getMessage(),
+        ], 422);
     }
+}
 
     public function returnRental(Request $request, int $id): JsonResponse
     {

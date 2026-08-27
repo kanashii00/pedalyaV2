@@ -168,22 +168,6 @@ class IoTService
         ]);
 
         if ($bicycle) {
-            // Lock commands only change the physical smart-lock state
-            // (lockStatus). The bicycle's rental/operational status
-            // (available / rented / maintenance) is managed by the rental
-            // lifecycle, never here.
-            if (in_array($command, ['lock', 'unlock'], true)) {
-                $lockStatus = $command === 'lock'
-                    ? Bicycle::LOCK_LOCKED
-                    : Bicycle::LOCK_UNLOCKED;
-
-                $bicycle->update([
-                    'lockStatus' => $lockStatus,
-                    'lastLockAction' => Carbon::now(),
-                    'lockActionBy' => $user?->id,
-                ]);
-            }
-
             DeviceStatus::create([
                 'bicycleId' => $bicycleId,
                 'command' => $command,
@@ -197,23 +181,63 @@ class IoTService
 
         return $deviceCommand;
     }
+public function acknowledgeDeviceCommand(
+    int $deviceCommandId,
+    ?string $result = null,
+    string $status = 'executed'
+): bool {
+    $command = DeviceCommand::find($deviceCommandId);
 
-    public function acknowledgeDeviceCommand(int $deviceCommandId, ?string $result = null, string $status = 'executed'): bool
-    {
-        $command = DeviceCommand::find($deviceCommandId);
-
-        if (!$command) {
-            return false;
-        }
-
-        $command->update([
-            'status' => in_array($status, ['executed', 'failed', 'sent'], true) ? $status : 'executed',
-            'executedAt' => now(),
-            'response' => $result,
-        ]);
-
-        return true;
+    if (!$command) {
+        return false;
     }
+
+    $validStatus = in_array(
+        $status,
+        ['executed', 'failed', 'sent'],
+        true
+    )
+        ? $status
+        : 'executed';
+
+    $command->update([
+        'status' => $validStatus,
+        'executedAt' =>
+            $validStatus === 'executed'
+                ? now()
+                : null,
+        'response' => $result,
+    ]);
+
+    if ($validStatus === 'executed') {
+        $bicycle = Bicycle::find($command->bicycleId);
+
+        if ($bicycle) {
+      if ($command->command === 'lock') {
+    $bicycle->update([
+        'lockStatus' => 'locked',
+        'status' => $bicycle->currentRentalId
+            ? Bicycle::STATUS_LOCKED
+            : Bicycle::STATUS_AVAILABLE,
+        'lastLockAction' => Carbon::now(),
+        'lockActionBy' => $command->issuedBy,
+    ]);
+}
+            if ($command->command === 'unlock') {
+                $bicycle->update([
+                    'lockStatus' => 'unlocked',
+                    'status' => $bicycle->currentRentalId
+                        ? Bicycle::STATUS_RENTED
+                        : Bicycle::STATUS_AVAILABLE,
+                    'lastLockAction' => Carbon::now(),
+                    'lockActionBy' => $command->issuedBy,
+                ]);
+            }
+        }
+    }
+
+    return true;
+}
 
     public function getPendingCommands(int $bicycleId): array
     {
