@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\RentalResource;
 use App\Models\Bicycle;
 use App\Models\Rental;
+use App\Services\IoTService;
 use App\Services\RentalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class RentalController extends Controller
 {
     public function __construct(
-        private RentalService $rentalService
+        private RentalService $rentalService,
+        private IoTService $iotService
     ) {}
 
     public function active(Request $request): AnonymousResourceCollection
@@ -183,12 +185,16 @@ public function store(Request $request): JsonResponse
             'approvedAt' => now(),
         ]);
 
+        // Rental approved: bicycle becomes Rented and the smart lock is
+        // Unlocked because the rider is now authorized to use it.
         Bicycle::where('id', $rental->bicycleId)->update([
             'status' => Bicycle::STATUS_RENTED,
             'currentRider' => $rental->riderId,
             'currentRentalId' => $rental->rentalId,
-            'lockStatus' => 'unlocked',
+            'lockStatus' => Bicycle::LOCK_UNLOCKED,
         ]);
+
+        $this->iotService->sendCommand($rental->bicycleId, 'unlock', [], $request->user());
 
         return response()->json([
             'message' => 'Rental approved successfully',
@@ -221,12 +227,16 @@ public function store(Request $request): JsonResponse
 
         $bicycle = Bicycle::find($rental->bicycleId);
         if ($bicycle && $bicycle->currentRentalId === $rental->rentalId) {
+            // Rental cancelled: bicycle becomes Available and the smart lock
+            // is Locked again since nobody is authorized to use it.
             $bicycle->update([
                 'status' => Bicycle::STATUS_AVAILABLE,
                 'currentRider' => null,
                 'currentRentalId' => null,
-                'lockStatus' => 'locked',
+                'lockStatus' => Bicycle::LOCK_LOCKED,
             ]);
+
+            $this->iotService->sendCommand($rental->bicycleId, 'lock', [], $user);
         }
 
         return response()->json([

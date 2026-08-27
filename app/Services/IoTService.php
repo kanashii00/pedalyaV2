@@ -37,7 +37,9 @@ class IoTService
                 $updateData['batteryLevel'] = (int) max(0, min(100, (float) $battery));
             }
             if (array_key_exists('locked', $data)) {
-                $updateData['lockStatus'] = $data['locked'] ? 'locked' : 'unlocked';
+                $updateData['lockStatus'] = $data['locked']
+                    ? Bicycle::LOCK_LOCKED
+                    : Bicycle::LOCK_UNLOCKED;
             }
             $updateData['lastHeartbeat'] = $timestamp;
             $bicycle->update($updateData);
@@ -153,7 +155,7 @@ class IoTService
             ->first();
     }
 
-    public function sendCommand(int $bicycleId, string $command, array $params, User $user): DeviceCommand
+    public function sendCommand(int $bicycleId, string $command, array $params, ?User $user = null): DeviceCommand
     {
         $bicycle = Bicycle::find($bicycleId);
 
@@ -162,7 +164,7 @@ class IoTService
             'command' => $command,
             'params' => $params ?: null,
             'status' => 'pending',
-            'issuedBy' => $user->id,
+            'issuedBy' => $user?->id,
         ]);
 
         if ($bicycle) {
@@ -170,7 +172,7 @@ class IoTService
                 'bicycleId' => $bicycleId,
                 'command' => $command,
                 'params' => $params ?: null,
-                'commandIssuedBy' => $user->id,
+                'commandIssuedBy' => $user?->id,
                 'commandIssuedAt' => Carbon::now(),
                 'type' => 'command',
                 'eventTimestamp' => Carbon::now(),

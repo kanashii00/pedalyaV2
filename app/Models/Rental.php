@@ -11,10 +11,18 @@ class Rental extends Model
     use HasFactory;
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_OVERDUE = 'overdue';
+
+    public const STATUS_RETURNED = 'returned';
+
+    public const STATUS_EXPIRED = 'expired';
 
     protected $table = 'rentals';
 

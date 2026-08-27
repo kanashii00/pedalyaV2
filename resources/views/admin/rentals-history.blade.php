@@ -1,11 +1,11 @@
+@extends('layouts.admin')
 
+@section('title', 'Rental History')
 
-<?php $__env->startSection('title', 'Rental Management'); ?>
-
-<?php $__env->startSection('styles'); ?>
+@section('styles')
 <style>
     /* ============================================================
-       Active Rentals — Redesigned Module
+       Rental History — Read-only archive view
        ============================================================ */
 
     /* ---- Filter card ---- */
@@ -83,7 +83,7 @@
     }
     .rv-table-scroll { overflow-x: auto; }
     .rv-table {
-        width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1060px;
+        width: 100%; border-collapse: collapse; font-size: 13px; min-width: 960px;
     }
     .rv-table thead th {
         position: sticky; top: 0; z-index: 2;
@@ -150,14 +150,11 @@
     .rv-status--pending { background: var(--warning-soft); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 24%, transparent); }
     .rv-status--overdue { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
     .rv-status--cancelled { background: var(--surface-3); color: var(--text-3); border-color: var(--border-subtle); }
+    .rv-status--returned { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+    .rv-status--expired { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
     .rv-status--paid { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 22%, transparent); }
     .rv-status--unpaid { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
     .rv-status--dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-    .rv-status--live::before { animation: rvPulse 1.8s ease-in-out infinite; }
-    @keyframes rvPulse {
-        0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent); opacity: 1; }
-        50% { box-shadow: 0 0 0 4px transparent; opacity: 0.65; }
-    }
 
     /* Payment method */
     .rv-method {
@@ -168,7 +165,7 @@
     .rv-method--gcash { background: var(--accent-soft); color: var(--accent); }
     .rv-method--cash { background: var(--success-soft); color: var(--success); }
 
-    /* ---- Action buttons ---- */
+    /* ---- Action buttons (view + print only) ---- */
     .rv-actions { display: flex; gap: 6px; align-items: center; }
     .rv-btn {
         width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
@@ -179,12 +176,8 @@
     .rv-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
     .rv-btn:active { transform: translateY(0); }
     .rv-btn--view:hover, .rv-btn--view.is-open { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
-    .rv-btn--complete { color: var(--success); border-color: color-mix(in srgb, var(--success) 38%, transparent); }
-    .rv-btn--complete:hover { color: #fff; background: var(--success); border-color: var(--success); }
-    .rv-btn--cancel { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 34%, transparent); }
-    .rv-btn--cancel:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
-    .rv-btn--approve { color: var(--brand-strong); border-color: color-mix(in srgb, var(--brand) 40%, transparent); }
-    .rv-btn--approve:hover { color: #fff; background: var(--brand); border-color: var(--brand); }
+    .rv-btn--print { color: var(--text-3); border-color: var(--border-subtle); }
+    .rv-btn--print:hover { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
     .rv-btn[title]::after {
         content: attr(title); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
         background: var(--text-1); color: var(--canvas); padding: 4px 8px; border-radius: 6px;
@@ -274,10 +267,6 @@
     /* ---- Empty state ---- */
     .rv-empty { padding: 48px 20px !important; }
 
-    /* ---- Print receipt button ---- */
-    .rv-btn--print { color: var(--text-3); border-color: var(--border-subtle); }
-    .rv-btn--print:hover { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
-
     /* ============================================================
        Receipt preview modal
        ============================================================ */
@@ -347,116 +336,93 @@
         padding: 8px 2px; border-bottom: 1px dashed #e5e7eb; font-size: 11px; color: #6b7280;
     }
     .rcpt-meta i { font-size: 11px; }
-    .rcpt-sec { margin-top: 12px; }
-    .rcpt-sec__label {
-        display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
-        font-size: 9px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #6b7280;
-    }
-    .rcpt-sec__label i { font-size: 11px; color: #16a34a; }
-    .rcpt-card {
-        background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px;
-    }
-    .rcpt-strong { font-size: 13px; font-weight: 700; color: #111827; line-height: 1.3; }
-    .rcpt-sub { font-size: 11px; color: #6b7280; margin-top: 2px; overflow-wrap: anywhere; }
-    .rcpt-list { margin: 0; }
-    .rcpt-kv {
-        display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
-        padding: 5px 2px; border-bottom: 1px dashed #e5e7eb; font-size: 12px;
-    }
-    .rcpt-kv:last-child { border-bottom: none; }
-    .rcpt-kv dt { color: #6b7280; white-space: nowrap; }
-    .rcpt-kv dd { margin: 0; font-weight: 600; color: #111827; text-align: right; }
-    .rcpt-total {
-        display: flex; justify-content: space-between; align-items: center; gap: 10px;
-        background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
-        padding: 10px 12px; margin: 0 0 8px;
-    }
-    .rcpt-total dt { font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #14532d; }
-    .rcpt-total dd { margin: 0; font-size: 20px; font-weight: 800; color: #14532d; font-variant-numeric: tabular-nums; line-height: 1; }
-    .rcpt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .rcpt-chip {
         display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 10px; border-radius: 999px;
         font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
-        border-radius: 999px; padding: 3px 10px; border: 1px solid transparent; white-space: nowrap;
     }
-    .rcpt-chip i { font-size: 10.5px; }
-    .rcpt-chip--green { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
-    .rcpt-chip--blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-    .rcpt-chip--amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-    .rcpt-chip--red { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
-    .rcpt-chip--live { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .rcpt-chip--live { background: #ecfdf5; color: #166534; }
+    .rcpt-chip--green { background: #ecfdf5; color: #166534; }
+    .rcpt-chip--amber { background: #fffbeb; color: #92400e; }
+    .rcpt-chip--red { background: #fef2f2; color: #991b1b; }
+    .rcpt-chip--blue { background: #eff6ff; color: #1e40af; }
+
+    .rcpt-sec { margin-top: 14px; }
+    .rcpt-sec__label {
+        font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+        color: #6b7280; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+    }
+    .rcpt-sec__label i { font-size: 11px; color: #14532d; }
+    .rcpt-card {
+        background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
+    }
+    .rcpt-strong { font-weight: 700; color: #111827; font-size: 13px; }
+    .rcpt-sub { font-size: 11.5px; color: #6b7280; }
+
+    .rcpt-list { margin: 0; }
+    .rcpt-kv {
+        display: flex; justify-content: space-between; align-items: baseline;
+        font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #f3f4f6;
+    }
+    .rcpt-kv:last-child { border-bottom: none; }
+    .rcpt-kv dt { color: #6b7280; }
+    .rcpt-kv dd { margin: 0; font-weight: 600; color: #111827; }
+
+    .rcpt-total {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin: 8px 0 10px; padding: 10px 12px;
+        background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+    }
+    .rcpt-total dt { font-size: 12px; font-weight: 600; color: #14532d; }
+    .rcpt-total dd { margin: 0; font-size: 18px; font-weight: 800; color: #14532d; }
+
+    .rcpt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
     .rcpt-footer {
-        margin-top: 14px; padding-top: 10px; border-top: 2px solid #14532d;
-        text-align: center; font-size: 11.5px; font-weight: 600; color: #374151;
+        margin-top: 18px; padding-top: 12px; border-top: 2px solid #14532d;
+        text-align: center; font-size: 10.5px; font-weight: 600; color: #14532d; line-height: 1.5;
     }
-    .rcpt-footer small { display: block; margin-top: 3px; font-size: 9px; font-weight: 400; color: #9ca3af; line-height: 1.5; }
+    .rcpt-footer small { display: block; margin-top: 4px; font-size: 9px; font-weight: 500; color: #9ca3af; }
 
-    @media (max-width: 520px) {
-        .rcpt-modal__dialog { max-width: 100%; margin: 8px; }
-        .rcpt-sheet { padding: 16px 14px 12px; }
-        .rcpt-total dd { font-size: 17px; }
-    }
-
-    /* ============================================================
-       Print — output ONLY the receipt on a clean white page
-       ============================================================ */
+    /* ---- Print styles ---- */
     @media print {
-        @page { size: A4 portrait; margin: 14mm; }
-        html, body { background: #ffffff !important; }
-        body.rcpt-printing .admin-sidebar,
-        body.rcpt-printing .sidebar-overlay,
-        body.rcpt-printing .admin-toasts,
-        body.rcpt-printing .admin-main > header.admin-topbar,
-        body.rcpt-printing .admin-pagehead,
-        body.rcpt-printing .alert-pedalya,
-        body.rcpt-printing .rv-filter-card,
-        body.rcpt-printing .rv-table-card { display: none !important; }
-        body.rcpt-printing * { visibility: hidden !important; box-shadow: none !important; }
-        body.rcpt-printing .rcpt-sheet,
-        body.rcpt-printing .rcpt-sheet * { visibility: visible !important; box-shadow: none !important; }
-        body.rcpt-printing .rcpt-modal {
-            position: static !important; display: block !important;
-            opacity: 1 !important; visibility: visible !important;
-            padding: 0 !important; overflow: visible !important;
-        }
+        body > *:not(.rcpt-printing) { display: none !important; }
+        body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+        body.rcpt-printing { background: #fff !important; }
+        body.rcpt-printing > * { display: none !important; }
+        body.rcpt-printing .rcpt-modal,
+        body.rcpt-printing .rcpt-modal.open { position: static; opacity: 1; visibility: visible; background: none !important; }
         body.rcpt-printing .rcpt-modal__backdrop,
         body.rcpt-printing .rcpt-modal__head,
         body.rcpt-printing .rcpt-modal__foot { display: none !important; }
         body.rcpt-printing .rcpt-modal__dialog {
-            position: static !important; display: block !important;
-            width: auto !important; max-width: none !important; max-height: none !important;
-            border: none !important; border-radius: 0 !important;
-            background: transparent !important; transform: none !important; overflow: visible !important;
+            width: 100%; max-width: 100%; margin: 0; border: none; border-radius: 0; box-shadow: none; transform: none;
+            max-height: none; overflow: visible;
         }
-        body.rcpt-printing .rcpt-modal__body { padding: 0 !important; overflow: visible !important; }
-        body.rcpt-printing .rcpt-sheet {
-            width: 100% !important; max-width: 100% !important;
-            margin: 0 !important; padding: 0 !important;
-            border-radius: 0 !important; box-shadow: none !important;
-        }
-        .rcpt-sheet, .rcpt-sheet * {
-            -webkit-print-color-adjust: exact; print-color-adjust: exact;
-        }
+        body.rcpt-printing .rcpt-modal__body { padding: 0; }
+        body.rcpt-printing .rcpt-sheet { box-shadow: none; border-radius: 0; padding: 18px; max-width: 100%; margin: 0; }
+        .rv-btn[title]::after { display: none !important; }
+        * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
     }
 </style>
-<?php $__env->stopSection(); ?>
+@endsection
 
-<?php $__env->startSection('page-header'); ?>
+@section('page-header')
 <div class="admin-pagehead">
     <div class="admin-pagehead__title">
-        <h1>Active Rentals</h1>
-        <p>Track ongoing rides, payments and settlements across all bicycles</p>
+        <h1>Rental History</h1>
+        <p>Completed, returned, cancelled, and expired rental records</p>
     </div>
 </div>
-<?php $__env->stopSection(); ?>
+@endsection
 
-<?php $__env->startSection('content'); ?>
+@section('content')
 <div style="display:flex;flex-direction:column;gap:0;">
 
-    
+    {{-- ===== Filter bar ===== --}}
     <div class="rv-filter-card">
-        <div class="rv-filter-head"><i class="bi bi-funnel"></i>Refine Rentals</div>
-        <form method="GET" action="<?php echo e(route('admin.rentals.index')); ?>" class="rv-filter-grid">
+        <div class="rv-filter-head"><i class="bi bi-funnel"></i>Refine History</div>
+        <form method="GET" action="{{ route('admin.rentals.history') }}" class="rv-filter-grid">
             <div class="rv-filter-field rv-filter-field--search">
                 <label for="rvSearch">Search</label>
                 <div class="rv-filter-ctrl has-icon no-caret">
@@ -468,23 +434,24 @@
                 <label for="rvStatus">Status</label>
                 <div class="rv-filter-ctrl">
                     <select name="status" id="rvStatus">
-                        <option value="">All Active</option>
-                        <option value="active" <?php echo e(request('status') === 'active' ? 'selected' : ''); ?>>Active</option>
-                        <option value="pending" <?php echo e(request('status') === 'pending' ? 'selected' : ''); ?>>Pending</option>
-                        <option value="overdue" <?php echo e(request('status') === 'overdue' ? 'selected' : ''); ?>>Overdue</option>
+                        <option value="">All History</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="returned" {{ request('status') === 'returned' ? 'selected' : '' }}>Returned</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Expired</option>
                     </select>
                 </div>
             </div>
             <div class="rv-filter-field">
                 <label for="rvFrom">Start Date</label>
                 <div class="rv-filter-ctrl no-caret">
-                    <input type="date" name="date_from" id="rvFrom" value="<?php echo e(request('date_from')); ?>">
+                    <input type="date" name="date_from" id="rvFrom" value="{{ request('date_from') }}">
                 </div>
             </div>
             <div class="rv-filter-field">
                 <label for="rvTo">End Date</label>
                 <div class="rv-filter-ctrl no-caret">
-                    <input type="date" name="date_to" id="rvTo" value="<?php echo e(request('date_to')); ?>">
+                    <input type="date" name="date_to" id="rvTo" value="{{ request('date_to') }}">
                 </div>
             </div>
             <div class="rv-filter-field">
@@ -492,9 +459,9 @@
                 <div class="rv-filter-ctrl">
                     <select name="bicycle_id" id="rvBike">
                         <option value="">All Bicycles</option>
-                        <?php $__currentLoopData = $bicyclesList ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($b->id); ?>" <?php echo e(request('bicycle_id') == $b->id ? 'selected' : ''); ?>><?php echo e($b->name); ?></option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        @foreach($bicyclesList ?? [] as $b)
+                            <option value="{{ $b->id }}" {{ request('bicycle_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -503,9 +470,9 @@
                 <div class="rv-filter-ctrl">
                     <select name="rider_id" id="rvRider">
                         <option value="">All Riders</option>
-                        <?php $__currentLoopData = $ridersList ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <option value="<?php echo e($r->id); ?>" <?php echo e(request('rider_id') == $r->id ? 'selected' : ''); ?>><?php echo e($r->name); ?></option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        @foreach($ridersList ?? [] as $r)
+                            <option value="{{ $r->id }}" {{ request('rider_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -513,14 +480,14 @@
                 <button type="submit" class="btn-admin btn-admin--primary btn-admin--sm">
                     <i class="bi bi-funnel me-1"></i>Filter
                 </button>
-                <a href="<?php echo e(route('admin.rentals.index')); ?>" class="btn-admin btn-admin--ghost btn-admin--sm" title="Clear all filters">
+                <a href="{{ route('admin.rentals.history') }}" class="btn-admin btn-admin--ghost btn-admin--sm" title="Clear all filters">
                     <i class="bi bi-x-lg"></i>
                 </a>
             </div>
         </form>
     </div>
 
-    
+    {{-- ===== Rentals history table ===== --}}
     <div class="rv-table-card">
         <div class="rv-table-scroll">
             <table class="rv-table" id="rvTable">
@@ -540,94 +507,91 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php $__empty_1 = true; $__currentLoopData = $rentals; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rental): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <?php
+                    @forelse($rentals as $rental)
+                        @php
                             $durH = $rental->durationMinutes ? floor($rental->durationMinutes / 60) : null;
                             $durM = $rental->durationMinutes % 60;
                             $durLabel = $rental->durationMinutes ? ($durH ? $durH . 'h ' . $durM . 'm' : $durM . 'm') : null;
-                        ?>
-                        <tr class="rv-row" data-detail="rvd-<?php echo e($rental->id); ?>">
-                            <td><span class="rv-id"><small>REN</small>#<?php echo e($rental->id); ?></span></td>
+                        @endphp
+                        <tr class="rv-row" data-detail="rvd-{{ $rental->id }}">
+                            <td><span class="rv-id"><small>REN</small>#{{ $rental->id }}</span></td>
                             <td>
                                 <div class="rv-rider">
                                     <div class="user-avatar" style="width:30px;height:30px;font-size:11px;">
-                                        <?php echo e(strtoupper(substr($rental->rider->name ?? 'U', 0, 1))); ?>
-
+                                        {{ strtoupper(substr($rental->rider->name ?? 'U', 0, 1)) }}
                                     </div>
                                     <div style="min-width:0;">
-                                        <div class="rv-rider__name"><?php echo e($rental->rider->name ?? 'Unknown'); ?></div>
-                                        <div class="rv-rider__email"><?php echo e($rental->rider->email ?? ''); ?></div>
+                                        <div class="rv-rider__name">{{ $rental->rider->name ?? 'Unknown' }}</div>
+                                        <div class="rv-rider__email">{{ $rental->rider->email ?? '' }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                <div class="rv-bike__name"><?php echo e($rental->bicycle->name ?? 'Unknown'); ?></div>
-                                <?php if($rental->bicycle?->serialNumber): ?>
-                                    <div class="rv-bike__sub">SN &middot; <?php echo e($rental->bicycle->serialNumber); ?></div>
-                                <?php endif; ?>
+                                <div class="rv-bike__name">{{ $rental->bicycle->name ?? 'Unknown' }}</div>
+                                @if($rental->bicycle?->serialNumber)
+                                    <div class="rv-bike__sub">SN &middot; {{ $rental->bicycle->serialNumber }}</div>
+                                @endif
                             </td>
                             <td>
                                 <div class="rv-dt">
-                                    <div class="rv-dt__date"><?php echo e($rental->startTime?->format('M d, Y') ?? '&mdash;'); ?></div>
-                                    <div class="rv-dt__time"><?php echo e($rental->startTime?->format('h:i A') ?? 'Not started'); ?></div>
+                                    <div class="rv-dt__date">{{ $rental->startTime?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    <div class="rv-dt__time">{{ $rental->startTime?->format('h:i A') ?? 'Not started' }}</div>
                                 </div>
                             </td>
                             <td>
                                 <div class="rv-dt">
-                                    <div class="rv-dt__date"><?php echo e($rental->endTime?->format('M d, Y') ?? '&mdash;'); ?></div>
-                                    <div class="rv-dt__time"><?php echo e($rental->endTime?->format('h:i A') ?? 'In progress'); ?></div>
+                                    <div class="rv-dt__date">{{ $rental->endTime?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    <div class="rv-dt__time">{{ $rental->endTime?->format('h:i A') ?? '&mdash;' }}</div>
                                 </div>
                             </td>
                             <td>
-                                <?php if($durLabel): ?>
-                                    <span class="rv-chip"><i class="bi bi-hourglass-split"></i><?php echo e($durLabel); ?></span>
-                                <?php else: ?>
+                                @if($durLabel)
+                                    <span class="rv-chip"><i class="bi bi-hourglass-split"></i>{{ $durLabel }}</span>
+                                @else
                                     <span style="color:var(--text-3);">&mdash;</span>
-                                <?php endif; ?>
+                                @endif
                             </td>
                             <td>
-                                <div class="rv-fee">&#8369;<?php echo e(number_format($rental->totalFee ?? 0, 2)); ?></div>
-                                <div class="rv-fee__sub">&#8369;<?php echo e(number_format($rental->ratePerHour ?? 0, 2)); ?>/hr</div>
+                                <div class="rv-fee">&#8369;{{ number_format($rental->totalFee ?? 0, 2) }}</div>
+                                <div class="rv-fee__sub">&#8369;{{ number_format($rental->ratePerHour ?? 0, 2) }}/hr</div>
                             </td>
                             <td>
-                                <?php if($rental->paymentMethod === 'gcash'): ?>
+                                @if($rental->paymentMethod === 'gcash')
                                     <span class="rv-method rv-method--gcash"><i class="bi bi-phone"></i>GCash</span>
-                                <?php else: ?>
+                                @else
                                     <span class="rv-method rv-method--cash"><i class="bi bi-cash-stack"></i>Cash</span>
-                                <?php endif; ?>
+                                @endif
                             </td>
                             <td>
-                                <?php if($rental->status === 'active'): ?>
-                                    <span class="rv-status rv-status--active rv-status--dot rv-status--live">Active</span>
-                                <?php elseif($rental->status === 'completed'): ?>
+                                @if($rental->status === 'completed')
                                     <span class="rv-status rv-status--completed rv-status--dot">Completed</span>
-                                <?php elseif($rental->status === 'pending'): ?>
-                                    <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
-                                <?php elseif($rental->status === 'overdue'): ?>
-                                    <span class="rv-status rv-status--overdue rv-status--dot rv-status--live">Overdue</span>
-                                <?php elseif($rental->status === 'cancelled'): ?>
+                                @elseif($rental->status === 'returned')
+                                    <span class="rv-status rv-status--returned rv-status--dot">Returned</span>
+                                @elseif($rental->status === 'cancelled')
                                     <span class="rv-status rv-status--cancelled rv-status--dot">Cancelled</span>
-                                <?php else: ?>
-                                    <span class="rv-status rv-status--cancelled rv-status--dot"><?php echo e(ucfirst($rental->status)); ?></span>
-                                <?php endif; ?>
+                                @elseif($rental->status === 'expired')
+                                    <span class="rv-status rv-status--expired rv-status--dot">Expired</span>
+                                @else
+                                    <span class="rv-status rv-status--cancelled rv-status--dot">{{ ucfirst($rental->status) }}</span>
+                                @endif
                             </td>
                             <td>
-                                <?php if($rental->paymentStatus === 'paid'): ?>
+                                @if($rental->paymentStatus === 'paid')
                                     <span class="rv-status rv-status--paid"><i class="bi bi-check-circle-fill"></i>Paid</span>
-                                <?php elseif($rental->paymentStatus === 'pending'): ?>
+                                @elseif($rental->paymentStatus === 'pending')
                                     <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
-                                <?php else: ?>
-                                    <span class="rv-status rv-status--unpaid rv-status--dot"><?php echo e(ucfirst($rental->paymentStatus ?? 'unpaid')); ?></span>
-                                <?php endif; ?>
+                                @else
+                                    <span class="rv-status rv-status--unpaid rv-status--dot">{{ ucfirst($rental->paymentStatus ?? 'unpaid') }}</span>
+                                @endif
                             </td>
                             <td>
                                 <div class="rv-actions">
                                     <button type="button" class="rv-btn rv-btn--view"
-                                            data-detail-toggle="rvd-<?php echo e($rental->id); ?>"
+                                            data-detail-toggle="rvd-{{ $rental->id }}"
                                             title="View details">
                                         <i class="bi bi-eye"></i>
                                     </button>
-                                    <?php
+                                    @php
                                         $receiptData = [
                                             'id'        => $rental->rentalId ?? ('REN-' . str_pad($rental->id, 4, '0', STR_PAD_LEFT)),
                                             'rider'     => $rental->rider->name ?? $rental->riderName ?? 'Unknown',
@@ -646,62 +610,18 @@
                                             'status'    => ucfirst($rental->status),
                                             'issued'    => now()->format('M d, Y \a\t h:i A'),
                                         ];
-                                    ?>
+                                    @endphp
                                     <button type="button" class="rv-btn rv-btn--print"
-                                            data-print-receipt="<?php echo e(json_encode($receiptData)); ?>"
+                                            data-print-receipt="{{ json_encode($receiptData) }}"
                                             title="Print receipt">
                                         <i class="bi bi-printer"></i>
                                     </button>
-                                    <?php if($rental->status === 'pending' && $rental->paymentMethod === 'gcash'): ?>
-                                        <form action="<?php echo e(route('admin.rentals.verify-gcash', $rental->id)); ?>" method="POST" class="d-inline">
-                                            <?php echo csrf_field(); ?>
-                                            <?php echo method_field('PUT'); ?>
-                                            <button type="submit" class="rv-btn rv-btn--approve"
-                                                    data-confirm="Verify this GCash payment and approve the rental?"
-                                                    title="Verify &amp; approve">
-                                                <i class="bi bi-patch-check"></i>
-                                            </button>
-                                        </form>
-                                    <?php elseif($rental->status === 'pending'): ?>
-                                        <form action="<?php echo e(route('admin.rentals.approve', $rental->id)); ?>" method="POST" class="d-inline">
-                                            <?php echo csrf_field(); ?>
-                                            <?php echo method_field('PUT'); ?>
-                                            <button type="submit" class="rv-btn rv-btn--approve"
-                                                    data-confirm="Approve this pending rental?"
-                                                    title="Approve">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <?php if(in_array($rental->status, ['active', 'overdue'])): ?>
-                                        <form action="<?php echo e(route('admin.rentals.end-ride', $rental->id)); ?>" method="POST" class="d-inline">
-                                            <?php echo csrf_field(); ?>
-                                            <?php echo method_field('PUT'); ?>
-                                            <button type="submit" class="rv-btn rv-btn--complete"
-                                                    data-confirm="End this ride now? The end time will be recorded, the final fee calculated, and the bicycle returned to Available."
-                                                    title="End ride">
-                                                <i class="bi bi-stop-circle"></i>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <?php if(in_array($rental->status, ['active', 'pending', 'overdue'])): ?>
-                                        <form action="<?php echo e(route('admin.rentals.cancel', $rental->id)); ?>" method="POST" class="d-inline">
-                                            <?php echo csrf_field(); ?>
-                                            <?php echo method_field('PUT'); ?>
-                                            <input type="hidden" name="reason" value="Cancelled by administrator">
-                                            <button type="submit" class="rv-btn rv-btn--cancel"
-                                                    data-confirm="Are you sure you want to cancel this rental?"
-                                                    title="Cancel">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
 
-                        
-                        <tr class="rv-detail" id="rvd-<?php echo e($rental->id); ?>">
+                        {{-- Expandable detail row --}}
+                        <tr class="rv-detail" id="rvd-{{ $rental->id }}">
                             <td colspan="11" class="rv-detail__cell">
                                 <div class="rv-detail__inner">
                                     <div class="rv-detail__content">
@@ -709,87 +629,85 @@
                                             <div class="rv-detail__head">
                                                 <div class="rv-detail__title">
                                                     <i class="bi bi-receipt"></i>
-                                                    Rental #<?php echo e($rental->id); ?>
-
-                                                    <?php if($rental->status === 'active'): ?>
-                                                        <span class="rv-status rv-status--active rv-status--dot rv-status--live">Active</span>
-                                                    <?php elseif($rental->status === 'completed'): ?>
+                                                    Rental #{{ $rental->id }}
+                                                    @if($rental->status === 'completed')
                                                         <span class="rv-status rv-status--completed rv-status--dot">Completed</span>
-                                                    <?php elseif($rental->status === 'pending'): ?>
-                                                        <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
-                                                    <?php elseif($rental->status === 'overdue'): ?>
-                                                        <span class="rv-status rv-status--overdue rv-status--dot rv-status--live">Overdue</span>
-                                                    <?php else: ?>
-                                                        <span class="rv-status rv-status--cancelled rv-status--dot"><?php echo e(ucfirst($rental->status)); ?></span>
-                                                    <?php endif; ?>
+                                                    @elseif($rental->status === 'returned')
+                                                        <span class="rv-status rv-status--returned rv-status--dot">Returned</span>
+                                                    @elseif($rental->status === 'cancelled')
+                                                        <span class="rv-status rv-status--cancelled rv-status--dot">Cancelled</span>
+                                                    @elseif($rental->status === 'expired')
+                                                        <span class="rv-status rv-status--expired rv-status--dot">Expired</span>
+                                                    @else
+                                                        <span class="rv-status rv-status--cancelled rv-status--dot">{{ ucfirst($rental->status) }}</span>
+                                                    @endif
                                                 </div>
                                                 <div class="rv-detail__meta">
-                                                    <i class="bi bi-clock-history me-1"></i>Created <?php echo e($rental->created_at->format('M d, Y h:i A')); ?>
-
+                                                    <i class="bi bi-clock-history me-1"></i>Created {{ $rental->created_at->format('M d, Y h:i A') }}
                                                 </div>
                                             </div>
                                             <div class="rv-detail__body">
                                                 <div class="rv-detail__grid">
-                                                    
+                                                    {{-- Rental timeline --}}
                                                     <div class="rv-panel">
                                                         <div class="rv-panel__label"><i class="bi bi-route"></i>Rental Details</div>
                                                         <dl style="margin:0;">
-                                                            <div class="rv-kv"><dt>Start Time</dt><dd><?php echo e($rental->startTime?->format('M d, Y h:i A') ?? '&mdash;'); ?></dd></div>
-                                                            <div class="rv-kv"><dt>End Time</dt><dd><?php echo e($rental->endTime?->format('M d, Y h:i A') ?? '&mdash;'); ?></dd></div>
-                                                            <div class="rv-kv"><dt>Duration</dt><dd><?php echo e($durLabel ?? '&mdash;'); ?></dd></div>
-                                                            <div class="rv-kv"><dt>Created</dt><dd><?php echo e($rental->created_at->format('M d, Y h:i A')); ?></dd></div>
+                                                            <div class="rv-kv"><dt>Start Time</dt><dd>{{ $rental->startTime?->format('M d, Y h:i A') ?? '&mdash;' }}</dd></div>
+                                                            <div class="rv-kv"><dt>End Time</dt><dd>{{ $rental->endTime?->format('M d, Y h:i A') ?? '&mdash;' }}</dd></div>
+                                                            <div class="rv-kv"><dt>Duration</dt><dd>{{ $durLabel ?? '&mdash;' }}</dd></div>
+                                                            <div class="rv-kv"><dt>Created</dt><dd>{{ $rental->created_at->format('M d, Y h:i A') }}</dd></div>
                                                         </dl>
-                                                        <?php if($rental->notes): ?>
-                                                            <div class="rv-notes"><strong><i class="bi bi-sticky me-1"></i>Notes</strong><?php echo e($rental->notes); ?></div>
-                                                        <?php endif; ?>
+                                                        @if($rental->notes)
+                                                            <div class="rv-notes"><strong><i class="bi bi-sticky me-1"></i>Notes</strong>{{ $rental->notes }}</div>
+                                                        @endif
                                                     </div>
 
-                                                    
+                                                    {{-- Payment & Participants --}}
                                                     <div class="rv-panel">
                                                         <div class="rv-panel__label"><i class="bi bi-people"></i>Participants &amp; Payment</div>
                                                         <div class="rv-parties">
                                                             <div class="rv-party">
-                                                                <div class="user-avatar" style="width:32px;height:32px;font-size:12px;"><?php echo e(strtoupper(substr($rental->rider->name ?? 'U', 0, 1))); ?></div>
+                                                                <div class="user-avatar" style="width:32px;height:32px;font-size:12px;">{{ strtoupper(substr($rental->rider->name ?? 'U', 0, 1)) }}</div>
                                                                 <div style="min-width:0;">
-                                                                    <div class="rv-rider__name"><?php echo e($rental->rider->name ?? 'Unknown'); ?></div>
-                                                                    <div class="rv-rider__email"><?php echo e($rental->rider->email ?? '&mdash;'); ?></div>
+                                                                    <div class="rv-rider__name">{{ $rental->rider->name ?? 'Unknown' }}</div>
+                                                                    <div class="rv-rider__email">{{ $rental->rider->email ?? '&mdash;' }}</div>
                                                                 </div>
                                                             </div>
                                                             <div class="rv-party">
                                                                 <i class="bi bi-bicycle lead"></i>
                                                                 <div style="min-width:0;">
-                                                                    <div class="rv-rider__name"><?php echo e($rental->bicycle->name ?? 'Unknown'); ?></div>
-                                                                    <div class="rv-rider__email">&#8369;<?php echo e(number_format($rental->bicycle->hourlyRate ?? 0, 2)); ?>/hour</div>
+                                                                    <div class="rv-rider__name">{{ $rental->bicycle->name ?? 'Unknown' }}</div>
+                                                                    <div class="rv-rider__email">&#8369;{{ number_format($rental->bicycle->hourlyRate ?? 0, 2) }}/hour</div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <div class="rv-fees">
                                                             <div class="rv-tile">
                                                                 <div class="rv-tile__label">Hourly Rate</div>
-                                                                <div class="rv-tile__value">&#8369;<?php echo e(number_format($rental->ratePerHour ?? 0, 2)); ?></div>
+                                                                <div class="rv-tile__value">&#8369;{{ number_format($rental->ratePerHour ?? 0, 2) }}</div>
                                                             </div>
                                                             <div class="rv-tile">
                                                                 <div class="rv-tile__label">Duration</div>
-                                                                <div class="rv-tile__value"><?php echo e($durLabel ?? '&mdash;'); ?></div>
+                                                                <div class="rv-tile__value">{{ $durLabel ?? '&mdash;' }}</div>
                                                             </div>
                                                             <div class="rv-tile rv-tile--total">
                                                                 <div class="rv-tile__label">Total Fee</div>
-                                                                <div class="rv-tile__value">&#8369;<?php echo e(number_format($rental->totalFee ?? 0, 2)); ?></div>
+                                                                <div class="rv-tile__value">&#8369;{{ number_format($rental->totalFee ?? 0, 2) }}</div>
                                                             </div>
                                                         </div>
                                                         <div class="rv-payline">
-                                                            <?php if($rental->paymentMethod === 'gcash'): ?>
+                                                            @if($rental->paymentMethod === 'gcash')
                                                                 <span class="rv-method rv-method--gcash"><i class="bi bi-phone"></i>GCash</span>
-                                                            <?php else: ?>
+                                                            @else
                                                                 <span class="rv-method rv-method--cash"><i class="bi bi-cash-stack"></i>Cash</span>
-                                                            <?php endif; ?>
-                                                            <?php if($rental->paymentStatus === 'paid'): ?>
+                                                            @endif
+                                                            @if($rental->paymentStatus === 'paid')
                                                                 <span class="rv-status rv-status--paid"><i class="bi bi-check-circle-fill"></i>Paid</span>
-                                                            <?php elseif($rental->paymentStatus === 'pending'): ?>
+                                                            @elseif($rental->paymentStatus === 'pending')
                                                                 <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
-                                                            <?php else: ?>
-                                                                <span class="rv-status rv-status--unpaid rv-status--dot"><?php echo e(ucfirst($rental->paymentStatus ?? 'unpaid')); ?></span>
-                                                            <?php endif; ?>
+                                                            @else
+                                                                <span class="rv-status rv-status--unpaid rv-status--dot">{{ ucfirst($rental->paymentStatus ?? 'unpaid') }}</span>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
@@ -799,50 +717,29 @@
                                 </div>
                             </td>
                         </tr>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                    @empty
                         <tr>
                             <td colspan="11" class="rv-empty">
-                                <?php if (isset($component)) { $__componentOriginal99089f8e2ef4184d7d35db81d60c6521 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal99089f8e2ef4184d7d35db81d60c6521 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.empty-state','data' => ['icon' => 'bi-key','title' => 'No rentals found','message' => 'Adjust your filters or try a different search.']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('admin.empty-state'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['icon' => 'bi-key','title' => 'No rentals found','message' => 'Adjust your filters or try a different search.']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal99089f8e2ef4184d7d35db81d60c6521)): ?>
-<?php $attributes = $__attributesOriginal99089f8e2ef4184d7d35db81d60c6521; ?>
-<?php unset($__attributesOriginal99089f8e2ef4184d7d35db81d60c6521); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal99089f8e2ef4184d7d35db81d60c6521)): ?>
-<?php $component = $__componentOriginal99089f8e2ef4184d7d35db81d60c6521; ?>
-<?php unset($__componentOriginal99089f8e2ef4184d7d35db81d60c6521); ?>
-<?php endif; ?>
+                                <x-admin.empty-state icon="bi-clock-history" title="No rental history found" message="No finished rentals match your filters."/>
                             </td>
                         </tr>
-                    <?php endif; ?>
+                    @endforelse
                 </tbody>
             </table>
         </div>
 
         <div class="rv-foot">
             <span>
-                <i class="bi bi-list-ul me-1"></i>Showing <?php echo e($rentals->total()); ?> record<?php echo e($rentals->total() === 1 ? '' : 's'); ?>
-
+                <i class="bi bi-list-ul me-1"></i>Showing {{ $rentals->total() }} record{{ $rentals->total() === 1 ? '' : 's' }}
             </span>
-            <?php if(method_exists($rentals, 'links')): ?>
-                <?php echo e($rentals->withQueryString()->links()); ?>
-
-            <?php endif; ?>
+            @if(method_exists($rentals, 'links'))
+                {{ $rentals->withQueryString()->links() }}
+            @endif
         </div>
     </div>
 </div>
 
-
+{{-- ===== Receipt preview modal ===== --}}
 <div class="rcpt-modal" id="rcptModal">
     <div class="rcpt-modal__backdrop" data-rcpt-close></div>
     <div class="rcpt-modal__dialog" role="dialog" aria-modal="true" aria-label="Rental receipt preview">
@@ -854,7 +751,7 @@
             <div class="rcpt-sheet" id="rcptSheet">
                 <div class="rcpt-brandrow">
                     <div class="rcpt-brand">
-                        <img src="<?php echo e(asset('assets/img/Logo.png')); ?>" alt="Pedalya logo" class="rcpt-logo">
+                        <img src="{{ asset('assets/img/Logo.png') }}" alt="Pedalya logo" class="rcpt-logo">
                         <div style="min-width:0;">
                             <div class="rcpt-name">Peda<span>lya</span></div>
                             <div class="rcpt-tagline">IoT Bicycle Rental System</div>
@@ -929,9 +826,9 @@
         </div>
     </div>
 </div>
-<?php $__env->stopSection(); ?>
+@endsection
 
-<?php $__env->startSection('scripts'); ?>
+@section('scripts')
 <script>
 (function () {
     var tbody = document.querySelector('#rvTable tbody');
@@ -1072,6 +969,4 @@
     if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
 })();
 </script>
-<?php $__env->stopSection(); ?>
-
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Administrator\pedalya\resources\views\admin\rentals.blade.php ENDPATH**/ ?>
+@endsection

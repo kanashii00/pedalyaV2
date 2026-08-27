@@ -33,6 +33,10 @@ class CheckOverdueRentals extends Command
                 'isOverdue' => true,
                 'overdueAt' => now(),
             ]);
+
+             // Do not lock immediately when the rental becomes overdue.
+            // The grace-period lock command handles the smart lock after
+            // the allowed grace period has elapsed.
             
             $notificationService->create(
                 $rental->riderId,

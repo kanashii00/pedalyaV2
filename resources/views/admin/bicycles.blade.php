@@ -48,6 +48,11 @@
         </thead>
         <tbody>
             @forelse($bicycles as $bike)
+                @php
+                    $isLocked = $bike->lockStatus === 'locked';
+                    $isRented = $bike->status === 'rented';
+                    $inMaintenance = $bike->status === 'maintenance';
+                @endphp
                 <tr>
                     <td class="cell-title" data-label="Name">{{ $bike->name }}</td>
                     <td data-label="Serial"><code>{{ $bike->serialNumber }}</code></td>
@@ -72,7 +77,7 @@
                         </div>
                     </td>
                     <td data-label="Lock">
-                        @if($bike->lockStatus === 'locked')
+                        @if($isLocked)
                             <x-admin.badge type="danger" label="Locked" />
                         @else
                             <x-admin.badge type="success" label="Unlocked" />
@@ -83,26 +88,72 @@
                     <td data-label="Last Updated"><small class="text-muted">{{ $bike->updated_at->diffForHumans() }}</small></td>
                     <td data-label="Actions">
                         <div class="d-flex gap-1">
-                            <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button"
-                                    onclick="PedalyaModal.open('editBicycleModal{{ $bike->id }}')" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <form action="{{ route('admin.bicycles.lock', $bike->id) }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="action" value="{{ ($bike->lockStatus === 'locked') ? 'unlock' : 'lock' }}">
-                                <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm"
-                                        title="{{ ($bike->lockStatus === 'locked') ? 'Unlock' : 'Lock' }}">
-                                    <i class="bi bi-{{ ($bike->lockStatus === 'locked') ? 'unlock' : 'lock' }}"></i>
+                            @if($inMaintenance)
+                                {{-- Under maintenance: all row actions disabled --}}
+                                <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button" disabled
+                                        title="Disabled while bicycle is under maintenance"
+                                        aria-label="Edit disabled, bicycle under maintenance">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
-                            </form>
-                            <form action="{{ route('admin.bicycles.destroy', $bike->id) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm" title="Delete"
-                                        data-confirm="Are you sure you want to delete this bicycle?">
+                                <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button" disabled
+                                        title="Disabled while bicycle is under maintenance"
+                                        aria-label="Lock control disabled, bicycle under maintenance">
+                                    <i class="bi bi-{{ $isLocked ? 'lock' : 'unlock' }}-fill"></i>
+                                    <span>{{ $isLocked ? 'Lock' : 'Unlock' }}</span>
+                                </button>
+                                <button class="btn-admin btn-admin--danger btn-admin--sm" type="button" disabled
+                                        title="Disabled while bicycle is under maintenance"
+                                        aria-label="Delete disabled, bicycle under maintenance">
                                     <i class="bi bi-trash"></i>
                                 </button>
-                            </form>
+                            @else
+                                <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button"
+                                        onclick="PedalyaModal.open('editBicycleModal{{ $bike->id }}')" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                @if($isRented)
+                                    {{-- Rented: lock is controlled by the active rider --}}
+                                    <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button" disabled
+                                            title="Bicycle is currently rented - the smart lock is controlled by the rider"
+                                            aria-label="Bicycle in use, lock control unavailable">
+                                        <i class="bi bi-bicycle"></i>
+                                        <span>In Use</span>
+                                    </button>
+                                @elseif(!$isLocked)
+                                    <form action="{{ route('admin.bicycles.lock', $bike->id) }}" method="POST">
+                                        @csrf
+                                        {{-- Label and icon mirror the Lock badge; clicking toggles the state --}}
+                                        <input type="hidden" name="action" value="lock">
+                                        <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm"
+                                                title="Unlocked - click to lock"
+                                                aria-label="Unlocked bicycle, click to lock">
+                                            <i class="bi bi-unlock-fill"></i>
+                                            <span>Unlock</span>
+                                        </button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('admin.bicycles.lock', $bike->id) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="action" value="unlock">
+                                        <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm"
+                                                title="Locked - click to unlock"
+                                                aria-label="Locked bicycle, click to unlock">
+                                            <i class="bi bi-lock-fill"></i>
+                                            <span>Lock</span>
+                                        </button>
+                                    </form>
+                                @endif
+
+                                <form action="{{ route('admin.bicycles.destroy', $bike->id) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm" title="Delete"
+                                            data-confirm="Are you sure you want to delete this bicycle?">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

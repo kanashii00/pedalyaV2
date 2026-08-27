@@ -42,6 +42,65 @@ class MonitoringController extends Controller
         return response()->view('admin.monitoring', compact('bicycles', 'geofence', 'section'));
     }
 
+    public function bicycleStatusIndex(Request $request): Response
+    {
+        $query = Bicycle::with(['latestTelemetry', 'latestGpsLog', 'currentRiderUser'])
+            ->where('status', '!=', 'removed');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('lock')) {
+            $query->where('lockStatus', $request->input('lock') === 'locked' ? 'locked' : 'unlocked');
+        }
+
+        if ($request->filled('connectivity')) {
+            $online = $request->input('connectivity') === 'online';
+            $cutoff = now()->subMinutes(5);
+            if ($online) {
+                $query->where('lastHeartbeat', '>=', $cutoff);
+            } else {
+                $query->where(function ($q) use ($cutoff) {
+                    $q->whereNull('lastHeartbeat')->orWhere('lastHeartbeat', '<', $cutoff);
+                });
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('serialNumber', 'like', "%{$search}%");
+            });
+        }
+
+        $bicycles = $query->orderBy('id')->get();
+
+        $summary = [
+            'total'      => 0,
+            'available'  => 0,
+            'rented'     => 0,
+            'maintenance'=> 0,
+            'locked'     => 0,
+            'unlocked'   => 0,
+            'online'     => 0,
+            'offline'    => 0,
+        ];
+
+        $cutoff = now()->subMinutes(5);
+        foreach ($bicycles as $bike) {
+            $online = $bike->lastHeartbeat !== null && $bike->lastHeartbeat->gt($cutoff);
+            $summary['total']++;
+            $summary[$bike->status] = ($summary[$bike->status] ?? 0) + 1;
+            $bike->lockStatus === 'locked' ? $summary['locked']++ : $summary['unlocked']++;
+            $online ? $summary['online']++ : $summary['offline']++;
+            $bike->connectivity = $online ? 'online' : 'offline';
+        }
+
+        return response()->view('admin.bicycles-status', compact('bicycles', 'summary'));
+    }
+
     public function bicycleStatus(int $id): JsonResponse
     {
         $bicycle = Bicycle::with(['latestTelemetry', 'latestGpsLog'])->findOrFail($id);

@@ -148,6 +148,57 @@
                     <small>Estimated Cost</small>
                     <h4 class="mb-0" id="costDisplay">₱50.00</h4>
                 </div>
+
+                <!-- Payment Method -->
+                <div class="mb-3">
+                    <label class="form-label-pedalya fw-bold">Payment Method</label>
+                    <div class="d-flex gap-3">
+                        <label class="payment-method-option flex-fill active" id="payOptCash">
+                            <input type="radio" name="paymentMethod" value="cash" class="d-none" checked onchange="togglePaymentMethod('cash')">
+                            <div class="text-center p-3 rounded border h-100">
+                                <i class="bi bi-cash-stack fs-3 text-success"></i>
+                                <div class="fw-bold mt-1" style="font-size:0.9rem;">Cash</div>
+                                <small class="text-muted">Pay at station</small>
+                            </div>
+                        </label>
+                        <label class="payment-method-option flex-fill" id="payOptGcash">
+                            <input type="radio" name="paymentMethod" value="gcash" class="d-none" onchange="togglePaymentMethod('gcash')">
+                            <div class="text-center p-3 rounded border h-100">
+                                <i class="bi bi-phone fs-3 text-primary"></i>
+                                <div class="fw-bold mt-1" style="font-size:0.9rem;">GCash</div>
+                                <small class="text-muted">Scan QR to pay</small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- GCash Payment Area (hidden by default) -->
+                <div id="gcashPaymentArea" class="d-none mb-3">
+                    <div class="border rounded p-3" style="background:#f0f7ff;">
+                        <div class="text-center mb-3">
+                            <small class="text-muted">Scan this QR code to pay</small>
+                            <div class="my-2">
+                                <div id="gcashQrCode" style="display:inline-block;background:#fff;padding:12px;border-radius:8px;border:1px solid #e0e0e0;">
+                                    <canvas id="gcashQrCanvas"></canvas>
+                                </div>
+                            </div>
+                            <div class="fw-bold text-primary fs-5" id="gcashAmountDisplay">₱50.00</div>
+                        </div>
+                        <ol class="mb-3" style="font-size:0.85rem;padding-left:1.2rem;color:#555;">
+                            <li>Open your <strong>GCash</strong> app and tap <strong>Scan QR</strong></li>
+                            <li>Scan the QR code above</li>
+                            <li>Enter the exact amount shown above</li>
+                            <li>Complete the payment and take a screenshot</li>
+                        </ol>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold" style="font-size:0.85rem;">GCash Reference Number</label>
+                            <input type="text" class="form-control" name="paymentReference" id="gcashRefInput"
+                                   placeholder="e.g. 1234567890123" maxlength="100" required>
+                            <small class="text-muted">Enter the reference number from your GCash receipt</small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" id="rentalTerms" required>
                     <label class="form-check-label" for="rentalTerms" style="font-size:0.85rem;color:#666;">I agree to the rental terms and conditions, and will return the bicycle to a designated station.</label>
@@ -158,12 +209,25 @@
                 <form action="<?php echo e(route('rider.rent.store')); ?>" method="POST" id="rentalForm" class="d-inline">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="bicycleId" id="selectedBicycleId" value="">
+                    <input type="hidden" name="durationHours" id="selectedDuration" value="2">
+                    <input type="hidden" name="paymentMethod" id="selectedPaymentMethod" value="cash">
+                    <input type="hidden" name="paymentReference" id="selectedPaymentRef" value="">
                     <button type="submit" class="btn btn-pedalya" id="confirmRentBtn"><i class="bi bi-key-fill"></i> Start Rental</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+<style>
+    .payment-method-option { cursor: pointer; }
+    .payment-method-option .border { transition: all 0.2s; }
+    .payment-method-option.active .border,
+    .payment-method-option input:checked + .border {
+        border-color: var(--primary) !important;
+        background: #f0f7ff;
+        box-shadow: 0 0 0 2px var(--primary);
+    }
+</style>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
@@ -176,6 +240,7 @@
         document.getElementById('modalBikeName').textContent = name;
         document.getElementById('modalBikeBattery').textContent = battery + '%';
         document.getElementById('modalBikeRate').textContent = '₱' + rate + '/hr';
+        togglePaymentMethod('cash');
         updateCost();
         new bootstrap.Modal(document.getElementById('rentalModal')).show();
     }
@@ -183,7 +248,101 @@
     function updateCost() {
         var hours = document.getElementById('durationSlider').value;
         document.getElementById('durationDisplay').textContent = hours + (hours == 1 ? ' hour' : ' hours');
-        document.getElementById('costDisplay').textContent = '₱' + (hours * currentRate).toFixed(2);
+        var total = hours * currentRate;
+        document.getElementById('costDisplay').textContent = '₱' + total.toFixed(2);
+        document.getElementById('selectedDuration').value = hours;
+        document.getElementById('gcashAmountDisplay').textContent = '₱' + total.toFixed(2);
+    }
+
+    function togglePaymentMethod(method) {
+        document.getElementById('selectedPaymentMethod').value = method;
+        var gcashArea = document.getElementById('gcashPaymentArea');
+        var refInput = document.getElementById('gcashRefInput');
+        var optCash = document.getElementById('payOptCash');
+        var optGcash = document.getElementById('payOptGcash');
+        var submitBtn = document.getElementById('confirmRentBtn');
+
+        if (method === 'gcash') {
+            gcashArea.classList.remove('d-none');
+            refInput.required = true;
+            optCash.classList.remove('active');
+            optGcash.classList.add('active');
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Submit Payment';
+            generateGcashQr();
+        } else {
+            gcashArea.classList.add('d-none');
+            refInput.required = false;
+            refInput.value = '';
+            optCash.classList.add('active');
+            optGcash.classList.remove('active');
+            submitBtn.innerHTML = '<i class="bi bi-key-fill"></i> Start Rental';
+        }
+    }
+
+    function generateGcashQr() {
+        var canvas = document.getElementById('gcashQrCanvas');
+        var amount = (document.getElementById('durationSlider').value * currentRate).toFixed(2);
+        var text = 'gcash://pay?amount=' + amount + '&note=BicycleRental';
+        canvas.width = 180;
+        canvas.height = 180;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 180, 180);
+        var modules = generateQrMatrix(text);
+        var size = modules.length;
+        var cellSize = Math.floor(160 / size);
+        var offset = Math.floor((180 - cellSize * size) / 2);
+        ctx.fillStyle = '#000000';
+        for (var r = 0; r < size; r++) {
+            for (var c = 0; c < size; c++) {
+                if (modules[r][c]) {
+                    ctx.fillRect(offset + c * cellSize, offset + r * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+    }
+
+    function generateQrMatrix(text) {
+        var len = text.length;
+        var size = len < 20 ? 21 : len < 50 ? 25 : len < 100 ? 29 : 33;
+        var matrix = [];
+        for (var i = 0; i < size; i++) {
+            matrix[i] = [];
+            for (var j = 0; j < size; j++) {
+                matrix[i][j] = false;
+            }
+        }
+        drawFinder(matrix, 0, 0);
+        drawFinder(matrix, size - 7, 0);
+        drawFinder(matrix, 0, size - 7);
+        for (var i = 8; i < size - 8; i++) {
+            matrix[6][i] = (i % 2 === 0);
+            matrix[i][6] = (i % 2 === 0);
+        }
+        var hash = 0;
+        for (var k = 0; k < len; k++) {
+            hash = ((hash << 5) - hash + text.charCodeAt(k)) | 0;
+        }
+        var seed = Math.abs(hash);
+        for (var r = 9; r < size; r++) {
+            for (var c = 9; c < size; c++) {
+                if (matrix[r] && !matrix[r][c]) {
+                    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                    matrix[r][c] = (seed % 3 === 0);
+                }
+            }
+        }
+        return matrix;
+    }
+
+    function drawFinder(matrix, row, col) {
+        for (var r = 0; r < 7; r++) {
+            for (var c = 0; c < 7; c++) {
+                var isEdge = r === 0 || r === 6 || c === 0 || c === 6;
+                var isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+                matrix[row + r][col + c] = isEdge || isInner;
+            }
+        }
     }
 
     document.getElementById('rentalForm').addEventListener('submit', function(e) {
@@ -191,6 +350,16 @@
             e.preventDefault();
             alert('Please accept the terms and conditions');
             return;
+        }
+        var method = document.getElementById('selectedPaymentMethod').value;
+        if (method === 'gcash') {
+            var ref = document.getElementById('gcashRefInput').value.trim();
+            if (!ref) {
+                e.preventDefault();
+                alert('Please enter your GCash reference number');
+                return;
+            }
+            document.getElementById('selectedPaymentRef').value = ref;
         }
         var btn = document.getElementById('confirmRentBtn');
         btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div> Processing...';

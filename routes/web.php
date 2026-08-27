@@ -1,28 +1,27 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
-use App\Http\Controllers\Admin\BicycleController as AdminBicycle;
-use App\Http\Controllers\Admin\RiderController as AdminRider;
-use App\Http\Controllers\Admin\RentalController as AdminRental;
-use App\Http\Controllers\Admin\MonitoringController as AdminMonitoring;
-use App\Http\Controllers\Admin\TheftController as AdminTheft;
 use App\Http\Controllers\Admin\AccidentController as AdminAccident;
-use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenance;
-use App\Http\Controllers\Admin\NotificationController as AdminNotifications;
 use App\Http\Controllers\Admin\AuditController as AdminAudit;
-use App\Http\Controllers\Admin\SettingController as AdminSettings;
-use App\Http\Controllers\Admin\ReportController as AdminReports;
-use App\Http\Controllers\Admin\IdScanController as AdminIdScan;
+use App\Http\Controllers\Admin\BicycleController as AdminBicycle;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Admin\GeofenceController as AdminGeofence;
+use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenance;
+use App\Http\Controllers\Admin\MonitoringController as AdminMonitoring;
+use App\Http\Controllers\Admin\NotificationController as AdminNotifications;
 use App\Http\Controllers\Admin\PaymentController as AdminPayment;
 use App\Http\Controllers\Admin\PaymentWebhookController as AdminPaymentWebhook;
-use App\Http\Controllers\Admin\GeofenceController as AdminGeofence;
+use App\Http\Controllers\Admin\RentalController as AdminRental;
+use App\Http\Controllers\Admin\ReportController as AdminReports;
+use App\Http\Controllers\Admin\RiderController as AdminRider;
+use App\Http\Controllers\Admin\SettingController as AdminSettings;
+use App\Http\Controllers\Admin\TheftController as AdminTheft;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Rider\DashboardController as RiderDashboard;
-use App\Http\Controllers\Rider\RentController as RiderRent;
-use App\Http\Controllers\Rider\ProfileController as RiderProfile;
 use App\Http\Controllers\Rider\NotificationController as RiderNotifications;
+use App\Http\Controllers\Rider\ProfileController as RiderProfile;
+use App\Http\Controllers\Rider\RentController as RiderRent;
+use Illuminate\Support\Facades\Route;
 
 // Landing page
 Route::get('/', fn () => view('index'))->name('home');
@@ -46,6 +45,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Bicycle management
     Route::get('/bicycles', [AdminBicycle::class, 'index'])->name('bicycles.index');
+    Route::get('/bicycles/status', [AdminMonitoring::class, 'bicycleStatusIndex'])->name('bicycles.status');
     Route::get('/bicycles/create', [AdminBicycle::class, 'create'])->name('bicycles.create');
     Route::get('/bicycles/{id}', [AdminBicycle::class, 'show'])->name('bicycles.show');
     Route::post('/bicycles', [AdminBicycle::class, 'store'])->name('bicycles.store');
@@ -64,18 +64,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/blacklisted-customers', [AdminRider::class, 'blacklisted'])->name('riders.blacklisted');
     Route::put('/blacklisted-customers/{id}', [AdminRider::class, 'updateBlacklist'])->name('riders.blacklist.update');
 
-    // Automated ID scanner
-    Route::get('/id-scans', [AdminIdScan::class, 'index'])->name('id-scans.index');
-    Route::get('/id-scans/scan', [AdminIdScan::class, 'create'])->name('id-scans.create');
-    Route::post('/id-scans', [AdminIdScan::class, 'store'])->name('id-scans.store');
-    Route::get('/id-scans/{id}', [AdminIdScan::class, 'show'])->name('id-scans.show');
-    Route::put('/id-scans/{id}/review', [AdminIdScan::class, 'review'])->name('id-scans.review');
-    Route::get('/id-scans/{id}/image/{side}', [AdminIdScan::class, 'serveImage'])->name('id-scans.image');
-
     // Rental management
     Route::get('/rentals', [AdminRental::class, 'index'])->name('rentals.index');
+    Route::get('/rentals/history', [AdminRental::class, 'history'])->name('rentals.history');
     Route::get('/rentals/{id}', [AdminRental::class, 'show'])->name('rentals.show');
     Route::put('/rentals/{id}/approve', [AdminRental::class, 'approve'])->name('rentals.approve');
+    Route::put('/rentals/{id}/verify-gcash', [AdminRental::class, 'verifyGcashPayment'])->name('rentals.verify-gcash');
+    Route::put('/rentals/{id}/end-ride', [AdminRental::class, 'endRide'])->name('rentals.end-ride');
     Route::put('/rentals/{id}/cancel', [AdminRental::class, 'cancel'])->name('rentals.cancel');
 
     // Monitoring

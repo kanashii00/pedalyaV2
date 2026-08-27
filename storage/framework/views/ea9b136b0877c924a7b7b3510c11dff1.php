@@ -84,6 +84,7 @@
                     <th>End</th>
                     <th>Duration</th>
                     <th>Cost</th>
+                    <th>Payment</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -97,6 +98,18 @@
                         <td><?php echo e($rental->endTime ? $rental->endTime->format('M d, g:i A') : '—'); ?></td>
                         <td><?php echo e($rental->durationFormatted ?? ($rental->durationMinutes ? floor($rental->durationMinutes / 60) . 'h ' . ($rental->durationMinutes % 60) . 'm' : '—')); ?></td>
                         <td>₱<?php echo e(number_format($rental->totalFee ?? 0, 2)); ?></td>
+                        <td>
+                            <?php if($rental->paymentMethod === 'gcash'): ?>
+                                <span class="badge bg-primary-subtle text-primary" style="font-size:0.75rem;"><i class="bi bi-phone me-1"></i>GCash</span>
+                            <?php else: ?>
+                                <span class="badge bg-success-subtle text-success" style="font-size:0.75rem;"><i class="bi bi-cash-stack me-1"></i>Cash</span>
+                            <?php endif; ?>
+                            <?php if($rental->paymentStatus === 'pending_verification'): ?>
+                                <br><small class="text-warning"><i class="bi bi-hourglass-split"></i> Pending</small>
+                            <?php elseif($rental->paymentStatus === 'paid'): ?>
+                                <br><small class="text-success"><i class="bi bi-check-circle"></i> Paid</small>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <?php if($rental->status === 'active'): ?>
                                 <span class="badge-status badge-active"><i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Active</span>
@@ -115,7 +128,7 @@
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="9" class="text-center text-muted py-4">
                             <i class="bi bi-clock-history" style="font-size:2rem;"></i>
                             <p class="mt-2 mb-0">No rental history found</p>
                         </td>
@@ -153,6 +166,7 @@
                     <div class="col-sm-6"><label class="form-label-pedalya">End Time</label><p id="detailEnd">—</p></div>
                     <div class="col-sm-6"><label class="form-label-pedalya">Duration</label><p id="detailDuration">—</p></div>
                     <div class="col-sm-6"><label class="form-label-pedalya">Total Cost</label><p><strong class="text-primary" id="detailCost">—</strong></p></div>
+                    <div class="col-sm-6"><label class="form-label-pedalya">Payment Method</label><p id="detailPaymentMethod">—</p></div>
                     <div class="col-sm-6"><label class="form-label-pedalya">Status</label><p id="detailStatus">—</p></div>
                     <div class="col-sm-6"><label class="form-label-pedalya">Payment</label><p id="detailPayment">—</p></div>
                 </div>
@@ -176,6 +190,7 @@
         'duration' => $r->durationFormatted ?? ($r->durationMinutes ? floor($r->durationMinutes / 60) . 'h ' . ($r->durationMinutes % 60) . 'm' : '—'),
         'cost' => '₱' . number_format($r->totalFee ?? 0, 2),
         'status' => $r->status,
+        'paymentMethod' => ucfirst($r->paymentMethod ?? 'cash'),
         'payment' => $r->paymentStatus ?? 'pending',
     ])); ?>;
 
@@ -188,6 +203,7 @@
         document.getElementById('detailEnd').textContent = rental.end;
         document.getElementById('detailDuration').textContent = rental.duration;
         document.getElementById('detailCost').textContent = rental.cost;
+        document.getElementById('detailPaymentMethod').textContent = rental.paymentMethod;
         document.getElementById('detailPayment').textContent = rental.payment;
         var statusHtml = '';
         if (rental.status === 'active') statusHtml = '<span class="badge-status badge-active"><i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Active</span>';

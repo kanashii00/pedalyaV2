@@ -2,249 +2,1050 @@
 
 @section('title', 'Rental Management')
 
+@section('styles')
+<style>
+    /* ============================================================
+       Active Rentals — Redesigned Module
+       ============================================================ */
+
+    /* ---- Filter card ---- */
+    .rv-filter-card {
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-card);
+        padding: 14px 18px;
+        margin-bottom: 16px;
+    }
+    .rv-filter-head {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--text-3); margin-bottom: 12px;
+    }
+    .rv-filter-head i { font-size: 13px; color: var(--brand); }
+    .rv-filter-grid {
+        display: grid; gap: 10px; align-items: end;
+        grid-template-columns: minmax(200px, 2fr) minmax(130px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(140px, 1fr) minmax(130px, 1fr) auto;
+    }
+    .rv-filter-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .rv-filter-field > label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+        text-transform: uppercase; color: var(--text-3); padding-left: 2px; white-space: nowrap;
+    }
+    .rv-filter-ctrl { position: relative; }
+    .rv-filter-ctrl > i {
+        position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+        color: var(--text-3); font-size: 13px; pointer-events: none;
+    }
+    .rv-filter-ctrl input,
+    .rv-filter-ctrl select {
+        width: 100%; height: 34px; padding: 0 10px; font-size: 12.5px;
+        color: var(--text-1); background: var(--surface-2);
+        border: 1px solid var(--border-subtle); border-radius: 8px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        outline: none; appearance: none;
+    }
+    .rv-filter-ctrl.has-icon input { padding-left: 32px; }
+    .rv-filter-ctrl select { padding-right: 24px; cursor: pointer; }
+    .rv-filter-ctrl::after {
+        content: '\F282'; font-family: 'bootstrap-icons'; font-size: 10px;
+        color: var(--text-3); position: absolute; right: 10px; top: 50%;
+        transform: translateY(-50%); pointer-events: none;
+    }
+    .rv-filter-ctrl.no-caret::after { display: none; }
+    .rv-filter-ctrl input:hover,
+    .rv-filter-ctrl select:hover { border-color: var(--border-strong); }
+    .rv-filter-ctrl input:focus,
+    .rv-filter-ctrl select:focus {
+        border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); background: var(--surface);
+    }
+    .rv-filter-actions { display: flex; gap: 8px; align-items: center; height: 34px; }
+    @media (max-width: 1400px) {
+        .rv-filter-grid { grid-template-columns: repeat(3, 1fr); }
+        .rv-filter-field--search { grid-column: span 3; }
+    }
+    @media (max-width: 900px) {
+        .rv-filter-grid { grid-template-columns: repeat(2, 1fr); }
+        .rv-filter-field--search { grid-column: span 2; }
+    }
+    @media (max-width: 640px) {
+        .rv-filter-grid { grid-template-columns: 1fr; }
+        .rv-filter-field--search { grid-column: span 1; }
+    }
+
+    /* ---- Table card ---- */
+    .rv-table-card {
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .rv-table-scroll { overflow-x: auto; }
+    .rv-table {
+        width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1060px;
+    }
+    .rv-table thead th {
+        position: sticky; top: 0; z-index: 2;
+        padding: 11px 16px; text-align: left; white-space: nowrap;
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
+        text-transform: uppercase; color: var(--text-3); background: var(--surface-2);
+        border-bottom: 1px solid var(--border-subtle); user-select: none;
+    }
+    .rv-table tbody td {
+        padding: 12px 16px; border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-2); vertical-align: middle;
+    }
+    .rv-table tbody tr.rv-row { transition: background 0.12s; }
+    .rv-table tbody tr.rv-row:hover { background: var(--surface-2); }
+    .rv-table tbody tr.rv-row:last-child td { border-bottom: none; }
+    .rv-table tbody tr.rv-row.is-open { background: var(--surface-2); }
+
+    /* Rental ID chip */
+    .rv-id {
+        display: inline-flex; align-items: baseline; gap: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px; font-weight: 600; color: var(--text-1);
+        background: var(--surface-3); border: 1px solid var(--border-subtle);
+        border-radius: 7px; padding: 3px 9px;
+    }
+    .rv-id small { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-3); }
+
+    /* Rider cell */
+    .rv-rider { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+    .rv-rider__name { font-weight: 600; color: var(--text-1); font-size: 13px; line-height: 1.25; }
+    .rv-rider__email { font-size: 11.5px; color: var(--text-3); line-height: 1.3; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Bicycle cell */
+    .rv-bike__name { font-weight: 600; color: var(--text-1); font-size: 13px; }
+    .rv-bike__sub { font-size: 11.5px; color: var(--text-3); }
+
+    /* Date/time cell */
+    .rv-dt { line-height: 1.35; }
+    .rv-dt__date { font-size: 12.5px; color: var(--text-1); font-weight: 500; }
+    .rv-dt__time { font-size: 11px; color: var(--text-3); }
+
+    /* Duration chip */
+    .rv-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 11.5px; font-weight: 600; color: var(--text-2);
+        background: var(--surface-3); border: 1px solid var(--border-subtle);
+        border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+    }
+
+    /* Fee */
+    .rv-fee { font-weight: 700; color: var(--text-1); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+    .rv-fee__sub { font-size: 10.5px; color: var(--text-3); font-weight: 500; }
+
+    /* ---- Status pills ---- */
+    .rv-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 11px; border-radius: 999px;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+        white-space: nowrap; border: 1px solid transparent;
+    }
+    .rv-status i { font-size: 11px; }
+    .rv-status--active { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 22%, transparent); }
+    .rv-status--completed { background: var(--brand-soft); color: var(--brand-strong); border-color: color-mix(in srgb, var(--brand) 24%, transparent); }
+    .rv-status--pending { background: var(--warning-soft); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 24%, transparent); }
+    .rv-status--overdue { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
+    .rv-status--cancelled { background: var(--surface-3); color: var(--text-3); border-color: var(--border-subtle); }
+    .rv-status--paid { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 22%, transparent); }
+    .rv-status--unpaid { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
+    .rv-status--dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .rv-status--live::before { animation: rvPulse 1.8s ease-in-out infinite; }
+    @keyframes rvPulse {
+        0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent); opacity: 1; }
+        50% { box-shadow: 0 0 0 4px transparent; opacity: 0.65; }
+    }
+
+    /* Payment method */
+    .rv-method {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 11.5px; font-weight: 600; padding: 3px 10px;
+        border-radius: 999px; white-space: nowrap;
+    }
+    .rv-method--gcash { background: var(--accent-soft); color: var(--accent); }
+    .rv-method--cash { background: var(--success-soft); color: var(--success); }
+
+    /* ---- Action buttons ---- */
+    .rv-actions { display: flex; gap: 6px; align-items: center; }
+    .rv-btn {
+        width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 8px; border: 1px solid var(--border-subtle); background: transparent;
+        color: var(--text-2); font-size: 13.5px; cursor: pointer; padding: 0;
+        transition: all 0.15s ease; position: relative;
+    }
+    .rv-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+    .rv-btn:active { transform: translateY(0); }
+    .rv-btn--view:hover, .rv-btn--view.is-open { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+    .rv-btn--complete { color: var(--success); border-color: color-mix(in srgb, var(--success) 38%, transparent); }
+    .rv-btn--complete:hover { color: #fff; background: var(--success); border-color: var(--success); }
+    .rv-btn--cancel { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 34%, transparent); }
+    .rv-btn--cancel:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
+    .rv-btn--approve { color: var(--brand-strong); border-color: color-mix(in srgb, var(--brand) 40%, transparent); }
+    .rv-btn--approve:hover { color: #fff; background: var(--brand); border-color: var(--brand); }
+    .rv-btn[title]::after {
+        content: attr(title); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+        background: var(--text-1); color: var(--canvas); padding: 4px 8px; border-radius: 6px;
+        font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none;
+        opacity: 0; transition: opacity 0.15s; z-index: 10;
+    }
+    .rv-btn:hover[title]::after { opacity: 1; }
+
+    /* ---- Expandable detail rows ---- */
+    tr.rv-detail { display: none; }
+    tr.rv-detail.open { display: table-row; }
+    .rv-detail__cell { padding: 0 !important; border-bottom: 1px solid var(--border-subtle) !important; }
+    .rv-detail__inner {
+        display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.32s ease;
+    }
+    tr.rv-detail.open .rv-detail__inner { grid-template-rows: 1fr; }
+    .rv-detail__content { overflow: hidden; min-height: 0; }
+
+    .rv-detail__card {
+        margin: 0 14px 14px; border-radius: 12px; overflow: hidden;
+        background: var(--surface-2); border: 1px solid var(--border-subtle);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), var(--shadow-card);
+    }
+    .rv-detail__head {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 13px 16px; border-bottom: 1px solid var(--border-subtle); background: var(--surface-3);
+    }
+    .rv-detail__title { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-1); }
+    .rv-detail__title i { color: var(--brand); font-size: 15px; }
+    .rv-detail__meta { font-size: 11.5px; color: var(--text-3); }
+    .rv-detail__body { padding: 16px; }
+    .rv-detail__grid { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(340px, 1.8fr); gap: 14px; }
+    @media (max-width: 1100px) { .rv-detail__grid { grid-template-columns: 1fr; } }
+
+    /* Detail panels */
+    .rv-panel {
+        background: var(--surface); border: 1px solid var(--border-subtle);
+        border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .rv-panel__label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--text-3); display: flex; align-items: center; gap: 7px;
+    }
+    .rv-panel__label i { color: var(--brand); font-size: 12px; }
+
+    .rv-kv { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px dashed var(--border-subtle); }
+    .rv-kv:last-child { border-bottom: none; }
+    .rv-kv dt { color: var(--text-3); flex-shrink: 0; }
+    .rv-kv dd { margin: 0; color: var(--text-1); font-weight: 600; text-align: right; }
+
+    /* Participants grid */
+    .rv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 640px) { .rv-parties { grid-template-columns: 1fr; } }
+    .rv-party {
+        display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+        background: var(--surface-2); border: 1px solid var(--border-subtle);
+        border-radius: 9px; min-width: 0;
+    }
+    .rv-party i.lead { font-size: 16px; color: var(--brand); flex-shrink: 0; }
+
+    /* Fee tiles */
+    .rv-fees { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 520px) { .rv-fees { grid-template-columns: 1fr; } }
+    .rv-tile {
+        background: var(--surface-2); border: 1px solid var(--border-subtle);
+        border-radius: 9px; padding: 10px 12px; text-align: center;
+    }
+    .rv-tile__label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; }
+    .rv-tile__value { font-size: 14.5px; font-weight: 700; color: var(--text-1); font-variant-numeric: tabular-nums; }
+    .rv-tile--total { background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 30%, transparent); }
+    .rv-tile--total .rv-tile__value { color: var(--brand-strong); font-size: 16px; }
+
+    .rv-payline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .rv-notes {
+        margin-top: 2px; padding: 10px 12px; border-radius: 9px; font-size: 12.5px; color: var(--text-2);
+        background: var(--warning-soft); border: 1px dashed color-mix(in srgb, var(--warning) 40%, transparent);
+    }
+    .rv-notes strong { color: var(--warning); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+
+    /* ---- Footer ---- */
+    .rv-foot {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 12px 18px; border-top: 1px solid var(--border-subtle); background: var(--surface);
+        font-size: 12.5px; color: var(--text-3);
+    }
+
+    /* ---- Empty state ---- */
+    .rv-empty { padding: 48px 20px !important; }
+
+    /* ---- Print receipt button ---- */
+    .rv-btn--print { color: var(--text-3); border-color: var(--border-subtle); }
+    .rv-btn--print:hover { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
+
+    /* ============================================================
+       Receipt preview modal
+       ============================================================ */
+    .rcpt-modal {
+        position: fixed; inset: 0; z-index: 2000;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s;
+    }
+    .rcpt-modal.open { opacity: 1; visibility: visible; }
+    .rcpt-modal__backdrop {
+        position: absolute; inset: 0;
+        background: rgba(9, 12, 20, 0.6); backdrop-filter: blur(2px);
+    }
+    .rcpt-modal__dialog {
+        position: relative; z-index: 1; width: 100%; max-width: 460px;
+        max-height: 90vh; overflow-y: auto; margin: 16px;
+        background: var(--surface); border: 1px solid var(--border-subtle);
+        border-radius: 14px; box-shadow: var(--shadow-pop);
+        transform: translateY(12px) scale(0.97);
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .rcpt-modal.open .rcpt-modal__dialog { transform: translateY(0) scale(1); }
+    .rcpt-modal__head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+    }
+    .rcpt-modal__head h3 {
+        margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+    .rcpt-modal__head h3 i { color: var(--brand); font-size: 17px; }
+    .rcpt-modal__close {
+        width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 8px; border: 1px solid var(--border-subtle); background: transparent;
+        color: var(--text-2); font-size: 13px; cursor: pointer; transition: all 0.15s;
+    }
+    .rcpt-modal__close:hover { background: var(--surface-3); color: var(--text-1); }
+    .rcpt-modal__body { padding: 20px; }
+    .rcpt-modal__foot {
+        display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+        padding: 14px 20px; border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ---- Receipt sheet (white paper) ---- */
+    .rcpt-sheet {
+        background: #ffffff; color: #111827; border-radius: 10px;
+        padding: 22px 22px 16px; font-size: 13px; line-height: 1.45;
+        box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.06);
+    }
+    .rcpt-brandrow {
+        display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+        padding-bottom: 12px; border-bottom: 3px solid #14532d;
+    }
+    .rcpt-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .rcpt-logo { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .rcpt-name { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.15; color: #14532d; }
+    .rcpt-name span { color: #16a34a; }
+    .rcpt-tagline { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; font-weight: 600; margin-top: 1px; }
+    .rcpt-doc { text-align: right; flex-shrink: 0; }
+    .rcpt-doc__label { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; margin-bottom: 3px; }
+    .rcpt-doc__id {
+        display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11.5px; font-weight: 700; color: #14532d; white-space: nowrap;
+        background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 6px;
+    }
+    .rcpt-meta {
+        display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
+        padding: 8px 2px; border-bottom: 1px dashed #e5e7eb; font-size: 11px; color: #6b7280;
+    }
+    .rcpt-meta i { font-size: 11px; }
+    .rcpt-sec { margin-top: 12px; }
+    .rcpt-sec__label {
+        display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
+        font-size: 9px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #6b7280;
+    }
+    .rcpt-sec__label i { font-size: 11px; color: #16a34a; }
+    .rcpt-card {
+        background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px;
+    }
+    .rcpt-strong { font-size: 13px; font-weight: 700; color: #111827; line-height: 1.3; }
+    .rcpt-sub { font-size: 11px; color: #6b7280; margin-top: 2px; overflow-wrap: anywhere; }
+    .rcpt-list { margin: 0; }
+    .rcpt-kv {
+        display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+        padding: 5px 2px; border-bottom: 1px dashed #e5e7eb; font-size: 12px;
+    }
+    .rcpt-kv:last-child { border-bottom: none; }
+    .rcpt-kv dt { color: #6b7280; white-space: nowrap; }
+    .rcpt-kv dd { margin: 0; font-weight: 600; color: #111827; text-align: right; }
+    .rcpt-total {
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+        padding: 10px 12px; margin: 0 0 8px;
+    }
+    .rcpt-total dt { font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #14532d; }
+    .rcpt-total dd { margin: 0; font-size: 20px; font-weight: 800; color: #14532d; font-variant-numeric: tabular-nums; line-height: 1; }
+    .rcpt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rcpt-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+        border-radius: 999px; padding: 3px 10px; border: 1px solid transparent; white-space: nowrap;
+    }
+    .rcpt-chip i { font-size: 10.5px; }
+    .rcpt-chip--green { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
+    .rcpt-chip--blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .rcpt-chip--amber { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .rcpt-chip--red { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .rcpt-chip--live { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .rcpt-footer {
+        margin-top: 14px; padding-top: 10px; border-top: 2px solid #14532d;
+        text-align: center; font-size: 11.5px; font-weight: 600; color: #374151;
+    }
+    .rcpt-footer small { display: block; margin-top: 3px; font-size: 9px; font-weight: 400; color: #9ca3af; line-height: 1.5; }
+
+    @media (max-width: 520px) {
+        .rcpt-modal__dialog { max-width: 100%; margin: 8px; }
+        .rcpt-sheet { padding: 16px 14px 12px; }
+        .rcpt-total dd { font-size: 17px; }
+    }
+
+    /* ============================================================
+       Print — output ONLY the receipt on a clean white page
+       ============================================================ */
+    @media print {
+        @page { size: A4 portrait; margin: 14mm; }
+        html, body { background: #ffffff !important; }
+        body.rcpt-printing .admin-sidebar,
+        body.rcpt-printing .sidebar-overlay,
+        body.rcpt-printing .admin-toasts,
+        body.rcpt-printing .admin-main > header.admin-topbar,
+        body.rcpt-printing .admin-pagehead,
+        body.rcpt-printing .alert-pedalya,
+        body.rcpt-printing .rv-filter-card,
+        body.rcpt-printing .rv-table-card { display: none !important; }
+        body.rcpt-printing * { visibility: hidden !important; box-shadow: none !important; }
+        body.rcpt-printing .rcpt-sheet,
+        body.rcpt-printing .rcpt-sheet * { visibility: visible !important; box-shadow: none !important; }
+        body.rcpt-printing .rcpt-modal {
+            position: static !important; display: block !important;
+            opacity: 1 !important; visibility: visible !important;
+            padding: 0 !important; overflow: visible !important;
+        }
+        body.rcpt-printing .rcpt-modal__backdrop,
+        body.rcpt-printing .rcpt-modal__head,
+        body.rcpt-printing .rcpt-modal__foot { display: none !important; }
+        body.rcpt-printing .rcpt-modal__dialog {
+            position: static !important; display: block !important;
+            width: auto !important; max-width: none !important; max-height: none !important;
+            border: none !important; border-radius: 0 !important;
+            background: transparent !important; transform: none !important; overflow: visible !important;
+        }
+        body.rcpt-printing .rcpt-modal__body { padding: 0 !important; overflow: visible !important; }
+        body.rcpt-printing .rcpt-sheet {
+            width: 100% !important; max-width: 100% !important;
+            margin: 0 !important; padding: 0 !important;
+            border-radius: 0 !important; box-shadow: none !important;
+        }
+        .rcpt-sheet, .rcpt-sheet * {
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+    }
+</style>
+@endsection
+
 @section('page-header')
 <div class="admin-pagehead">
     <div class="admin-pagehead__title">
-        <h1>Rentals</h1>
-        <p>Track and manage all bicycle rentals</p>
+        <h1>Active Rentals</h1>
+        <p>Track ongoing rides, payments and settlements across all bicycles</p>
     </div>
 </div>
 @endsection
 
 @section('content')
-<div class="admin-table-wrap">
-    {{-- Toolbar: search + GET filters --}}
-    <div class="admin-table-toolbar">
-        <div class="grow"><i class="bi bi-search"></i><input type="text" data-table-search placeholder="Search rentals..."></div>
-        <form method="GET" action="{{ route('admin.rentals.index') }}" class="d-flex gap-2 align-items-center flex-wrap">
-            <select name="status" class="form-select" aria-label="Filter by status">
-                <option value="">All Statuses</option>
-                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Overdue</option>
-            </select>
-            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}" aria-label="From date">
-            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}" aria-label="To date">
-            <select name="bicycle_id" class="form-select" aria-label="Filter by bicycle">
-                <option value="">All Bicycles</option>
-                @foreach($bicyclesList ?? [] as $b)
-                    <option value="{{ $b->id }}" {{ request('bicycle_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
-                @endforeach
-            </select>
-            <select name="rider_id" class="form-select" aria-label="Filter by rider">
-                <option value="">All Riders</option>
-                @foreach($ridersList ?? [] as $r)
-                    <option value="{{ $r->id }}" {{ request('rider_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
-                @endforeach
-            </select>
-            <button type="submit" class="btn-admin btn-admin--primary btn-admin--sm">
-                <i class="bi bi-funnel me-1"></i>Filter
-            </button>
+<div style="display:flex;flex-direction:column;gap:0;">
+
+    {{-- ===== Filter bar ===== --}}
+    <div class="rv-filter-card">
+        <div class="rv-filter-head"><i class="bi bi-funnel"></i>Refine Rentals</div>
+        <form method="GET" action="{{ route('admin.rentals.index') }}" class="rv-filter-grid">
+            <div class="rv-filter-field rv-filter-field--search">
+                <label for="rvSearch">Search</label>
+                <div class="rv-filter-ctrl has-icon no-caret">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="rvSearch" data-table-search placeholder="Rider, bicycle, ID...">
+                </div>
+            </div>
+            <div class="rv-filter-field">
+                <label for="rvStatus">Status</label>
+                <div class="rv-filter-ctrl">
+                    <select name="status" id="rvStatus">
+                        <option value="">All Active</option>
+                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Overdue</option>
+                    </select>
+                </div>
+            </div>
+            <div class="rv-filter-field">
+                <label for="rvFrom">Start Date</label>
+                <div class="rv-filter-ctrl no-caret">
+                    <input type="date" name="date_from" id="rvFrom" value="{{ request('date_from') }}">
+                </div>
+            </div>
+            <div class="rv-filter-field">
+                <label for="rvTo">End Date</label>
+                <div class="rv-filter-ctrl no-caret">
+                    <input type="date" name="date_to" id="rvTo" value="{{ request('date_to') }}">
+                </div>
+            </div>
+            <div class="rv-filter-field">
+                <label for="rvBike">Bicycle</label>
+                <div class="rv-filter-ctrl">
+                    <select name="bicycle_id" id="rvBike">
+                        <option value="">All Bicycles</option>
+                        @foreach($bicyclesList ?? [] as $b)
+                            <option value="{{ $b->id }}" {{ request('bicycle_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="rv-filter-field">
+                <label for="rvRider">Rider</label>
+                <div class="rv-filter-ctrl">
+                    <select name="rider_id" id="rvRider">
+                        <option value="">All Riders</option>
+                        @foreach($ridersList ?? [] as $r)
+                            <option value="{{ $r->id }}" {{ request('rider_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="rv-filter-actions">
+                <button type="submit" class="btn-admin btn-admin--primary btn-admin--sm">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <a href="{{ route('admin.rentals.index') }}" class="btn-admin btn-admin--ghost btn-admin--sm" title="Clear all filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
         </form>
     </div>
 
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th class="sortable">Rental ID <span class="sort-ind"></span></th>
-                <th class="sortable">Rider <span class="sort-ind"></span></th>
-                <th class="sortable">Bicycle <span class="sort-ind"></span></th>
-                <th class="sortable">Start <span class="sort-ind"></span></th>
-                <th class="sortable">End <span class="sort-ind"></span></th>
-                <th class="sortable">Duration <span class="sort-ind"></span></th>
-                <th class="sortable">Fee <span class="sort-ind"></span></th>
-                <th class="sortable">Status <span class="sort-ind"></span></th>
-                <th class="sortable">Payment <span class="sort-ind"></span></th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($rentals as $rental)
-                <tr>
-                    <td data-label="Rental ID"><code>#{{ $rental->id }}</code></td>
-                    <td data-label="Rider">
-                        <div class="d-flex align-items-center">
-                            <div class="user-avatar me-2" style="width:28px;height:28px;font-size:11px;">
-                                {{ strtoupper(substr($rental->rider->name ?? 'U', 0, 1)) }}
-                            </div>
-                            {{ $rental->rider->name ?? 'Unknown' }}
-                        </div>
-                    </td>
-                    <td data-label="Bicycle">{{ $rental->bicycle->name ?? 'Unknown' }}</td>
-                    <td data-label="Start"><small>{{ $rental->startTime?->format('M d, Y h:i A') ?? '—' }}</small></td>
-                    <td data-label="End"><small>{{ $rental->endTime?->format('M d, Y h:i A') ?? '—' }}</small></td>
-                    <td data-label="Duration">{{ $rental->durationMinutes ? floor($rental->durationMinutes / 60) . 'h ' . ($rental->durationMinutes % 60) . 'm' : '—' }}</td>
-                    <td data-label="Fee" class="fw-semibold">₱{{ number_format($rental->totalFee ?? 0, 2) }}</td>
-                    <td data-label="Status">
-                        @if($rental->status === 'active')
-                            <x-admin.badge type="success" label="Active"/>
-                        @elseif($rental->status === 'completed')
-                            <x-admin.badge type="success" label="Completed"/>
-                        @elseif($rental->status === 'pending')
-                            <x-admin.badge type="warning" label="Pending"/>
-                        @elseif($rental->status === 'overdue')
-                            <x-admin.badge type="danger" label="Overdue"/>
-                        @elseif($rental->status === 'cancelled')
-                            <x-admin.badge type="neutral" label="Cancelled"/>
-                        @else
-                            <x-admin.badge :label="ucfirst($rental->status)"/>
-                        @endif
-                    </td>
-                    <td data-label="Payment">
-                        @if($rental->paymentStatus === 'paid')
-                            <x-admin.badge type="success" label="Paid"/>
-                        @elseif($rental->paymentStatus === 'pending')
-                            <x-admin.badge type="warning" label="Pending"/>
-                        @else
-                            <x-admin.badge :label="ucfirst($rental->paymentStatus ?? 'unpaid')"/>
-                        @endif
-                    </td>
-                    <td data-label="Actions">
-                        <div class="d-flex gap-1">
-                            <button type="button" class="btn-admin btn-admin--secondary btn-admin--sm"
-                                    onclick="PedalyaModal.open('rentalDetailModal{{ $rental->id }}')" title="View Details">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            @if($rental->status === 'pending')
-                                <form action="{{ route('admin.rentals.approve', $rental->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="submit" class="btn-admin btn-admin--primary btn-admin--sm" title="Approve">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                </form>
-                            @endif
-                            @if(in_array($rental->status, ['active', 'pending', 'overdue']))
-                                <form action="{{ route('admin.rentals.cancel', $rental->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="reason" value="Cancelled by administrator">
-                                    <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm"
-                                            data-confirm="Are you sure you want to cancel this rental?" title="Cancel">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-
-                {{-- Detail Modal --}}
-                <div class="admin-modal" id="rentalDetailModal{{ $rental->id }}">
-                    <div class="admin-modal__backdrop"></div>
-                    <div class="admin-modal__dialog admin-modal__dialog--lg">
-                        <div class="admin-modal__head">
-                            <h3><i class="bi bi-key me-2"></i>Rental #{{ $rental->id }} Details</h3>
-                            <button type="button" class="admin-icon-btn" data-modal-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
-                        </div>
-                        <div class="admin-modal__body">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <h6 class="text-muted mb-3">Rental Information</h6>
-                                    <table class="table table-sm">
-                                        <tbody>
-                                            <tr>
-                                                <td class="text-muted" style="width:140px;">Status</td>
-                                                <td>
-                                                    @if($rental->status === 'active')
-                                                        <x-admin.badge type="success" label="Active"/>
-                                                    @elseif($rental->status === 'completed')
-                                                        <x-admin.badge type="success" label="Completed"/>
-                                                    @elseif($rental->status === 'pending')
-                                                        <x-admin.badge type="warning" label="Pending"/>
-                                                    @elseif($rental->status === 'overdue')
-                                                        <x-admin.badge type="danger" label="Overdue"/>
-                                                    @else
-                                                        <x-admin.badge :label="ucfirst($rental->status)"/>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Start Time</td>
-                                                <td>{{ $rental->startTime?->format('M d, Y h:i A') ?? '—' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">End Time</td>
-                                                <td>{{ $rental->endTime?->format('M d, Y h:i A') ?? '—' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Duration</td>
-                                                <td>{{ $rental->durationMinutes ? floor($rental->durationMinutes / 60) . 'h ' . ($rental->durationMinutes % 60) . 'm' : '—' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Created</td>
-                                                <td>{{ $rental->created_at->format('M d, Y h:i A') }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6 class="text-muted mb-3">Payment & Participants</h6>
-                                    <table class="table table-sm">
-                                        <tbody>
-                                            <tr>
-                                                <td class="text-muted" style="width:140px;">Rider</td>
-                                                <td>{{ $rental->rider->name ?? 'Unknown' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Email</td>
-                                                <td>{{ $rental->rider->email ?? '—' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Bicycle</td>
-                                                <td>{{ $rental->bicycle->name ?? 'Unknown' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Hourly Rate</td>
-                                                <td>₱{{ number_format($rental->bicycle->hourlyRate ?? 0, 2) }}/hr</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Total Fee</td>
-                                                <td class="fw-bold text-success">₱{{ number_format($rental->totalFee ?? 0, 2) }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Payment</td>
-                                                <td>
-                                                    @if($rental->paymentStatus === 'paid')
-                                                        <x-admin.badge type="success" label="Paid"/>
-                                                    @else
-                                                        <x-admin.badge type="warning" :label="ucfirst($rental->paymentStatus ?? 'Unpaid')"/>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                @if($rental->notes)
-                                    <div class="col-12">
-                                        <h6 class="text-muted mb-2">Notes</h6>
-                                        <p class="mb-0">{{ $rental->notes }}</p>
+    {{-- ===== Rentals table ===== --}}
+    <div class="rv-table-card">
+        <div class="rv-table-scroll">
+            <table class="rv-table" id="rvTable">
+                <thead>
+                    <tr>
+                        <th>Rental ID</th>
+                        <th>Rider</th>
+                        <th>Bicycle</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Duration</th>
+                        <th>Fee</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($rentals as $rental)
+                        @php
+                            $durH = $rental->durationMinutes ? floor($rental->durationMinutes / 60) : null;
+                            $durM = $rental->durationMinutes % 60;
+                            $durLabel = $rental->durationMinutes ? ($durH ? $durH . 'h ' . $durM . 'm' : $durM . 'm') : null;
+                        @endphp
+                        <tr class="rv-row" data-detail="rvd-{{ $rental->id }}">
+                            <td><span class="rv-id"><small>REN</small>#{{ $rental->id }}</span></td>
+                            <td>
+                                <div class="rv-rider">
+                                    <div class="user-avatar" style="width:30px;height:30px;font-size:11px;">
+                                        {{ strtoupper(substr($rental->rider->name ?? 'U', 0, 1)) }}
                                     </div>
+                                    <div style="min-width:0;">
+                                        <div class="rv-rider__name">{{ $rental->rider->name ?? 'Unknown' }}</div>
+                                        <div class="rv-rider__email">{{ $rental->rider->email ?? '' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rv-bike__name">{{ $rental->bicycle->name ?? 'Unknown' }}</div>
+                                @if($rental->bicycle?->serialNumber)
+                                    <div class="rv-bike__sub">SN &middot; {{ $rental->bicycle->serialNumber }}</div>
                                 @endif
-                            </div>
-                        </div>
-                        <div class="admin-modal__foot">
-                            <button type="button" class="btn-admin btn-admin--secondary" data-modal-close>Close</button>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <tr>
-                    <td colspan="10">
-                        <x-admin.empty-state icon="bi-key" title="No rentals found" message="Adjust your filters or try a different search."/>
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+                            </td>
+                            <td>
+                                <div class="rv-dt">
+                                    <div class="rv-dt__date">{{ $rental->startTime?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    <div class="rv-dt__time">{{ $rental->startTime?->format('h:i A') ?? 'Not started' }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="rv-dt">
+                                    <div class="rv-dt__date">{{ $rental->endTime?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    <div class="rv-dt__time">{{ $rental->endTime?->format('h:i A') ?? 'In progress' }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                @if($durLabel)
+                                    <span class="rv-chip"><i class="bi bi-hourglass-split"></i>{{ $durLabel }}</span>
+                                @else
+                                    <span style="color:var(--text-3);">&mdash;</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="rv-fee">&#8369;{{ number_format($rental->totalFee ?? 0, 2) }}</div>
+                                <div class="rv-fee__sub">&#8369;{{ number_format($rental->ratePerHour ?? 0, 2) }}/hr</div>
+                            </td>
+                            <td>
+                                @if($rental->paymentMethod === 'gcash')
+                                    <span class="rv-method rv-method--gcash"><i class="bi bi-phone"></i>GCash</span>
+                                @else
+                                    <span class="rv-method rv-method--cash"><i class="bi bi-cash-stack"></i>Cash</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($rental->status === 'active')
+                                    <span class="rv-status rv-status--active rv-status--dot rv-status--live">Active</span>
+                                @elseif($rental->status === 'completed')
+                                    <span class="rv-status rv-status--completed rv-status--dot">Completed</span>
+                                @elseif($rental->status === 'pending')
+                                    <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
+                                @elseif($rental->status === 'overdue')
+                                    <span class="rv-status rv-status--overdue rv-status--dot rv-status--live">Overdue</span>
+                                @elseif($rental->status === 'cancelled')
+                                    <span class="rv-status rv-status--cancelled rv-status--dot">Cancelled</span>
+                                @else
+                                    <span class="rv-status rv-status--cancelled rv-status--dot">{{ ucfirst($rental->status) }}</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($rental->paymentStatus === 'paid')
+                                    <span class="rv-status rv-status--paid"><i class="bi bi-check-circle-fill"></i>Paid</span>
+                                @elseif($rental->paymentStatus === 'pending')
+                                    <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
+                                @else
+                                    <span class="rv-status rv-status--unpaid rv-status--dot">{{ ucfirst($rental->paymentStatus ?? 'unpaid') }}</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="rv-actions">
+                                    <button type="button" class="rv-btn rv-btn--view"
+                                            data-detail-toggle="rvd-{{ $rental->id }}"
+                                            title="View details">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    @php
+                                        $receiptData = [
+                                            'id'        => $rental->rentalId ?? ('REN-' . str_pad($rental->id, 4, '0', STR_PAD_LEFT)),
+                                            'rider'     => $rental->rider->name ?? $rental->riderName ?? 'Unknown',
+                                            'email'     => $rental->rider->email ?? $rental->riderEmail ?? '',
+                                            'bike'      => $rental->bicycle->name ?? $rental->bicycleName ?? 'Unknown',
+                                            'serial'    => $rental->bicycle->serialNumber ?? $rental->bicycleSerial ?? '',
+                                            'start'     => $rental->startTime?->format('M d, Y \a\t h:i A') ?? '—',
+                                            'end'       => $rental->endTime?->format('M d, Y \a\t h:i A') ?? '',
+                                            'startIso'  => $rental->startTime?->toIso8601String() ?? '',
+                                            'hasEnd'    => (bool) $rental->endTime,
+                                            'duration'  => $durLabel,
+                                            'rate'      => number_format((float) ($rental->ratePerHour ?? 0), 2),
+                                            'total'     => number_format((float) ($rental->totalFee ?? 0), 2),
+                                            'method'    => $rental->paymentMethod === 'gcash' ? 'GCash' : 'Cash',
+                                            'payStatus' => ucfirst($rental->paymentStatus ?? 'Unpaid'),
+                                            'status'    => ucfirst($rental->status),
+                                            'issued'    => now()->format('M d, Y \a\t h:i A'),
+                                        ];
+                                    @endphp
+                                    <button type="button" class="rv-btn rv-btn--print"
+                                            data-print-receipt="{{ json_encode($receiptData) }}"
+                                            title="Print receipt">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                    @if($rental->status === 'pending' && $rental->paymentMethod === 'gcash')
+                                        <form action="{{ route('admin.rentals.verify-gcash', $rental->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="rv-btn rv-btn--approve"
+                                                    data-confirm="Verify this GCash payment and approve the rental?"
+                                                    title="Verify &amp; approve">
+                                                <i class="bi bi-patch-check"></i>
+                                            </button>
+                                        </form>
+                                    @elseif($rental->status === 'pending')
+                                        <form action="{{ route('admin.rentals.approve', $rental->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="rv-btn rv-btn--approve"
+                                                    data-confirm="Approve this pending rental?"
+                                                    title="Approve">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if(in_array($rental->status, ['active', 'overdue']))
+                                        <form action="{{ route('admin.rentals.end-ride', $rental->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="rv-btn rv-btn--complete"
+                                                    data-confirm="End this ride now? The end time will be recorded, the final fee calculated, and the bicycle returned to Available."
+                                                    title="End ride">
+                                                <i class="bi bi-stop-circle"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if(in_array($rental->status, ['active', 'pending', 'overdue']))
+                                        <form action="{{ route('admin.rentals.cancel', $rental->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="reason" value="Cancelled by administrator">
+                                            <button type="submit" class="rv-btn rv-btn--cancel"
+                                                    data-confirm="Are you sure you want to cancel this rental?"
+                                                    title="Cancel">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
 
-    <div class="admin-table-foot">
-        <span>Showing {{ $rentals->total() }} records</span>
-        @if(method_exists($rentals, 'links'))
-            {{ $rentals->withQueryString()->links() }}
-        @endif
+                        {{-- Expandable detail row --}}
+                        <tr class="rv-detail" id="rvd-{{ $rental->id }}">
+                            <td colspan="11" class="rv-detail__cell">
+                                <div class="rv-detail__inner">
+                                    <div class="rv-detail__content">
+                                        <div class="rv-detail__card">
+                                            <div class="rv-detail__head">
+                                                <div class="rv-detail__title">
+                                                    <i class="bi bi-receipt"></i>
+                                                    Rental #{{ $rental->id }}
+                                                    @if($rental->status === 'active')
+                                                        <span class="rv-status rv-status--active rv-status--dot rv-status--live">Active</span>
+                                                    @elseif($rental->status === 'completed')
+                                                        <span class="rv-status rv-status--completed rv-status--dot">Completed</span>
+                                                    @elseif($rental->status === 'pending')
+                                                        <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
+                                                    @elseif($rental->status === 'overdue')
+                                                        <span class="rv-status rv-status--overdue rv-status--dot rv-status--live">Overdue</span>
+                                                    @else
+                                                        <span class="rv-status rv-status--cancelled rv-status--dot">{{ ucfirst($rental->status) }}</span>
+                                                    @endif
+                                                </div>
+                                                <div class="rv-detail__meta">
+                                                    <i class="bi bi-clock-history me-1"></i>Created {{ $rental->created_at->format('M d, Y h:i A') }}
+                                                </div>
+                                            </div>
+                                            <div class="rv-detail__body">
+                                                <div class="rv-detail__grid">
+                                                    {{-- Rental timeline --}}
+                                                    <div class="rv-panel">
+                                                        <div class="rv-panel__label"><i class="bi bi-route"></i>Rental Details</div>
+                                                        <dl style="margin:0;">
+                                                            <div class="rv-kv"><dt>Start Time</dt><dd>{{ $rental->startTime?->format('M d, Y h:i A') ?? '&mdash;' }}</dd></div>
+                                                            <div class="rv-kv"><dt>End Time</dt><dd>{{ $rental->endTime?->format('M d, Y h:i A') ?? '&mdash;' }}</dd></div>
+                                                            <div class="rv-kv"><dt>Duration</dt><dd>{{ $durLabel ?? '&mdash;' }}</dd></div>
+                                                            <div class="rv-kv"><dt>Created</dt><dd>{{ $rental->created_at->format('M d, Y h:i A') }}</dd></div>
+                                                        </dl>
+                                                        @if($rental->notes)
+                                                            <div class="rv-notes"><strong><i class="bi bi-sticky me-1"></i>Notes</strong>{{ $rental->notes }}</div>
+                                                        @endif
+                                                    </div>
+
+                                                    {{-- Payment & Participants --}}
+                                                    <div class="rv-panel">
+                                                        <div class="rv-panel__label"><i class="bi bi-people"></i>Participants &amp; Payment</div>
+                                                        <div class="rv-parties">
+                                                            <div class="rv-party">
+                                                                <div class="user-avatar" style="width:32px;height:32px;font-size:12px;">{{ strtoupper(substr($rental->rider->name ?? 'U', 0, 1)) }}</div>
+                                                                <div style="min-width:0;">
+                                                                    <div class="rv-rider__name">{{ $rental->rider->name ?? 'Unknown' }}</div>
+                                                                    <div class="rv-rider__email">{{ $rental->rider->email ?? '&mdash;' }}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="rv-party">
+                                                                <i class="bi bi-bicycle lead"></i>
+                                                                <div style="min-width:0;">
+                                                                    <div class="rv-rider__name">{{ $rental->bicycle->name ?? 'Unknown' }}</div>
+                                                                    <div class="rv-rider__email">&#8369;{{ number_format($rental->bicycle->hourlyRate ?? 0, 2) }}/hour</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="rv-fees">
+                                                            <div class="rv-tile">
+                                                                <div class="rv-tile__label">Hourly Rate</div>
+                                                                <div class="rv-tile__value">&#8369;{{ number_format($rental->ratePerHour ?? 0, 2) }}</div>
+                                                            </div>
+                                                            <div class="rv-tile">
+                                                                <div class="rv-tile__label">Duration</div>
+                                                                <div class="rv-tile__value">{{ $durLabel ?? '&mdash;' }}</div>
+                                                            </div>
+                                                            <div class="rv-tile rv-tile--total">
+                                                                <div class="rv-tile__label">Total Fee</div>
+                                                                <div class="rv-tile__value">&#8369;{{ number_format($rental->totalFee ?? 0, 2) }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="rv-payline">
+                                                            @if($rental->paymentMethod === 'gcash')
+                                                                <span class="rv-method rv-method--gcash"><i class="bi bi-phone"></i>GCash</span>
+                                                            @else
+                                                                <span class="rv-method rv-method--cash"><i class="bi bi-cash-stack"></i>Cash</span>
+                                                            @endif
+                                                            @if($rental->paymentStatus === 'paid')
+                                                                <span class="rv-status rv-status--paid"><i class="bi bi-check-circle-fill"></i>Paid</span>
+                                                            @elseif($rental->paymentStatus === 'pending')
+                                                                <span class="rv-status rv-status--pending rv-status--dot">Pending</span>
+                                                            @else
+                                                                <span class="rv-status rv-status--unpaid rv-status--dot">{{ ucfirst($rental->paymentStatus ?? 'unpaid') }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="11" class="rv-empty">
+                                <x-admin.empty-state icon="bi-key" title="No rentals found" message="Adjust your filters or try a different search."/>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="rv-foot">
+            <span>
+                <i class="bi bi-list-ul me-1"></i>Showing {{ $rentals->total() }} record{{ $rentals->total() === 1 ? '' : 's' }}
+            </span>
+            @if(method_exists($rentals, 'links'))
+                {{ $rentals->withQueryString()->links() }}
+            @endif
+        </div>
     </div>
 </div>
+
+{{-- ===== Receipt preview modal ===== --}}
+<div class="rcpt-modal" id="rcptModal">
+    <div class="rcpt-modal__backdrop" data-rcpt-close></div>
+    <div class="rcpt-modal__dialog" role="dialog" aria-modal="true" aria-label="Rental receipt preview">
+        <div class="rcpt-modal__head">
+            <h3><i class="bi bi-receipt"></i>Receipt Preview</h3>
+            <button type="button" class="rcpt-modal__close" data-rcpt-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="rcpt-modal__body">
+            <div class="rcpt-sheet" id="rcptSheet">
+                <div class="rcpt-brandrow">
+                    <div class="rcpt-brand">
+                        <img src="{{ asset('assets/img/Logo.png') }}" alt="Pedalya logo" class="rcpt-logo">
+                        <div style="min-width:0;">
+                            <div class="rcpt-name">Peda<span>lya</span></div>
+                            <div class="rcpt-tagline">IoT Bicycle Rental System</div>
+                        </div>
+                    </div>
+                    <div class="rcpt-doc">
+                        <div class="rcpt-doc__label">Official Receipt</div>
+                        <span class="rcpt-doc__id" id="rcptId">&mdash;</span>
+                    </div>
+                </div>
+
+                <div class="rcpt-meta">
+                    <span><i class="bi bi-clock-history me-1"></i>Issued: <strong id="rcptIssued" style="color:#111827;">&mdash;</strong></span>
+                    <span class="rcpt-chip rcpt-chip--live" id="rcptRideChip"><i class="bi bi-play-fill"></i>Ride in progress</span>
+                </div>
+
+                <div class="rcpt-sec">
+                    <div class="rcpt-sec__label"><i class="bi bi-person-circle"></i>Rider</div>
+                    <div class="rcpt-card">
+                        <div class="rcpt-strong" id="rcptRiderName">&mdash;</div>
+                        <div class="rcpt-sub" id="rcptRiderContact">&mdash;</div>
+                    </div>
+                </div>
+
+                <div class="rcpt-sec">
+                    <div class="rcpt-sec__label"><i class="bi bi-bicycle"></i>Bicycle</div>
+                    <div class="rcpt-card">
+                        <div class="rcpt-strong" id="rcptBikeName">&mdash;</div>
+                        <div class="rcpt-sub" id="rcptBikeSub">&mdash;</div>
+                    </div>
+                </div>
+
+                <div class="rcpt-sec">
+                    <div class="rcpt-sec__label"><i class="bi bi-calendar3"></i>Rental Period</div>
+                    <dl class="rcpt-list">
+                        <div class="rcpt-kv"><dt>Start</dt><dd id="rcptStart">&mdash;</dd></div>
+                        <div class="rcpt-kv"><dt>End</dt><dd id="rcptEnd">In progress</dd></div>
+                        <div class="rcpt-kv">
+                            <dt>Duration</dt>
+                            <dd><span id="rcptDuration">&mdash;</span> <small style="font-weight:500;font-size:10px;color:#c2410c;" id="rcptDurationNote"></small></dd>
+                        </div>
+                        <div class="rcpt-kv"><dt>Rate</dt><dd>&#8369;<span id="rcptRate">0.00</span> / hour</dd></div>
+                    </dl>
+                </div>
+
+                <div class="rcpt-sec">
+                    <div class="rcpt-sec__label"><i class="bi bi-cash-coin"></i>Payment</div>
+                    <dl class="rcpt-total">
+                        <dt>Total Fee</dt>
+                        <dd>&#8369;<span id="rcptTotal">0.00</span></dd>
+                    </dl>
+                    <div class="rcpt-chips">
+                        <span class="rcpt-chip" id="rcptMethod">&mdash;</span>
+                        <span class="rcpt-chip" id="rcptPayStatus">&mdash;</span>
+                    </div>
+                </div>
+
+                <div class="rcpt-footer">
+                    Thank you for riding with Pedalya!
+                    <small>
+                        Pedalya IoT Bicycle Rental Management System &bull; Azuela Cove, Davao City<br>
+                        This receipt was generated electronically and is valid without signature.
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="rcpt-modal__foot">
+            <button type="button" class="btn-admin btn-admin--secondary btn-admin--sm" data-rcpt-close>Close</button>
+            <button type="button" class="btn-admin btn-admin--primary btn-admin--sm" id="rcptPrintBtn">
+                <i class="bi bi-printer me-1"></i>Print Receipt
+            </button>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+(function () {
+    var tbody = document.querySelector('#rvTable tbody');
+    if (!tbody) return;
+
+    /* --- Expandable details --- */
+    function closeAll(exceptBtn) {
+        tbody.querySelectorAll('tr.rv-detail.open').forEach(function (r) { r.classList.remove('open'); });
+        tbody.querySelectorAll('tr.rv-row.is-open').forEach(function (r) { r.classList.remove('is-open'); });
+        tbody.querySelectorAll('.rv-btn--view.is-open').forEach(function (b) {
+            if (b !== exceptBtn) {
+                b.classList.remove('is-open');
+                var ic = b.querySelector('i');
+                if (ic) ic.className = 'bi bi-eye';
+            }
+        });
+    }
+
+    tbody.querySelectorAll('[data-detail-toggle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var target = document.getElementById(btn.getAttribute('data-detail-toggle'));
+            if (!target) return;
+            var wasOpen = target.classList.contains('open');
+            closeAll(btn);
+            if (!wasOpen) {
+                target.classList.add('open');
+                var main = tbody.querySelector('tr.rv-row[data-detail="' + btn.getAttribute('data-detail-toggle') + '"]');
+                if (main) main.classList.add('is-open');
+                btn.classList.add('is-open');
+                var ic = btn.querySelector('i');
+                if (ic) ic.className = 'bi bi-eye-slash';
+            }
+        });
+    });
+
+    /* --- Client-side search --- */
+    var searchInput = document.querySelector('[data-table-search]');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            var q = searchInput.value.toLowerCase().trim();
+            tbody.querySelectorAll('tr.rv-row').forEach(function (row) {
+                var hit = row.textContent.toLowerCase().indexOf(q) !== -1;
+                var det = document.getElementById(row.getAttribute('data-detail'));
+                row.style.display = hit ? '' : 'none';
+                if (!hit && det) { det.style.display = 'none'; det.classList.remove('open'); }
+                else if (det) { det.style.display = ''; }
+            });
+        });
+    }
+})();
+
+/* --- Receipt preview & print --- */
+(function () {
+    var modal = document.getElementById('rcptModal');
+    if (!modal) return;
+    var current = null;
+    var tick = null;
+
+    function el(id) { return document.getElementById(id); }
+
+    function fmtDuration(totalMin) {
+        var h = Math.floor(totalMin / 60), m = totalMin % 60;
+        return h ? h + 'h ' + m + 'm' : m + 'm';
+    }
+
+    function chip(node, text, tone) { node.textContent = text; node.className = 'rcpt-chip ' + tone; }
+
+    function refreshLive() {
+        if (!current || current.hasEnd) return;
+        var start = new Date(current.startIso).getTime();
+        var mins = isNaN(start) ? 0 : Math.max(0, Math.floor((Date.now() - start) / 60000));
+        el('rcptDuration').textContent = fmtDuration(mins);
+        el('rcptDurationNote').textContent = '(ongoing)';
+    }
+
+    function openReceipt(d) {
+        current = d;
+        el('rcptId').textContent = d.id;
+        el('rcptIssued').textContent = d.issued;
+        el('rcptRiderName').textContent = d.rider;
+        var contact = [d.email].filter(Boolean).join('');
+        el('rcptRiderContact').textContent = contact || '\u2014';
+        el('rcptRiderContact').style.display = contact ? '' : 'none';
+        el('rcptBikeName').textContent = d.bike;
+        el('rcptBikeSub').textContent = d.serial ? 'SN \u00B7 ' + d.serial : '\u2014';
+        el('rcptStart').textContent = d.start;
+        el('rcptEnd').textContent = d.hasEnd ? d.end : 'In progress';
+        el('rcptDurationNote').textContent = '';
+        if (d.duration && d.hasEnd) { el('rcptDuration').textContent = d.duration; }
+        else { refreshLive(); }
+        el('rcptRate').textContent = d.rate;
+        el('rcptTotal').textContent = d.total;
+        chip(el('rcptMethod'), d.method, d.method === 'GCash' ? 'rcpt-chip--blue' : 'rcpt-chip--green');
+        var st = String(d.payStatus).toLowerCase();
+        chip(el('rcptPayStatus'), d.payStatus,
+             st === 'paid' ? 'rcpt-chip--green' : (st === 'pending' ? 'rcpt-chip--amber' : 'rcpt-chip--red'));
+        var ride = String(d.status || '').toLowerCase();
+        var rideTone = ride === 'completed' ? 'rcpt-chip--green'
+                     : (ride === 'pending' ? 'rcpt-chip--amber'
+                     : (ride === 'cancelled' ? 'rcpt-chip--red'
+                     : (ride === 'overdue' ? 'rcpt-chip--red' : 'rcpt-chip--live')));
+        var rideIcon = ride === 'completed' ? 'bi-check-circle-fill'
+                     : (ride === 'pending' ? 'bi-hourglass-split'
+                     : (ride === 'cancelled' ? 'bi-x-circle-fill'
+                     : (ride === 'overdue' ? 'bi-exclamation-triangle-fill' : 'bi-play-fill')));
+        var rideLabel = ride === 'active' ? 'Ride in progress' : d.status;
+        var rc = el('rcptRideChip');
+        rc.className = 'rcpt-chip ' + rideTone;
+        rc.innerHTML = '<i class="bi ' + rideIcon + '"></i>' + rideLabel;
+        modal.classList.add('open');
+        document.body.classList.add('rcpt-printing');
+        if (tick) clearInterval(tick);
+        tick = setInterval(refreshLive, 30000);
+    }
+
+    function closeReceipt() {
+        modal.classList.remove('open');
+        document.body.classList.remove('rcpt-printing');
+        if (tick) { clearInterval(tick); tick = null; }
+        current = null;
+    }
+
+    document.querySelectorAll('[data-print-receipt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            try { openReceipt(JSON.parse(btn.getAttribute('data-print-receipt'))); } catch (e) { /* ignore */ }
+        });
+    });
+
+    modal.querySelectorAll('[data-rcpt-close]').forEach(function (node) {
+        node.addEventListener('click', closeReceipt);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) closeReceipt();
+    });
+
+    var printBtn = el('rcptPrintBtn');
+    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+})();
+</script>
 @endsection

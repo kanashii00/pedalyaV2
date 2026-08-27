@@ -19,7 +19,7 @@ class TheftController extends Controller
             ->latest()
             ->paginate(20);
 
-        $bicycles = Bicycle::whereIn('status', ['rented', 'locked', 'maintenance'])->get();
+        $bicycles = Bicycle::whereIn('status', [Bicycle::STATUS_RENTED, Bicycle::STATUS_MAINTENANCE])->get();
 
         $openBreachCount = GeofenceBreach::whereNull('resolvedAt')->count();
 

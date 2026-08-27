@@ -48,6 +48,11 @@
         </thead>
         <tbody>
             <?php $__empty_1 = true; $__currentLoopData = $bicycles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bike): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php
+                    $isLocked = $bike->lockStatus === 'locked';
+                    $isRented = $bike->status === 'rented';
+                    $inMaintenance = $bike->status === 'maintenance';
+                ?>
                 <tr>
                     <td class="cell-title" data-label="Name"><?php echo e($bike->name); ?></td>
                     <td data-label="Serial"><code><?php echo e($bike->serialNumber); ?></code></td>
@@ -148,7 +153,7 @@
                         </div>
                     </td>
                     <td data-label="Lock">
-                        <?php if($bike->lockStatus === 'locked'): ?>
+                        <?php if($isLocked): ?>
                             <?php if (isset($component)) { $__componentOriginal92e51077c3bdcbfa01c516c134fd0f33 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal92e51077c3bdcbfa01c516c134fd0f33 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.admin.badge','data' => ['type' => 'danger','label' => 'Locked']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -197,26 +202,72 @@
                     <td data-label="Last Updated"><small class="text-muted"><?php echo e($bike->updated_at->diffForHumans()); ?></small></td>
                     <td data-label="Actions">
                         <div class="d-flex gap-1">
-                            <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button"
-                                    onclick="PedalyaModal.open('editBicycleModal<?php echo e($bike->id); ?>')" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <form action="<?php echo e(route('admin.bicycles.lock', $bike->id)); ?>" method="POST">
-                                <?php echo csrf_field(); ?>
-                                <input type="hidden" name="action" value="<?php echo e(($bike->lockStatus === 'locked') ? 'unlock' : 'lock'); ?>">
-                                <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm"
-                                        title="<?php echo e(($bike->lockStatus === 'locked') ? 'Unlock' : 'Lock'); ?>">
-                                    <i class="bi bi-<?php echo e(($bike->lockStatus === 'locked') ? 'unlock' : 'lock'); ?>"></i>
+                            <?php if($inMaintenance): ?>
+                                
+                                <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button" disabled
+                                        title="Disabled while bicycle is under maintenance"
+                                        aria-label="Edit disabled, bicycle under maintenance">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
-                            </form>
-                            <form action="<?php echo e(route('admin.bicycles.destroy', $bike->id)); ?>" method="POST">
-                                <?php echo csrf_field(); ?>
-                                <?php echo method_field('DELETE'); ?>
-                                <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm" title="Delete"
-                                        data-confirm="Are you sure you want to delete this bicycle?">
+                                <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button" disabled
+                                        title="Disabled while bicycle is under maintenance"
+                                        aria-label="Lock control disabled, bicycle under maintenance">
+                                    <i class="bi bi-<?php echo e($isLocked ? 'lock' : 'unlock'); ?>-fill"></i>
+                                    <span><?php echo e($isLocked ? 'Lock' : 'Unlock'); ?></span>
+                                </button>
+                                <button class="btn-admin btn-admin--danger btn-admin--sm" type="button" disabled
+                                        title="Disabled while bicycle is under maintenance"
+                                        aria-label="Delete disabled, bicycle under maintenance">
                                     <i class="bi bi-trash"></i>
                                 </button>
-                            </form>
+                            <?php else: ?>
+                                <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button"
+                                        onclick="PedalyaModal.open('editBicycleModal<?php echo e($bike->id); ?>')" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <?php if($isRented): ?>
+                                    
+                                    <button class="btn-admin btn-admin--secondary btn-admin--sm" type="button" disabled
+                                            title="Bicycle is currently rented - the smart lock is controlled by the rider"
+                                            aria-label="Bicycle in use, lock control unavailable">
+                                        <i class="bi bi-bicycle"></i>
+                                        <span>In Use</span>
+                                    </button>
+                                <?php elseif(!$isLocked): ?>
+                                    <form action="<?php echo e(route('admin.bicycles.lock', $bike->id)); ?>" method="POST">
+                                        <?php echo csrf_field(); ?>
+                                        
+                                        <input type="hidden" name="action" value="lock">
+                                        <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm"
+                                                title="Unlocked - click to lock"
+                                                aria-label="Unlocked bicycle, click to lock">
+                                            <i class="bi bi-unlock-fill"></i>
+                                            <span>Unlock</span>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <form action="<?php echo e(route('admin.bicycles.lock', $bike->id)); ?>" method="POST">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="action" value="unlock">
+                                        <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm"
+                                                title="Locked - click to unlock"
+                                                aria-label="Locked bicycle, click to unlock">
+                                            <i class="bi bi-lock-fill"></i>
+                                            <span>Lock</span>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+
+                                <form action="<?php echo e(route('admin.bicycles.destroy', $bike->id)); ?>" method="POST">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('DELETE'); ?>
+                                    <button type="submit" class="btn-admin btn-admin--danger btn-admin--sm" title="Delete"
+                                            data-confirm="Are you sure you want to delete this bicycle?">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </td>
                 </tr>

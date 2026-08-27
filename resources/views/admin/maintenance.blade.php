@@ -14,10 +14,11 @@
 @endsection
 
 @section('content')
-{{-- Table --}}
-<div class="admin-table-wrap">
+{{-- Active Maintenance Schedule --}}
+@if(!$showHistory)
+<div class="admin-table-wrap mb-4">
     <div class="admin-table-toolbar">
-        <div class="grow"><i class="bi bi-search"></i><input type="text" data-table-search placeholder="Search maintenance records..."></div>
+        <div class="grow"><i class="bi bi-search"></i><input type="text" data-table-search placeholder="Search active maintenance..."></div>
         <form method="GET" action="{{ route('admin.maintenance.index') }}" class="d-flex gap-2 align-items-center flex-wrap">
             <select class="form-select form-select-sm" name="bicycleId" style="flex:0 0 auto;max-width:190px;">
                 <option value="">All Bicycles</option>
@@ -28,11 +29,9 @@
                 @endforeach
             </select>
             <select class="form-select form-select-sm" name="status" style="flex:0 0 auto;max-width:150px;">
-                <option value="">All Statuses</option>
+                <option value="">All Active</option>
                 <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
                 <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
             </select>
             <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm">
                 <i class="bi bi-funnel me-1"></i>Filter
@@ -57,7 +56,7 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($maintenance as $m)
+            @forelse($activeMaintenance as $m)
             <tr>
                 <td data-label="Bicycle" class="cell-title">
                     <a href="{{ route('admin.bicycles.show', $m->bicycleId) }}" style="text-decoration:none;">
@@ -91,12 +90,6 @@
                         @case('in_progress')
                             <x-admin.badge type="info" label="In Progress"/>
                             @break
-                        @case('completed')
-                            <x-admin.badge type="success" label="Completed"/>
-                            @break
-                        @case('cancelled')
-                            <x-admin.badge type="neutral" label="Cancelled"/>
-                            @break
                         @default
                             <x-admin.badge :label="ucfirst($m->status)"/>
                     @endswitch
@@ -115,7 +108,7 @@
                                 <form action="{{ route('admin.maintenance.updateStatus', $m->id) }}" method="POST">
                                     @csrf
                                     <input type="hidden" name="status" value="scheduled">
-                                    <button class="dropdown-item" type="submit">
+                                    <button class="dropdown-item" type="submit" {{ $m->status === 'scheduled' ? 'disabled' : '' }}>
                                         <i class="bi bi-clock text-warning me-2"></i>Scheduled
                                     </button>
                                 </form>
@@ -124,7 +117,7 @@
                                 <form action="{{ route('admin.maintenance.updateStatus', $m->id) }}" method="POST">
                                     @csrf
                                     <input type="hidden" name="status" value="in_progress">
-                                    <button class="dropdown-item" type="submit">
+                                    <button class="dropdown-item" type="submit" {{ $m->status === 'in_progress' ? 'disabled' : '' }}>
                                         <i class="bi bi-gear text-primary me-2"></i>In Progress
                                     </button>
                                 </form>
@@ -154,13 +147,138 @@
             @empty
             <tr>
                 <td colspan="8" class="text-center">
-                    <x-admin.empty-state icon="bi-tools" title="No maintenance records found" />
+                    <x-admin.empty-state icon="bi-tools" title="No active maintenance" message="All bicycles are cleared for service." />
                 </td>
             </tr>
             @endforelse
         </tbody>
     </table>
+
+    @if(method_exists($activeMaintenance, 'links'))
+    <div class="admin-table-foot">
+        <span>Showing {{ $activeMaintenance->total() }} active records</span>
+        {{ $activeMaintenance->withQueryString()->links() }}
+    </div>
+    @endif
 </div>
+@endif
+
+{{-- Maintenance History --}}
+@if($showHistory || $maintenanceHistory->count() > 0)
+<div class="admin-table-wrap">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 style="font-size: 14px; font-weight: 700; margin: 0; color: var(--text-2);">
+            <i class="bi bi-clock-history me-2"></i>Maintenance History
+        </h5>
+        @if(!$showHistory)
+            <a href="{{ route('admin.maintenance.index', array_merge(request()->query(), ['status' => 'completed'])) }}"
+               class="btn-admin btn-admin--ghost btn-admin--sm">
+                View All <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        @endif
+    </div>
+
+    @if($showHistory)
+    <div class="admin-table-toolbar">
+        <div class="grow"><i class="bi bi-search"></i><input type="text" data-table-search placeholder="Search history..."></div>
+        <form method="GET" action="{{ route('admin.maintenance.index') }}" class="d-flex gap-2 align-items-center flex-wrap">
+            <select class="form-select form-select-sm" name="bicycleId" style="flex:0 0 auto;max-width:190px;">
+                <option value="">All Bicycles</option>
+                @foreach($bicycles ?? [] as $bicycle)
+                    <option value="{{ $bicycle->id }}" {{ request('bicycleId') == $bicycle->id ? 'selected' : '' }}>
+                        {{ $bicycle->name }} ({{ $bicycle->id }})
+                    </option>
+                @endforeach
+            </select>
+            <select class="form-select form-select-sm" name="status" style="flex:0 0 auto;max-width:150px;">
+                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+            </select>
+            <button type="submit" class="btn-admin btn-admin--secondary btn-admin--sm">
+                <i class="bi bi-funnel me-1"></i>Filter
+            </button>
+            <a href="{{ route('admin.maintenance.index') }}" class="btn-admin btn-admin--ghost btn-admin--sm">
+                <i class="bi bi-x-lg me-1"></i>Clear
+            </a>
+        </form>
+    </div>
+    @endif
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th class="sortable">Bicycle <span class="sort-ind"></span></th>
+                <th class="sortable">Type <span class="sort-ind"></span></th>
+                <th class="sortable">Severity <span class="sort-ind"></span></th>
+                <th class="sortable">Status <span class="sort-ind"></span></th>
+                <th class="sortable">Scheduled <span class="sort-ind"></span></th>
+                <th class="sortable">Completed <span class="sort-ind"></span></th>
+                <th class="sortable">Technician <span class="sort-ind"></span></th>
+                <th class="sortable">Est. Cost <span class="sort-ind"></span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($maintenanceHistory as $m)
+            <tr>
+                <td data-label="Bicycle" class="cell-title">
+                    <a href="{{ route('admin.bicycles.show', $m->bicycleId) }}" style="text-decoration:none;">
+                        {{ $m->bicycle->name ?? $m->bicycleId }}
+                    </a>
+                </td>
+                <td data-label="Type">{{ ucfirst($m->type) }}</td>
+                <td data-label="Severity">
+                    @switch($m->severity)
+                        @case('low')
+                            <x-admin.badge type="info" label="Low"/>
+                            @break
+                        @case('medium')
+                            <x-admin.badge type="warning" label="Medium"/>
+                            @break
+                        @case('high')
+                            <x-admin.badge type="danger" label="High"/>
+                            @break
+                        @case('critical')
+                            <x-admin.badge type="danger" label="Critical"/>
+                            @break
+                        @default
+                            <x-admin.badge :label="ucfirst($m->severity)"/>
+                    @endswitch
+                </td>
+                <td data-label="Status">
+                    @switch($m->status)
+                        @case('completed')
+                            <x-admin.badge type="success" label="Completed"/>
+                            @break
+                        @case('cancelled')
+                            <x-admin.badge type="neutral" label="Cancelled"/>
+                            @break
+                        @default
+                            <x-admin.badge :label="ucfirst($m->status)"/>
+                    @endswitch
+                </td>
+                <td data-label="Scheduled">{{ $m->scheduledDate ? \Carbon\Carbon::parse($m->scheduledDate)->format('M d, Y') : '—' }}</td>
+                <td data-label="Completed">{{ $m->completedDate ? \Carbon\Carbon::parse($m->completedDate)->format('M d, Y') : '—' }}</td>
+                <td data-label="Technician">{{ $m->technician ?? '—' }}</td>
+                <td data-label="Est. Cost" class="fw-semibold">{{ $m->estimatedCost !== null ? '₱' . number_format($m->estimatedCost, 2) : '—' }}</td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="8" class="text-center">
+                    <x-admin.empty-state icon="bi-clock-history" title="No history yet" message="Completed and cancelled records will appear here." />
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    @if(method_exists($maintenanceHistory, 'links'))
+    <div class="admin-table-foot">
+        <span>{{ $maintenanceHistory->total() }} history records</span>
+        {{ $maintenanceHistory->withQueryString()->links() }}
+    </div>
+    @endif
+</div>
+@endif
 
 <!-- Add Maintenance Modal -->
 <div class="admin-modal" id="addMaintenanceModal">

@@ -45,14 +45,19 @@ class GeofenceController extends Controller
             if ($bike->currentLat === null || $bike->currentLng === null) {
                 $bike->zone = ['level' => 'no-gps', 'distance' => null, 'inside' => null];
                 $stats['noGps']++;
+
                 continue;
             }
             $zone = $this->geofenceService->checkPoint((float) $bike->currentLat, (float) $bike->currentLng, $config);
             $bike->zone = $zone;
             $level = $zone['level'];
-            if ($level === 'breach') $stats['outside']++;
-            elseif (in_array($level, ['approaching', 'warning'], true)) $stats['near']++;
-            else $stats['inside']++;
+            if ($level === 'breach') {
+                $stats['outside']++;
+            } elseif (in_array($level, ['approaching', 'warning'], true)) {
+                $stats['near']++;
+            } else {
+                $stats['inside']++;
+            }
         }
 
         $theftIncidents = Accident::whereIn('type', ['geofence_breach', 'geofence_alert', 'theft'])
@@ -73,22 +78,22 @@ class GeofenceController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'centerLat'         => ['required', 'numeric', 'between:-90,90'],
-            'centerLng'         => ['required', 'numeric', 'between:-180,180'],
-            'radius'            => ['required', 'numeric', 'min:25', 'max:50000'],
-            'warningThreshold'  => ['nullable', 'numeric', 'min:1', 'max:10000'],
-            'alertEnabled'      => ['sometimes', 'boolean'],
+            'centerLat' => ['required', 'numeric', 'between:-90,90'],
+            'centerLng' => ['required', 'numeric', 'between:-180,180'],
+            'radius' => ['required', 'numeric', 'min:25', 'max:50000'],
+            'warningThreshold' => ['nullable', 'numeric', 'min:1', 'max:10000'],
+            'alertEnabled' => ['sometimes', 'boolean'],
         ]);
 
         $geofence = Geofence::updateOrCreate(
             ['isActive' => true],
             [
-                'name'            => 'Azuela Cove Riding Zone',
-                'centerLat'       => $validated['centerLat'],
-                'centerLng'       => $validated['centerLng'],
-                'radius'          => $validated['radius'],
-                'isActive'        => true,
-                'alertEnabled'    => $request->boolean('alertEnabled', true),
+                'name' => 'Azuela Cove Riding Zone',
+                'centerLat' => $validated['centerLat'],
+                'centerLng' => $validated['centerLng'],
+                'radius' => $validated['radius'],
+                'isActive' => true,
+                'alertEnabled' => $request->boolean('alertEnabled', true),
                 'warningThreshold' => $validated['warningThreshold'] ?? null,
             ]
         );

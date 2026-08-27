@@ -7,6 +7,7 @@ use App\Models\Bicycle;
 use App\Models\User;
 use App\Services\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -25,33 +26,45 @@ class ReportController extends Controller
         return response()->view('admin.reports', compact('bicycles', 'users'));
     }
 
-    public function rentalReport(Request $request): Response
+    public function rentalReport(Request $request): JsonResponse
     {
-        $report = $this->reportService->getRentalReport($this->filters($request));
+        try {
+            $report = $this->reportService->getRentalReport($this->filters($request));
 
-        return response()->json($report);
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Failed to generate rental report: '.$e->getMessage()], 500);
+        }
     }
 
-    public function revenueReport(Request $request): Response
+    public function revenueReport(Request $request): JsonResponse
     {
-        $report = $this->reportService->getRevenueReport([
-            'start_date' => $request->input('date_from'),
-            'end_date'   => $request->input('date_to'),
-        ], $request->input('group_by', 'month'));
+        try {
+            $report = $this->reportService->getRevenueReport([
+                'start_date' => $request->input('date_from'),
+                'end_date' => $request->input('date_to'),
+            ], $request->input('group_by', 'month'));
 
-        return response()->json($report);
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Failed to generate revenue report: '.$e->getMessage()], 500);
+        }
     }
 
-    public function incidentReport(Request $request): Response
+    public function incidentReport(Request $request): JsonResponse
     {
-        $report = $this->reportService->getIncidentReport([
-            'start_date' => $request->input('date_from'),
-            'end_date'   => $request->input('date_to'),
-            'severity'   => $request->input('severity'),
-            'type'       => $request->input('incident_type'),
-        ]);
+        try {
+            $report = $this->reportService->getIncidentReport([
+                'start_date' => $request->input('date_from'),
+                'end_date' => $request->input('date_to'),
+                'severity' => $request->input('severity'),
+                'type' => $request->input('incident_type'),
+            ]);
 
-        return response()->json($report);
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Failed to generate incident report: '.$e->getMessage()], 500);
+        }
     }
 
     public function exportPdf(Request $request): Response
@@ -61,8 +74,8 @@ class ReportController extends Controller
 
         $pdf = Pdf::loadView('admin.reports.pdf', [
             'reportType' => $type,
-            'report'     => $report,
-            'filters'    => $this->filters($request),
+            'report' => $report,
+            'filters' => $this->filters($request),
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download(strtolower($type).'-report-'.date('Ymd-His').'.pdf');
@@ -77,8 +90,8 @@ class ReportController extends Controller
         return response()->streamDownload(function () use ($headers, $rows, $report) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Pedalya - ' . ucfirst($type) . ' Report']);
-            fputcsv($out, ['Generated: ' . now()->format('M d, Y h:i A') . ' | Report ID: ' . $report['reportId']]);
+            fputcsv($out, ['Pedalya - '.ucfirst($type).' Report']);
+            fputcsv($out, ['Generated: '.now()->format('M d, Y h:i A').' | Report ID: '.$report['reportId']]);
             fputcsv($out, []);
             fputcsv($out, $headers);
             foreach ($rows as $row) {
@@ -114,20 +127,20 @@ class ReportController extends Controller
         return match ($type) {
             'revenue' => $this->reportService->getRevenueReport([
                 'start_date' => $request->input('date_from'),
-                'end_date'   => $request->input('date_to'),
+                'end_date' => $request->input('date_to'),
             ], $request->input('group_by', 'month')),
             'incident' => $this->reportService->getIncidentReport([
                 'start_date' => $request->input('date_from'),
-                'end_date'   => $request->input('date_to'),
-                'severity'   => $request->input('severity'),
-                'type'       => $request->input('incident_type'),
+                'end_date' => $request->input('date_to'),
+                'severity' => $request->input('severity'),
+                'type' => $request->input('incident_type'),
             ]),
             default => $this->reportService->getRentalReport([
                 'start_date' => $request->input('date_from'),
-                'end_date'   => $request->input('date_to'),
-                'status'     => $request->input('status'),
-                'riderId'    => $request->input('user_id'),
-                'bicycleId'  => $request->input('bicycle_id'),
+                'end_date' => $request->input('date_to'),
+                'status' => $request->input('status'),
+                'riderId' => $request->input('user_id'),
+                'bicycleId' => $request->input('bicycle_id'),
             ]),
         };
     }
@@ -136,12 +149,12 @@ class ReportController extends Controller
     {
         return [
             'start_date' => $request->input('date_from'),
-            'end_date'   => $request->input('date_to'),
-            'status'     => $request->input('status'),
-            'riderId'    => $request->input('user_id'),
-            'bicycleId'  => $request->input('bicycle_id'),
-            'severity'   => $request->input('severity'),
-            'type'       => $request->input('type'),
+            'end_date' => $request->input('date_to'),
+            'status' => $request->input('status'),
+            'riderId' => $request->input('user_id'),
+            'bicycleId' => $request->input('bicycle_id'),
+            'severity' => $request->input('severity'),
+            'type' => $request->input('incident_type'),
         ];
     }
 

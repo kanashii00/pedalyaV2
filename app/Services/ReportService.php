@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Accident;
 use App\Models\Bicycle;
+use App\Models\MaintenanceRecord;
 use App\Models\Rental;
 use App\Models\User;
 use Carbon\Carbon;
@@ -43,7 +44,7 @@ class ReportService
         $accidentActive = Accident::where('acknowledged', false)->count();
         $activeAlerts = $theftActive + $accidentActive;
 
-        $maintenanceRequests = \App\Models\MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
+        $maintenanceRequests = MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
 
         $users = User::selectRaw('
             COUNT(*) as total,
@@ -302,7 +303,7 @@ class ReportService
         $summary = [
             'total' => $accidents->count(),
             'critical' => $accidents->where('severity', 'critical')->count(),
-            'high' => $accidents->where('severity', 'high')->count(),
+            'major' => $accidents->where('severity', 'major')->count(),
             'moderate' => $accidents->where('severity', 'moderate')->count(),
             'minor' => $accidents->where('severity', 'minor')->count(),
             'theftIncidents' => $theftIncidents->count(),

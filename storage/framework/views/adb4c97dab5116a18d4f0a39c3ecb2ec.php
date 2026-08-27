@@ -3,9 +3,6 @@
 <?php $__env->startSection('title', 'Dashboard Overview — Pedalya Admin'); ?>
 
 <?php $__env->startSection('actions'); ?>
-    <a href="<?php echo e(route('admin.id-scans.create')); ?>" class="btn-admin btn-admin--secondary btn-admin--sm">
-        <i class="bi bi-person-badge"></i> Scan ID
-    </a>
     <a href="<?php echo e(route('admin.bicycles.index')); ?>?action=add" class="btn-admin btn-admin--secondary btn-admin--sm">
         <i class="bi bi-plus-circle"></i> Add Bicycle
     </a>
@@ -780,7 +777,7 @@ document.addEventListener('DOMContentLoaded', function () {
         charts.push(new Chart(fleetCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Available', 'Rented', 'Maintenance', 'Locked'],
+                labels: ['Available', 'Rented', 'Maintenance', 'Removed'],
                 datasets: [{
                     data: [
                         <?php echo e($stats['bicycles']['available'] ?? 0); ?>,
