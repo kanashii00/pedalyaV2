@@ -101,13 +101,13 @@
 
 <?php $__env->startSection('page-header'); ?>
     <h1>Geofence Management</h1>
-    <p>Configure the circular riding boundary around the Azuela Cove bicycle area</p>
+    <p>Configure the circular riding boundary — click the map or drag the marker to reposition</p>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('actions'); ?>
     <span id="saveStatus" class="badge-admin badge-admin--success me-2" style="display:none;"></span>
     <button class="btn-admin btn-admin--primary" id="saveGeofenceBtn">
-        <i class="bi bi-save me-1"></i>Save Geofence
+        <i class="bi bi-save me-1"></i>Save Geofence Location
     </button>
 <?php $__env->stopSection(); ?>
 
@@ -168,7 +168,7 @@
                     <div><span class="line" style="background:#27ae60;"></span>Geofence Boundary</div>
                     <div><span class="line" style="background:#f39c12;"></span>Warning Zone</div>
                     <div><span class="line" style="background:#e74c3c;"></span>Breach Zone</div>
-                    <div><span class="line" style="background:#2c3e50;"></span>Center (drag to move)</div>
+                    <div><span class="line" style="background:#2c3e50;"></span>Center (drag or click map to move)</div>
                 </div>
             </div>
          <?php echo $__env->renderComponent(); ?>
@@ -298,6 +298,23 @@
                 </div>
 
                 <div class="mb-4">
+                    <label class="form-label" for="searchLocationInput">
+                        <i class="bi bi-search me-1"></i>Search Location
+                    </label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="searchLocationInput"
+                               placeholder="Search address or place name...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchLocationBtn" title="Search">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary d-none" type="button" id="clearSearchBtn" title="Clear search">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <div class="form-text" id="searchStatus"></div>
+                </div>
+
+                <div class="mb-4">
                     <label class="form-label">Center Coordinates</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">Lat</span>
@@ -309,6 +326,7 @@
                         <input type="text" class="form-control" id="centerLngInput"
                                value="<?php echo e(number_format($config['centerLng'], 6)); ?>" readonly>
                     </div>
+                    <div class="form-text">Updated automatically when you click the map or drag the marker.</div>
                 </div>
 
                 <div class="form-check form-switch mb-4">
@@ -465,7 +483,6 @@
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.addControl(new maplibregl.FullscreenControl(), 'top-right');
 
-    // Convert center + radius (meters) to a GeoJSON circle polygon
     function circlePolygon(lng, lat, radiusMeters, segments) {
         segments = segments || 96;
         var coords = [];
@@ -514,7 +531,6 @@
             });
         }
 
-        // Warning ring (just inside the boundary)
         if (!map.getSource('warning-zone')) {
             map.addSource('warning-zone', { type: 'geojson', data: circlePolygon(center[0], center[1], Math.max(25, radius - warningThreshold)) });
         } else {
@@ -530,10 +546,20 @@
         }
     }
 
-    centerMarker.on('dragend', function () {
-        center = centerMarker.getLngLat().toArray();
+    function moveCenter(lng, lat) {
+        center = [lng, lat];
+        centerMarker.setLngLat([lng, lat]);
         renderCircle();
         updateReadouts();
+    }
+
+    centerMarker.on('dragend', function () {
+        var pos = centerMarker.getLngLat();
+        moveCenter(pos.lng, pos.lat);
+    });
+
+    map.on('click', function (e) {
+        moveCenter(e.lngLat.lng, e.lngLat.lat);
     });
 
     var radiusSlider = document.getElementById('radiusSlider');
@@ -563,6 +589,73 @@
         document.getElementById('centerReadout').textContent =
             'Center: ' + center[1].toFixed(6) + ', ' + center[0].toFixed(6) + ' • Radius: ' + numberFormat(radius) + ' m';
     }
+
+    var searchInput = document.getElementById('searchLocationInput');
+    var searchBtn = document.getElementById('searchLocationBtn');
+    var clearSearchBtn = document.getElementById('clearSearchBtn');
+    var searchStatus = document.getElementById('searchStatus');
+    var searchTimeout = null;
+
+    function performSearch() {
+        var query = searchInput.value.trim();
+        if (!query) return;
+
+        searchBtn.disabled = true;
+        searchBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        searchStatus.textContent = 'Searching...';
+        searchStatus.className = 'form-text text-muted';
+
+        fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query), {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (results) {
+            if (!results || results.length === 0) {
+                searchStatus.textContent = 'No results found.';
+                searchStatus.className = 'form-text text-danger';
+                return;
+            }
+            var place = results[0];
+            var lng = parseFloat(place.lon);
+            var lat = parseFloat(place.lat);
+
+            map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
+            moveCenter(lng, lat);
+
+            searchStatus.textContent = 'Found: ' + place.display_name;
+            searchStatus.className = 'form-text text-success';
+            clearSearchBtn.classList.remove('d-none');
+        })
+        .catch(function () {
+            searchStatus.textContent = 'Search failed. Try again.';
+            searchStatus.className = 'form-text text-danger';
+        })
+        .finally(function () {
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<i class="bi bi-search"></i>';
+        });
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        if (!searchInput.value.trim()) {
+            clearSearchBtn.classList.add('d-none');
+            searchStatus.textContent = '';
+        }
+    });
+
+    clearSearchBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        searchStatus.textContent = '';
+        clearSearchBtn.classList.add('d-none');
+    });
 
     var saveBtn = document.getElementById('saveGeofenceBtn');
     var saveStatus = document.getElementById('saveStatus');
@@ -603,7 +696,7 @@
         })
         .finally(function () {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save Geofence';
+            saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save Geofence Location';
         });
     });
 
