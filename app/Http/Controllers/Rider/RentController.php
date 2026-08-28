@@ -37,14 +37,15 @@ class RentController extends Controller
         $user = $request->user();
 
         try {
-            $this->rentalService->startRental(
-                $user,
-                $request->bicycleId,
-                $request->paymentMethod,
-                (int) $request->durationHours,
-                $request->paymentMethod === 'gcash' ? $request->paymentReference : null,
-            );
-
+          $this->rentalService->startRental(
+    $user,
+    $request->bicycleId,
+    (int) $request->durationHours * 60,
+    $request->paymentMethod,
+    $request->paymentMethod === 'gcash'
+        ? $request->paymentReference
+        : null,
+);
             if ($request->paymentMethod === 'gcash') {
                 return redirect()->route('rider.rentals.index')
                     ->with('success', 'Rental submitted! Your payment is pending verification. You will be notified once approved.');

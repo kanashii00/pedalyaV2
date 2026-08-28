@@ -16,11 +16,11 @@ class CheckOverdueRentals extends Command
 
     public function handle(NotificationService $notificationService): int
     {
-        $overdueRentals = Rental::with(['bicycle'])
-            ->where('status', Rental::STATUS_ACTIVE)
-            ->whereNotNull('endTime')
-            ->where('endTime', '<', now())
-            ->get();
+       $overdueRentals = Rental::with(['bicycle'])
+    ->where('status', Rental::STATUS_ACTIVE)
+    ->whereNotNull('expectedEndTime')
+    ->where('expectedEndTime', '<=', now())
+    ->get();
 
         if ($overdueRentals->isEmpty()) {
             $this->info('No overdue rentals found.');
@@ -34,14 +34,10 @@ class CheckOverdueRentals extends Command
                 'overdueAt' => now(),
             ]);
 
-            if ($rental->bicycle) {
-                // The rental is still ongoing so the bicycle remains Rented;
-                // only the physical smart lock is engaged to secure it.
-                $rental->bicycle->update([
-                    'lockStatus' => Bicycle::LOCK_LOCKED,
-                ]);
-            }
-
+             // Do not lock immediately when the rental becomes overdue.
+            // The grace-period lock command handles the smart lock after
+            // the allowed grace period has elapsed.
+            
             $notificationService->create(
                 $rental->riderId,
                 'Rental Overdue',

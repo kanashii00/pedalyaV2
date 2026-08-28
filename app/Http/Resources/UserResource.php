@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'status'         => $this->status,
             'verified'       => (bool) $this->verified,
             'idUploaded'     => (bool) $this->idUploaded,
+            'idVerification' => $this->idVerification,
             'totalRentals'   => $this->totalRentals,
             'totalSpent'     => $this->totalSpent,
             'isVerified'     => (bool) $this->verified,

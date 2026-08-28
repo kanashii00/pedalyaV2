@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -111,4 +112,101 @@ class AuthController extends Controller
             'user'    => new UserResource($user->fresh()),
         ]);
     }
+
+    public function changePassword(Request $request): JsonResponse
+{
+    $user = $request->user();
+
+    $validated = $request->validate([
+        'current_password' => ['required', 'string'],
+        'password' => ['required', 'string', 'confirmed', Password::defaults()],
+    ]);
+
+    if (!Hash::check($validated['current_password'], $user->password)) {
+        return response()->json([
+            'message' => 'Current password is incorrect.',
+        ], 422);
+    }
+
+    $user->update([
+        'password' => Hash::make($validated['password']),
+    ]);
+
+    return response()->json([
+        'message' => 'Password changed successfully.',
+    ]);
+}
+
+public function uploadIdVerification(Request $request): JsonResponse
+{
+    $user = $request->user();
+
+    $request->validate([
+        'id_image' => [
+            'required_without:id_image_base64',
+            'image',
+            'mimes:jpeg,jpg,png',
+            'max:5120',
+        ],
+        'id_image_base64' => [
+            'required_without:id_image',
+            'nullable',
+            'string',
+        ],
+    ]);
+
+    $idVerification = $user->idVerification ?? [];
+
+    if ($request->hasFile('id_image')) {
+        $path = $request->file('id_image')
+            ->store('id-verifications', 'public');
+
+        $idVerification['id_path'] = $path;
+        $idVerification['id_url'] =
+            Storage::disk('public')->url($path);
+    } elseif ($request->filled('id_image_base64')) {
+        $base64 = $request->input('id_image_base64');
+
+        $data = explode(',', $base64);
+
+        $mime = 'image/png';
+
+        if (str_contains($base64, 'data:image/jpeg')) {
+            $mime = 'image/jpeg';
+        }
+
+        $extension = $mime === 'image/jpeg'
+            ? 'jpg'
+            : 'png';
+
+        $filename =
+            'id-' . $user->id . '-' . time() . '.' . $extension;
+
+        $binary = base64_decode(end($data));
+
+        $path = 'id-verifications/' . $filename;
+
+        Storage::disk('public')->put($path, $binary);
+
+        $idVerification['id_path'] = $path;
+        $idVerification['id_url'] =
+            Storage::disk('public')->url($path);
+    }
+
+    $idVerification['status'] = 'pending';
+    $idVerification['submitted_at'] =
+        now()->toIso8601String();
+
+    $user->update([
+        'idVerification' => $idVerification,
+        'idUploaded' => true,
+    ]);
+
+    return response()->json([
+        'message' => 'ID submitted for verification.',
+        'verification_status' => 'pending',
+        'user' => new UserResource($user->fresh()),
+    ]);
+}
+
 }
