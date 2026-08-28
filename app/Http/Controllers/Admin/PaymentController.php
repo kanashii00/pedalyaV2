@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
@@ -167,7 +168,7 @@ class PaymentController extends Controller
                 'payment' => $payment->load(['user', 'bicycle']),
                 'checkoutUrl' => $payment->paymongoCheckoutUrl ?? null,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Payment creation failed', ['error' => $e->getMessage()]);
             return response()->json([

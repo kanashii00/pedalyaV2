@@ -160,7 +160,7 @@ public function store(Request $request): JsonResponse
                 'rental'  => new RentalResource($result['rental']->load(['bicycle', 'rider'])),
                 'fees'    => $result['fees'],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
@@ -190,7 +190,7 @@ public function store(Request $request): JsonResponse
         Bicycle::where('id', $rental->bicycleId)->update([
             'status' => Bicycle::STATUS_RENTED,
             'currentRider' => $rental->riderId,
-            'currentRentalId' => $rental->rentalId,
+            'currentRentalId' => $rental->id,
             'lockStatus' => Bicycle::LOCK_UNLOCKED,
         ]);
 
@@ -226,7 +226,7 @@ public function store(Request $request): JsonResponse
         ]);
 
         $bicycle = Bicycle::find($rental->bicycleId);
-        if ($bicycle && $bicycle->currentRentalId === $rental->rentalId) {
+        if ($bicycle && (string) $bicycle->currentRentalId === (string) $rental->id) {
             // Rental cancelled: bicycle becomes Available and the smart lock
             // is Locked again since nobody is authorized to use it.
             $bicycle->update([

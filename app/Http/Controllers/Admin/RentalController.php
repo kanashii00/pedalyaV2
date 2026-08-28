@@ -123,7 +123,7 @@ class RentalController extends Controller
             $bicycle->update([
                 'status' => Bicycle::STATUS_RENTED,
                 'currentRider' => $rental->riderId,
-                'currentRentalId' => $rental->rentalId,
+                'currentRentalId' => $rental->id,
                 'lockStatus' => Bicycle::LOCK_UNLOCKED,
             ]);
 
@@ -317,7 +317,7 @@ class RentalController extends Controller
         ]);
 
         $bicycle = $rental->bicycle;
-        if ($bicycle && $bicycle->currentRentalId === $rental->rentalId) {
+        if ($bicycle && (string) $bicycle->currentRentalId === (string) $rental->id) {
             // Rental cancelled: bicycle becomes Available and the smart lock
             // is Locked again since nobody is authorized to use it.
             $bicycle->update([

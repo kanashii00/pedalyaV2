@@ -173,7 +173,7 @@ public function startRental(
                 : 'Rental Started',
             $isGcash
                 ? "Your rental {$rental->rentalId} is pending payment verification. Please wait for admin approval."
-                : "Your rental {$rental->rentalId} has started. Pay ₱{$totalFee} upon return. Enjoy your ride!",
+                : "Your rental {$rental->rentalId} has started. Pay PHP {$totalFee} upon return. Enjoy your ride!",
             'rental_started'
         );
 
@@ -251,7 +251,7 @@ public function startRental(
             $this->notificationService->create(
                 $user->id,
                 'Rental Completed',
-                "Your rental {$rental->rentalId} has been completed. Total fee: ₱{$fees['totalFee']}.",
+                "Your rental {$rental->rentalId} has been completed. Total fee: PHP {$fees['totalFee']}.",
                 'rental_completed'
             );
 

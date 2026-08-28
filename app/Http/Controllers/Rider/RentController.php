@@ -53,7 +53,7 @@ class RentController extends Controller
 
             return redirect()->route('rider.dashboard')
                 ->with('success', 'Rental started successfully. Pay at the station upon return.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return back()->withErrors(['bicycleId' => $e->getMessage()]);
         }
     }
@@ -99,7 +99,7 @@ class RentController extends Controller
 
             return redirect()->route('rider.dashboard')
                 ->with('success', 'Rental returned successfully.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return back()->withErrors(['return' => $e->getMessage()]);
         }
     }
