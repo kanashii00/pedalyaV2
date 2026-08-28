@@ -46,6 +46,7 @@ class Rental extends Model
         'chargedHours',
         'totalDistance',
         'paymentStatus',
+        'paidAt',
         'isOverdue',
         'overdueAt',
         'paymentMethod',
@@ -55,6 +56,7 @@ class Rental extends Model
         'cancelReason',
         'approvedBy',
         'approvedAt',
+        'warningSentAt',
     ];
 
     protected function casts(): array
@@ -66,6 +68,8 @@ class Rental extends Model
             'endLocation' => 'array',
             'approvedAt' => 'datetime',
             'overdueAt' => 'datetime',
+            'warningSentAt' => 'datetime',
+            'paidAt' => 'datetime',
             'isOverdue' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

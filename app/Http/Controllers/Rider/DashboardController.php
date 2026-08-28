@@ -41,6 +41,8 @@ class DashboardController extends Controller
 
         $geofenceCenter = app(\App\Services\GeofenceService::class)->getConfig();
 
+        $warningMinutes = (int) \App\Models\SystemSetting::getValue('overdueBuzzerMinutes', 5);
+
         return view('rider.dashboard', compact(
             'user',
             'activeRental',
@@ -50,6 +52,7 @@ class DashboardController extends Controller
             'bicycles',
             'unreadCount',
             'geofenceCenter',
+            'warningMinutes',
         ));
     }
 }

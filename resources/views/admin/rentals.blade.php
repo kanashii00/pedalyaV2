@@ -185,6 +185,8 @@
     .rv-btn--cancel:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
     .rv-btn--approve { color: var(--brand-strong); border-color: color-mix(in srgb, var(--brand) 40%, transparent); }
     .rv-btn--approve:hover { color: #fff; background: var(--brand); border-color: var(--brand); }
+    .rv-btn--paid { color: var(--success); border-color: color-mix(in srgb, var(--success) 38%, transparent); }
+    .rv-btn--paid:hover { color: #fff; background: var(--success); border-color: var(--success); }
     .rv-btn[title]::after {
         content: attr(title); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
         background: var(--text-1); color: var(--canvas); padding: 4px 8px; border-radius: 6px;
@@ -320,6 +322,67 @@
         padding: 14px 20px; border-top: 1px solid var(--border-subtle);
     }
 
+    /* ============================================================
+       Mark as Paid confirmation modal
+       ============================================================ */
+    .rv-paid-modal {
+        position: fixed; inset: 0; z-index: 2100;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s;
+    }
+    .rv-paid-modal.open { opacity: 1; visibility: visible; }
+    .rv-paid-modal__backdrop {
+        position: absolute; inset: 0;
+        background: rgba(9, 12, 20, 0.6); backdrop-filter: blur(2px);
+    }
+    .rv-paid-modal__dialog {
+        position: relative; z-index: 1; width: 100%; max-width: 420px;
+        max-height: 90vh; overflow-y: auto; margin: 16px;
+        background: var(--surface); border: 1px solid var(--border-subtle);
+        border-radius: 14px; box-shadow: var(--shadow-pop);
+        transform: translateY(12px) scale(0.97);
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .rv-paid-modal.open .rv-paid-modal__dialog { transform: translateY(0) scale(1); }
+    .rv-paid-modal__head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+    }
+    .rv-paid-modal__head h3 {
+        margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+    .rv-paid-modal__head h3 i { color: var(--success); font-size: 17px; }
+    .rv-paid-modal__close {
+        width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 8px; border: 1px solid var(--border-subtle); background: transparent;
+        color: var(--text-2); font-size: 13px; cursor: pointer; transition: all 0.15s;
+    }
+    .rv-paid-modal__close:hover { background: var(--surface-3); color: var(--text-1); }
+    .rv-paid-modal__body { padding: 20px; }
+    .rv-paid-modal__list {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .rv-paid-modal__kv {
+        background: var(--surface-2); border: 1px solid var(--border-subtle);
+        border-radius: 9px; padding: 10px 12px;
+    }
+    .rv-paid-modal__kv--wide { grid-column: 1 / -1; }
+    .rv-paid-modal__kv dt {
+        font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em;
+        text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;
+    }
+    .rv-paid-modal__kv dd { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-1); }
+    .rv-paid-modal__kv--fee dd { color: var(--success); font-size: 16px; font-weight: 700; }
+    .rv-paid-modal__note {
+        margin-top: 14px; padding: 10px 12px; border-radius: 9px;
+        font-size: 12px; color: var(--text-2);
+        background: var(--success-soft); border: 1px dashed color-mix(in srgb, var(--success) 40%, transparent);
+    }
+    .rv-paid-modal__foot {
+        display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+        padding: 14px 20px; border-top: 1px solid var(--border-subtle);
+    }
+
     /* ---- Receipt sheet (white paper) ---- */
     .rcpt-sheet {
         background: #ffffff; color: #111827; border-radius: 10px;
@@ -373,6 +436,12 @@
     }
     .rcpt-total dt { font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #14532d; }
     .rcpt-total dd { margin: 0; font-size: 20px; font-weight: 800; color: #14532d; font-variant-numeric: tabular-nums; line-height: 1; }
+    .rcpt-ref {
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        font-size: 11.5px; padding: 6px 2px; border-bottom: 1px dashed #e5e7eb; margin-bottom: 8px;
+    }
+    .rcpt-ref span { color: #6b7280; font-weight: 600; }
+    .rcpt-ref strong { color: #111827; font-variant-numeric: tabular-nums; text-align: right; }
     .rcpt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .rcpt-chip {
         display: inline-flex; align-items: center; gap: 4px;
@@ -642,6 +711,7 @@
                                             'total'     => number_format((float) ($rental->totalFee ?? 0), 2),
                                             'method'    => $rental->paymentMethod === 'gcash' ? 'GCash' : 'Cash',
                                             'payStatus' => ucfirst($rental->paymentStatus ?? 'Unpaid'),
+                                            'reference' => $rental->paymentReference ?? ($rental->rentalId ?? ''),
                                             'status'    => ucfirst($rental->status),
                                             'issued'    => now()->format('M d, Y \a\t h:i A'),
                                         ];
@@ -651,6 +721,21 @@
                                             title="Print receipt">
                                         <i class="bi bi-printer"></i>
                                     </button>
+                                    @if(in_array($rental->status, ['active', 'overdue'])
+                                        && $rental->paymentStatus === 'pending'
+                                        && $rental->paymentMethod !== 'gcash')
+                                        <button type="button"
+                                                class="rv-btn rv-btn--paid"
+                                                data-pay-action="{{ route('admin.rentals.mark-paid', $rental->id) }}"
+                                                data-pay-rental-id="{{ $rental->rentalId }}"
+                                                data-pay-rider="{{ $rental->rider->name ?? $rental->riderName ?? 'Unknown' }}"
+                                                data-pay-bike="{{ $rental->bicycle->name ?? $rental->bicycleName ?? 'Unknown' }}"
+                                                data-pay-fee="{{ number_format((float) ($rental->totalFee ?? 0), 2) }}"
+                                                data-pay-method="Cash"
+                                                title="Mark as paid">
+                                            <i class="bi bi-cash-coin"></i>
+                                        </button>
+                                    @endif
                                     @if($rental->status === 'pending' && $rental->paymentMethod === 'gcash')
                                         <form action="{{ route('admin.rentals.verify-gcash', $rental->id) }}" method="POST" class="d-inline">
                                             @csrf
@@ -882,6 +967,10 @@
                         <dt>Total Fee</dt>
                         <dd>&#8369;<span id="rcptTotal">0.00</span></dd>
                     </dl>
+                    <div class="rcpt-ref">
+                        <span>Transaction / Ref No.</span>
+                        <strong id="rcptRef">&mdash;</strong>
+                    </div>
                     <div class="rcpt-chips">
                         <span class="rcpt-chip" id="rcptMethod">&mdash;</span>
                         <span class="rcpt-chip" id="rcptPayStatus">&mdash;</span>
@@ -902,6 +991,57 @@
             <button type="button" class="btn-admin btn-admin--primary btn-admin--sm" id="rcptPrintBtn">
                 <i class="bi bi-printer me-1"></i>Print Receipt
             </button>
+        </div>
+    </div>
+</div>
+
+{{-- ===== Mark as Paid confirmation modal ===== --}}
+<div class="rv-paid-modal" id="rvPaidModal">
+    <div class="rv-paid-modal__backdrop" data-rv-paid-close></div>
+    <div class="rv-paid-modal__dialog" role="dialog" aria-modal="true" aria-label="Mark rental as paid">
+        <div class="rv-paid-modal__head">
+            <h3><i class="bi bi-cash-coin"></i>Mark as Paid</h3>
+            <button type="button" class="rv-paid-modal__close" data-rv-paid-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="rv-paid-modal__body">
+            <p style="margin:0 0 14px;font-size:12.5px;color:var(--text-2);">
+                Please review the payment details before confirming.
+            </p>
+            <dl class="rv-paid-modal__list">
+                <div class="rv-paid-modal__kv rv-paid-modal__kv--wide">
+                    <dt>Rental ID</dt>
+                    <dd id="rvPaidRentalId">&mdash;</dd>
+                </div>
+                <div class="rv-paid-modal__kv">
+                    <dt>Rider</dt>
+                    <dd id="rvPaidRider">&mdash;</dd>
+                </div>
+                <div class="rv-paid-modal__kv">
+                    <dt>Bicycle</dt>
+                    <dd id="rvPaidBike">&mdash;</dd>
+                </div>
+                <div class="rv-paid-modal__kv rv-paid-modal__kv--fee">
+                    <dt>Total Fee</dt>
+                    <dd id="rvPaidFee">&mdash;</dd>
+                </div>
+                <div class="rv-paid-modal__kv">
+                    <dt>Payment Method</dt>
+                    <dd id="rvPaidMethod">&mdash;</dd>
+                </div>
+            </dl>
+            <div class="rv-paid-modal__note">
+                <i class="bi bi-info-circle me-1"></i>Confirming will mark this rental (and its payment record) as paid immediately.
+            </div>
+        </div>
+        <div class="rv-paid-modal__foot">
+            <button type="button" class="btn-admin btn-admin--secondary btn-admin--sm" data-rv-paid-close>Cancel</button>
+            <form id="rvPaidForm" action="#" method="POST" style="margin:0;">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="btn-admin btn-admin--success btn-admin--sm">
+                    <i class="bi bi-check-circle me-1"></i>Confirm Payment
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -1000,6 +1140,8 @@
         else { refreshLive(); }
         el('rcptRate').textContent = d.rate;
         el('rcptTotal').textContent = d.total;
+        var refNode = el('rcptRef');
+        if (refNode) refNode.textContent = d.reference || '\u2014';
         chip(el('rcptMethod'), d.method, d.method === 'GCash' ? 'rcpt-chip--blue' : 'rcpt-chip--green');
         var st = String(d.payStatus).toLowerCase();
         chip(el('rcptPayStatus'), d.payStatus,
@@ -1046,6 +1188,45 @@
 
     var printBtn = el('rcptPrintBtn');
     if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+})();
+
+/* ==================== Mark as Paid confirmation modal ==================== */
+(function () {
+    var modal = document.getElementById('rvPaidModal');
+    if (!modal) return;
+
+    var form = document.getElementById('rvPaidForm');
+    var setId = document.getElementById('rvPaidRentalId');
+    var setRider = document.getElementById('rvPaidRider');
+    var setBike = document.getElementById('rvPaidBike');
+    var setFee = document.getElementById('rvPaidFee');
+    var setMethod = document.getElementById('rvPaidMethod');
+
+    function openModal(btn) {
+        if (form) form.action = btn.getAttribute('data-pay-action') || '#';
+        if (setId) setId.textContent = btn.getAttribute('data-pay-rental-id') || '—';
+        if (setRider) setRider.textContent = btn.getAttribute('data-pay-rider') || '—';
+        if (setBike) setBike.textContent = btn.getAttribute('data-pay-bike') || '—';
+        if (setFee) setFee.textContent = '₱' + (btn.getAttribute('data-pay-fee') || '0.00');
+        if (setMethod) setMethod.textContent = btn.getAttribute('data-pay-method') || '—';
+        modal.classList.add('open');
+    }
+
+    function closeModal() {
+        modal.classList.remove('open');
+    }
+
+    document.querySelectorAll('[data-pay-action]').forEach(function (btn) {
+        btn.addEventListener('click', function () { openModal(btn); });
+    });
+
+    modal.querySelectorAll('[data-rv-paid-close]').forEach(function (node) {
+        node.addEventListener('click', closeModal);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
 })();
 </script>
 @endsection

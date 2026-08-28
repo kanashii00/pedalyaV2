@@ -160,6 +160,7 @@ class RentalController extends Controller
         $rental->update([
             'status' => 'active',
             'paymentStatus' => 'paid',
+            'paidAt' => now(),
             'approvedBy' => auth()->id(),
             'approvedAt' => now(),
         ]);
@@ -201,6 +202,59 @@ class RentalController extends Controller
         );
 
         return back()->with('success', 'GCash payment verified. Rental activated.');
+    }
+
+    public function markPaid(Request $request, int $id): RedirectResponse
+    {
+        $rental = Rental::with(['rider'])->findOrFail($id);
+
+        // Only ongoing (active/overdue) rentals may be manually marked paid,
+        // and only when payment is still pending.
+        if (! in_array($rental->status, [Rental::STATUS_ACTIVE, Rental::STATUS_OVERDUE], true)) {
+            return back()->withErrors(['rental' => 'Only active or overdue rentals can be marked as paid.']);
+        }
+
+        if ($rental->paymentStatus === 'paid') {
+            return back()->withErrors(['rental' => 'This rental is already marked as paid.']);
+        }
+
+        // Online / GCash payments are only marked paid after successful
+        // payment confirmation (gateway/webhook). Cash payments can be
+        // confirmed manually by the administrator.
+        if ($rental->paymentMethod === 'gcash') {
+            return back()->withErrors(['rental' => 'GCash payments can only be marked paid after payment confirmation.']);
+        }
+
+        $rental->update([
+            'paymentStatus' => 'paid',
+            'paidAt' => now(),
+        ]);
+
+        // Keep the Payments module in sync by updating any linked payment
+        // record for this rental to Paid (idempotent status/paidAt update).
+        Payment::where('rentalId', $rental->id)
+            ->where('paymentMethod', 'cash')
+            ->update([
+                'status' => 'paid',
+                'paidAt' => now(),
+            ]);
+
+        AuditLog::record('rental_marked_paid', auth()->id(), [
+            'rentalId' => $rental->rentalId,
+            'amount' => $rental->totalFee,
+            'paymentMethod' => 'cash',
+            'paidAt' => now()->toDateTimeString(),
+        ]);
+
+        $this->notificationService->create(
+            $rental->riderId,
+            'Payment Confirmed',
+            "Your cash payment for rental {$rental->rentalId} has been confirmed and marked as paid.",
+            'payment_status',
+            ['rentalId' => $rental->rentalId]
+        );
+
+        return back()->with('success', 'Rental marked as paid.');
     }
 
     public function endRide(Request $request, int $id): RedirectResponse

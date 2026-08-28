@@ -66,6 +66,7 @@ class RentalService
                 'bicycleName' => $bicycle->name,
                 'bicycleSerial' => $bicycle->serialNumber,
                 'startTime' => Carbon::now(),
+                'endTime' => Carbon::now()->addMinutes($durationHours * 60),
                 'startLocation' => ['lat' => $bicycle->currentLat, 'lng' => $bicycle->currentLng],
                 'status' => $isGcash ? 'pending' : 'active',
                 'ratePerHour' => $ratePerHour,

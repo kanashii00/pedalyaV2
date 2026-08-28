@@ -70,6 +70,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/rentals/{id}', [AdminRental::class, 'show'])->name('rentals.show');
     Route::put('/rentals/{id}/approve', [AdminRental::class, 'approve'])->name('rentals.approve');
     Route::put('/rentals/{id}/verify-gcash', [AdminRental::class, 'verifyGcashPayment'])->name('rentals.verify-gcash');
+    Route::put('/rentals/{id}/mark-paid', [AdminRental::class, 'markPaid'])->name('rentals.mark-paid');
     Route::put('/rentals/{id}/end-ride', [AdminRental::class, 'endRide'])->name('rentals.end-ride');
     Route::put('/rentals/{id}/cancel', [AdminRental::class, 'cancel'])->name('rentals.cancel');
 

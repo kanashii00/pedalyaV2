@@ -58,11 +58,15 @@
                                     <span><i class="bi bi-clock text-primary"></i> <strong id="rentalTimer">0:00:00</strong></span>
                                     <span><i class="bi bi-battery-three-quarters text-success"></i> {{ $activeRental->bicycle->batteryLevel ?? 0 }}%</span>
                                 </div>
+                                <div id="rentalWarning" class="mt-1" style="display:none;">
+                                    <span class="badge-status" style="background:#FFF3E0;color:#E65100;"><i class="bi bi-exclamation-triangle-fill me-1" style="font-size:0.5rem;"></i> Expiring soon</span>
+                                </div>
                             </div>
                             <div class="col-4 text-end">
                                 <div class="countdown-timer">
                                     <div class="countdown-item"><span class="countdown-value" id="cdHours">0</span><span class="countdown-label">Hrs</span></div>
                                     <div class="countdown-item"><span class="countdown-value" id="cdMins">0</span><span class="countdown-label">Min</span></div>
+                                    <div class="countdown-item"><span class="countdown-value" id="cdSecs">00</span><span class="countdown-label">Sec</span></div>
                                 </div>
                                 <p class="mt-2 mb-0 fw-bold text-primary">₱{{ number_format($activeRental->totalFee ?? 0, 2) }}</p>
                             </div>
@@ -133,20 +137,49 @@
 
 @section('scripts')
 @if($activeRental)
+@php
+    // Countdown source of truth: the server-computed rental end time.
+    // Falls back to startTime + selected duration if endTime is missing.
+    $endTime = $activeRental->endTime
+        ?? optional($activeRental->startTime)->copy()->addMinutes($activeRental->durationMinutes ?? 60);
+    $warningSeconds = ($warningMinutes ?? 5) * 60;
+@endphp
 <script>
     (function() {
-        var startTime = new Date('{{ $activeRental->startTime->toIso8601String() }}');
-        var hourlyRate = {{ $activeRental->bicycle->hourlyRate ?? 25 }};
+        var endTime = new Date('{{ $endTime->toIso8601String() }}');
+        var warningSeconds = {{ $warningSeconds }};
+        var expiredShown = false;
+
+        function pad(n) { return String(n).padStart(2, '0'); }
 
         function updateTimer() {
-            var now = new Date();
-            var diff = Math.floor((now - startTime) / 1000);
-            var h = Math.floor(diff / 3600);
-            var m = Math.floor((diff % 3600) / 60);
-            var s = diff % 60;
-            document.getElementById('rentalTimer').textContent = h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            var nowMs = Date.now();
+            var remaining = Math.max(0, Math.floor((endTime.getTime() - nowMs) / 1000));
+            var h = Math.floor(remaining / 3600);
+            var m = Math.floor((remaining % 3600) / 60);
+            var s = remaining % 60;
+
+            document.getElementById('rentalTimer').textContent = h + ':' + pad(m) + ':' + pad(s);
             document.getElementById('cdHours').textContent = h;
             document.getElementById('cdMins').textContent = m;
+            document.getElementById('cdSecs').textContent = pad(s);
+
+            var warn = document.getElementById('rentalWarning');
+            if (warn) {
+                if (remaining > 0 && remaining <= warningSeconds) {
+                    warn.style.display = 'block';
+                    document.getElementById('cdHours').style.color = '#E65100';
+                    document.getElementById('cdMins').style.color = '#E65100';
+                    document.getElementById('cdSecs').style.color = '#E65100';
+                } else {
+                    warn.style.display = 'none';
+                }
+            }
+
+            if (remaining <= 0 && !expiredShown) {
+                expiredShown = true;
+                document.getElementById('rentalTimer').textContent = '0:00:00';
+            }
         }
         updateTimer();
         setInterval(updateTimer, 1000);
