@@ -15,11 +15,15 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_RIDER = 'rider';
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_INACTIVE = 'inactive';
+
     public const STATUS_SUSPENDED = 'suspended';
+
     public const STATUS_BLACKLISTED = 'blacklisted';
 
     protected $table = 'users';
@@ -41,6 +45,10 @@ class User extends Authenticatable
         'phoneNumber',
         'address',
         'email_verified_at',
+        'google_id',
+        'avatar',
+        'oauth_provider',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -60,6 +68,7 @@ class User extends Authenticatable
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -96,6 +105,11 @@ class User extends Authenticatable
         return $this->role === self::ROLE_RIDER;
     }
 
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
     public function getInitialsAttribute(): string
     {
         $words = explode(' ', $this->name);
@@ -103,6 +117,7 @@ class User extends Authenticatable
         foreach (array_slice($words, 0, 2) as $word) {
             $initials .= strtoupper(mb_substr($word, 0, 1));
         }
+
         return $initials;
     }
 }

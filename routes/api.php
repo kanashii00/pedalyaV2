@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\IoTController as ApiIoT;
 use App\Http\Controllers\Api\NotificationController as ApiNotification;
 use App\Http\Controllers\Api\AuthController as ApiAuth;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 
 // Health check
 Route::get('/health', fn () => response()->json([
@@ -24,6 +25,11 @@ Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendCode'
 
 Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassword'])
     ->middleware('throttle:5,1');
+
+// Google OAuth (mobile / Sanctum token)
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'apiRedirect'])
+    ->middleware('throttle:10,1');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'apiCallback']);
 
 // Device-authenticated routes (IoT devices / ESP32)
 Route::middleware('device.auth')->group(function () {

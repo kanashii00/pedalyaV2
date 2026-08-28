@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\RiderController as AdminRider;
 use App\Http\Controllers\Admin\SettingController as AdminSettings;
 use App\Http\Controllers\Admin\TheftController as AdminTheft;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Rider\DashboardController as RiderDashboard;
 use App\Http\Controllers\Rider\NotificationController as RiderNotifications;
@@ -33,6 +34,10 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
+
+    // Google OAuth (web session)
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirectToProvider'])->name('login.google');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleProviderCallback'])->name('login.google.callback');
 });
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])

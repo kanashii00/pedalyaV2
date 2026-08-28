@@ -16,5 +16,17 @@
 /storage/framework/views/
 /storage/logs/
 
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.php
+
 .DS_Store
 Thumbs.db
+
+.idea/
+.vscode/
+*.log
+composer.phar
+.phpunit.result.cache
+phpunit.xml
+.phpunit.cache/
