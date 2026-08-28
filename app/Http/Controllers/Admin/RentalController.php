@@ -171,7 +171,7 @@ class RentalController extends Controller
             $bicycle->update([
                 'status' => Bicycle::STATUS_RENTED,
                 'currentRider' => $rental->riderId,
-                'currentRentalId' => $rental->rentalId,
+                'currentRentalId' => $rental->id,
                 'lockStatus' => Bicycle::LOCK_UNLOCKED,
             ]);
 
