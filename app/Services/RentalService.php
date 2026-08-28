@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\RentalException;
 use App\Models\Bicycle;
 use App\Models\Payment;
 use App\Models\Rental;
@@ -30,7 +31,7 @@ public function startRental(
     ?string $paymentReference = null
 ): Rental {
     if (!$user->verified) {
-        throw new \Exception(
+        throw new RentalException(
             'User must be verified to start a rental.'
         );
     }
@@ -44,7 +45,7 @@ public function startRental(
         ->first();
 
     if ($activeRental) {
-        throw new \Exception(
+        throw new RentalException(
             'User already has an active rental.'
         );
     }
@@ -52,13 +53,13 @@ public function startRental(
     $bicycle = Bicycle::findOrFail($bicycleId);
 
     if ($bicycle->status !== Bicycle::STATUS_AVAILABLE) {
-        throw new \Exception(
+        throw new RentalException(
             'Bicycle is not available for rental.'
         );
     }
 
     if ($bicycle->batteryLevel < 20) {
-        throw new \Exception(
+        throw new RentalException(
             'Bicycle battery level is too low to rent.'
         );
     }
@@ -69,12 +70,9 @@ public function startRental(
     $chargedHours = max((int) ceil($durationHours), 1);
     $totalFee = round($ratePerHour * $chargedHours, 2);
 
-    $hours = intdiv($durationMinutes, 60);
-    $minutes = $durationMinutes % 60;
-    $durationFormatted = "{$hours}h {$minutes}m";
+    $durationFormatted = $this->formatDuration($durationMinutes);
 
     $isGcash = $paymentMethod === 'gcash';
-
     $rental = DB::transaction(function () use (
         $user,
         $bicycle,
@@ -208,7 +206,7 @@ public function startRental(
         ?string $notes
     ): array {
       if (!in_array($rental->status, ['active', 'overdue'], true)) {
-    throw new \Exception(
+    throw new RentalException(
         'Only active or overdue rentals can be returned.'
     );
 }
@@ -326,7 +324,7 @@ public function startRental(
     public function approveRental(Rental $rental, User $admin): Rental
     {
         if ($rental->status !== 'pending') {
-            throw new \Exception('Rental is not pending approval.');
+            throw new RentalException('Rental is not pending approval.');
         }
 
         $rental->update([
@@ -348,7 +346,7 @@ public function startRental(
     public function cancelRental(Rental $rental, User $user, ?string $reason = null): Rental
     {
         if (!in_array($rental->status, ['active', 'pending'])) {
-            throw new \Exception('Rental cannot be cancelled in its current status.');
+            throw new RentalException('Rental cannot be cancelled in its current status.');
         }
 
         $rental->update([
@@ -402,9 +400,7 @@ public function startRental(
         $chargedHours = max(ceil($durationHours), 1);
         $totalFee = $chargedHours * $ratePerHour;
 
-        $hours = floor($durationMinutes / 60);
-        $minutes = $durationMinutes % 60;
-        $durationFormatted = "{$hours}h {$minutes}m";
+        $durationFormatted = $this->formatDuration($durationMinutes);
 
         return [
             'totalFee' => round($totalFee, 2),
@@ -413,6 +409,60 @@ public function startRental(
             'chargedHours' => $chargedHours,
             'ratePerHour' => $ratePerHour,
         ];
+    }
+
+    public function createRentalFromPaidPayment(Payment $payment): Rental
+    {
+        $metadata = $payment->metadata ?? [];
+        $durationHours = (int) ($metadata['rental_duration_hours'] ?? 1);
+        $rider = User::find($payment->userId);
+
+        $rental = Rental::create([
+            'rentalId' => $this->generateRentalId(),
+            'bicycleId' => $payment->bicycleId,
+            'bicycleName' => optional(Bicycle::find($payment->bicycleId))->name,
+            'bicycleSerial' => optional(Bicycle::find($payment->bicycleId))->serialNumber,
+            'riderId' => $payment->userId,
+            'riderName' => $rider?->name,
+            'riderEmail' => $rider?->email,
+            'status' => 'active',
+            'startTime' => now(),
+            'endTime' => now()->addHours(max($durationHours, 1)),
+            'ratePerHour' => $durationHours > 0 ? round($payment->totalAmount / $durationHours, 2) : $payment->totalAmount,
+            'totalFee' => $payment->totalAmount,
+            'chargedHours' => max($durationHours, 1),
+            'durationMinutes' => max($durationHours, 1) * 60,
+            'durationFormatted' => $durationHours . 'h 0m',
+            'paymentStatus' => 'paid',
+            'paymentMethod' => 'gcash',
+        ]);
+
+        $payment->update(['rentalId' => $rental->id]);
+
+        $bicycle = Bicycle::find($payment->bicycleId);
+        if ($bicycle) {
+            $bicycle->update([
+                'status' => Bicycle::STATUS_RENTED,
+                'currentRider' => $payment->userId,
+                'currentRentalId' => $rental->id,
+                'lockStatus' => Bicycle::LOCK_UNLOCKED,
+                'lastLockAction' => now(),
+            ]);
+
+            if ($rider) {
+                $this->iotService->sendCommand($bicycle->id, 'unlock', [], $rider);
+            }
+        }
+
+        return $rental;
+    }
+
+    private function formatDuration(int $durationMinutes): string
+    {
+        $hours = intdiv($durationMinutes, 60);
+        $minutes = $durationMinutes % 60;
+
+        return "{$hours}h {$minutes}m";
     }
 
     public function generateRentalId(): string

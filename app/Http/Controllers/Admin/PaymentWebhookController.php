@@ -4,10 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
-use App\Models\Rental;
 use App\Models\Bicycle;
-use App\Models\User;
-use App\Services\IoTService;
 use App\Services\RentalService;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
@@ -19,7 +16,7 @@ class PaymentWebhookController extends Controller
 {
     public function __construct(
         private PayMongoService $payMongoService,
-        private IoTService $iotService
+        private RentalService $rentalService
     ) {}
 
     public function handle(Request $request): JsonResponse
@@ -85,7 +82,7 @@ class PaymentWebhookController extends Controller
         ]);
 
         if (!$payment->rentalId) {
-            $this->createRentalFromPayment($payment);
+            $this->rentalService->createRentalFromPaidPayment($payment);
         }
 
         Log::info('Payment succeeded and rental created', ['payment_id' => $payment->id]);
@@ -158,7 +155,7 @@ class PaymentWebhookController extends Controller
         ]);
 
         if (!$payment->rentalId) {
-            $this->createRentalFromPayment($payment);
+            $this->rentalService->createRentalFromPaidPayment($payment);
         }
 
         return response()->json(['message' => 'Checkout completed']);
@@ -218,51 +215,5 @@ class PaymentWebhookController extends Controller
         }
 
         return response()->json(['message' => 'Refund failure recorded']);
-    }
-
-    private function createRentalFromPayment(Payment $payment): void
-    {
-        $metadata = $payment->metadata ?? [];
-        $durationHours = (int) ($metadata['rental_duration_hours'] ?? 1);
-        $rider = User::find($payment->userId);
-
-        // Payment succeeded: the rental starts now, so the bicycle becomes
-        // Rented and its smart lock is Unlocked for the authorized rider.
-        $rental = Rental::create([
-            'rentalId' => app(RentalService::class)->generateRentalId(),
-            'bicycleId' => $payment->bicycleId,
-            'bicycleName' => optional(Bicycle::find($payment->bicycleId))->name,
-            'bicycleSerial' => optional(Bicycle::find($payment->bicycleId))->serialNumber,
-            'riderId' => $payment->userId,
-            'riderName' => $rider?->name,
-            'riderEmail' => $rider?->email,
-            'status' => 'active',
-            'startTime' => now(),
-            'endTime' => now()->addHours(max($durationHours, 1)),
-            'ratePerHour' => $durationHours > 0 ? round($payment->totalAmount / $durationHours, 2) : $payment->totalAmount,
-            'totalFee' => $payment->totalAmount,
-            'chargedHours' => max($durationHours, 1),
-            'durationMinutes' => max($durationHours, 1) * 60,
-            'durationFormatted' => $durationHours . 'h 0m',
-            'paymentStatus' => 'paid',
-            'paymentMethod' => 'gcash',
-        ]);
-
-        $payment->update(['rentalId' => $rental->id]);
-
-        $bicycle = Bicycle::find($payment->bicycleId);
-        if ($bicycle) {
-            $bicycle->update([
-                'status' => Bicycle::STATUS_RENTED,
-                'currentRider' => $payment->userId,
-                'currentRentalId' => $rental->id,
-                'lockStatus' => Bicycle::LOCK_UNLOCKED,
-                'lastLockAction' => now(),
-            ]);
-
-            if ($rider) {
-                $this->iotService->sendCommand($bicycle->id, 'unlock', [], $rider);
-            }
-        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\RentalException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RentalResource;
 use App\Models\Bicycle;
@@ -11,6 +12,7 @@ use App\Services\RentalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
 
 class RentalController extends Controller
 {
@@ -116,10 +118,15 @@ public function store(Request $request): JsonResponse
                 $rental->load(['bicycle', 'rider'])
             ),
         ], 201);
-    } catch (\Exception $e) {
+    } catch (RentalException $e) {
         return response()->json([
             'message' => $e->getMessage(),
         ], 422);
+    } catch (\Throwable $e) {
+        Log::error('Failed to start rental', ['error' => $e->getMessage()]);
+        return response()->json([
+            'message' => 'Unable to start the rental.',
+        ], 500);
     }
 }
 
@@ -160,10 +167,15 @@ public function store(Request $request): JsonResponse
                 'rental'  => new RentalResource($result['rental']->load(['bicycle', 'rider'])),
                 'fees'    => $result['fees'],
             ]);
-        } catch (\Throwable $e) {
+        } catch (RentalException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Failed to return rental', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Unable to return the rental.',
+            ], 500);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\PaymentException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -66,7 +67,7 @@ class PayMongoService
                 'status' => $response->status(),
                 'body' => $response->json(),
             ]);
-            throw new \Exception('Failed to create payment intent: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
+            throw new PaymentException('Failed to create payment intent: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
         }
 
         return $response->json()['data'];
@@ -105,7 +106,7 @@ class PayMongoService
                 'status' => $response->status(),
                 'body' => $response->json(),
             ]);
-            throw new \Exception('Failed to create checkout session: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
+            throw new PaymentException('Failed to create checkout session: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
         }
 
         return $response->json()['data'];
@@ -119,7 +120,7 @@ class PayMongoService
         $response = $this->getClient()->get("{$this->baseUrl}/payment_intents/{$paymentIntentId}");
 
         if (!$response->successful()) {
-            throw new \Exception('Failed to retrieve payment intent');
+            throw new PaymentException('Failed to retrieve payment intent');
         }
 
         return $response->json()['data'];
@@ -133,7 +134,7 @@ class PayMongoService
         $response = $this->getClient()->get("{$this->baseUrl}/checkout_sessions/{$checkoutSessionId}");
 
         if (!$response->successful()) {
-            throw new \Exception('Failed to retrieve checkout session');
+            throw new PaymentException('Failed to retrieve checkout session');
         }
 
         return $response->json()['data'];
@@ -162,7 +163,7 @@ class PayMongoService
                 'status' => $response->status(),
                 'body' => $response->json(),
             ]);
-            throw new \Exception('Failed to create refund: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
+            throw new PaymentException('Failed to create refund: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
         }
 
         return $response->json()['data'];
@@ -176,7 +177,7 @@ class PayMongoService
         $response = $this->getClient()->get("{$this->baseUrl}/refunds/{$refundId}");
 
         if (!$response->successful()) {
-            throw new \Exception('Failed to retrieve refund');
+            throw new PaymentException('Failed to retrieve refund');
         }
 
         return $response->json()['data'];
@@ -192,7 +193,7 @@ class PayMongoService
         ]);
 
         if (!$response->successful()) {
-            throw new \Exception('Failed to list refunds');
+            throw new PaymentException('Failed to list refunds');
         }
 
         return $response->json()['data'];
@@ -220,7 +221,7 @@ class PayMongoService
         $data = json_decode($payload, true);
 
         if (!$data) {
-            throw new \Exception('Invalid webhook payload');
+            throw new PaymentException('Invalid webhook payload');
         }
 
         return [

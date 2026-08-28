@@ -41,8 +41,8 @@ class ReportService
         $gpsOnline = Bicycle::where('lastGpsUpdate', '>=', now()->subMinutes(5))->count();
 
         $theftActive = Accident::where('type', 'theft')->where('acknowledged', false)->count();
-        $accidentActive = Accident::where('acknowledged', false)->count();
-        $activeAlerts = $theftActive + $accidentActive;
+        $unacknowledgedIncidents = Accident::where('acknowledged', false)->count();
+        $activeAlerts = $theftActive + $unacknowledgedIncidents;
 
         $maintenanceRequests = MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
 
@@ -62,8 +62,6 @@ class ReportService
         $monthlyRevenue = Rental::where('status', 'completed')
             ->where('updated_at', '>=', $monthStart)
             ->sum('totalFee');
-
-        $unacknowledgedIncidents = Accident::where('acknowledged', false)->count();
 
         $monthlyRentals = Rental::where('created_at', '>=', $monthStart)->count();
 
@@ -164,7 +162,7 @@ class ReportService
             ],
             'alerts' => [
                 'theftActive' => $theftActive,
-                'accidentActive' => $accidentActive,
+                'accidentActive' => $unacknowledgedIncidents,
                 'activeAlerts' => $activeAlerts,
                 'maintenanceRequests' => $maintenanceRequests,
             ],
@@ -247,23 +245,36 @@ class ReportService
         }
 
         $dateFormat = match ($groupBy) {
-            'day' => '%Y-%m-%d',
-            'week' => '%Y-W%u',
-            'month' => '%Y-%m',
-            'year' => '%Y',
-            default => '%Y-%m',
+            'day' => 'Y-m-d',
+            'week' => 'Y-W',
+            'month' => 'Y-m',
+            'year' => 'Y',
+            default => 'Y-m',
         };
 
-        $data = $query->selectRaw("
-                DATE_FORMAT(updated_at, '{$dateFormat}') as period,
-                COUNT(*) as total_rentals,
-                SUM(totalFee) as total_revenue,
-                AVG(totalFee) as avg_revenue,
-                SUM(durationMinutes) as total_duration_minutes
-            ")
-            ->groupBy('period')
-            ->orderBy('period')
-            ->get();
+        $rentals = $query->get(['updated_at', 'totalFee', 'durationMinutes']);
+
+        $grouped = [];
+        foreach ($rentals as $rental) {
+            $period = Carbon::parse($rental->updated_at)->format($dateFormat);
+            if (!isset($grouped[$period])) {
+                $grouped[$period] = ['total_rentals' => 0, 'total_revenue' => 0, 'total_duration_minutes' => 0];
+            }
+            $grouped[$period]['total_rentals']++;
+            $grouped[$period]['total_revenue'] += (float) $rental->totalFee;
+            $grouped[$period]['total_duration_minutes'] += (int) $rental->durationMinutes;
+        }
+
+        $data = collect($grouped)
+            ->map(function (array $values, string $period) {
+                $values['period'] = $period;
+                $values['avg_revenue'] = $values['total_rentals'] > 0
+                    ? $values['total_revenue'] / $values['total_rentals']
+                    : 0;
+                return (object) $values;
+            })
+            ->sortBy('period')
+            ->values();
 
         $summary = [
             'totalRevenue' => $data->sum('total_revenue'),

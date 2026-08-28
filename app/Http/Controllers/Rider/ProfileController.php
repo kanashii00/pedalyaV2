@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Rider;
 
 use App\Http\Controllers\Controller;
+use App\Services\DocumentUploadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        protected DocumentUploadService $documentUploadService
+    ) {}
+
     public function show(Request $request): View
     {
         $user = $request->user();
@@ -94,39 +98,16 @@ class ProfileController extends Controller
             'id_image_base64' => ['required_without:id_image', 'string'],
         ]);
 
-        $idVerification = $user->idVerification ?? [];
+        $stored = $this->documentUploadService
+            ->storeIdVerification($request, $user->id);
 
-        if ($request->hasFile('id_image')) {
-            $path = $request->file('id_image')->store('id-verifications', 'public');
-            $idVerification['id_path'] = $path;
-            $idVerification['id_url'] = Storage::disk('public')->url($path);
-        } elseif ($request->filled('id_image_base64')) {
-            $base64 = $request->input('id_image_base64');
-            $data = explode(',', $base64);
-            $mime = 'image/png';
-            if (str_contains($base64, 'data:image/jpeg')) {
-                $mime = 'image/jpeg';
-            } elseif (str_contains($base64, 'data:application/pdf')) {
-                $mime = 'application/pdf';
-            }
-
-            $extension = match ($mime) {
-                'image/jpeg' => 'jpg',
-                'image/png' => 'png',
-                'application/pdf' => 'pdf',
-                default => 'png',
-            };
-
-            $filename = 'id-' . $user->id . '-' . time() . '.' . $extension;
-            $binary = base64_decode(end($data));
-            $path = 'id-verifications/' . $filename;
-
-            Storage::disk('public')->put($path, $binary);
-
-            $idVerification['id_path'] = $path;
-            $idVerification['id_url'] = Storage::disk('public')->url($path);
+        if ($stored === null) {
+            return back()->withErrors(['id_image' => 'The provided document is not a valid JPEG, PNG or PDF file.']);
         }
 
+        $idVerification = $user->idVerification ?? [];
+        $idVerification['id_path'] = $stored['id_path'];
+        $idVerification['id_url'] = $stored['id_url'];
         $idVerification['status'] = 'pending';
         $idVerification['submitted_at'] = now()->toIso8601String();
 

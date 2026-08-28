@@ -114,32 +114,15 @@ class MaintenanceController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $maintenance = MaintenanceRecord::findOrFail($id);
-
-        $validated = $request->validate([
-            'status' => ['required', 'string', 'in:scheduled,in_progress,completed,cancelled'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        if (in_array($maintenance->status, [MaintenanceRecord::STATUS_COMPLETED, MaintenanceRecord::STATUS_CANCELLED])) {
-            return back()->withErrors(['status' => 'Cannot change the status of a completed or cancelled record.']);
-        }
-
-        if ($validated['status'] === 'completed') {
-            $validated['completedDate'] = now();
-        }
-
-        $maintenance->update($validated);
-
-        AuditLog::record('maintenance_updated', auth()->id(), [
-            'maintenanceId' => $maintenance->id,
-            'status' => $validated['status'],
-        ]);
-
-        return back()->with('success', 'Maintenance record updated.');
+        return $this->updateMaintenanceStatus($request, $id, 'maintenance_updated', 'Maintenance record updated.');
     }
 
     public function updateStatus(Request $request, int $id): RedirectResponse
+    {
+        return $this->updateMaintenanceStatus($request, $id, 'maintenance_status_updated', 'Maintenance status updated.');
+    }
+
+    private function updateMaintenanceStatus(Request $request, int $id, string $auditAction, string $successMessage): RedirectResponse
     {
         $maintenance = MaintenanceRecord::findOrFail($id);
 
@@ -158,11 +141,11 @@ class MaintenanceController extends Controller
 
         $maintenance->update($validated);
 
-        AuditLog::record('maintenance_status_updated', auth()->id(), [
+        AuditLog::record($auditAction, auth()->id(), [
             'maintenanceId' => $maintenance->id,
             'status' => $validated['status'],
         ]);
 
-        return back()->with('success', 'Maintenance status updated.');
+        return back()->with('success', $successMessage);
     }
 }

@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -33,7 +34,8 @@ class ReportController extends Controller
 
             return response()->json($report);
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Failed to generate rental report: '.$e->getMessage()], 500);
+            Log::error('Failed to generate rental report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate rental report.'], 500);
         }
     }
 
@@ -47,7 +49,8 @@ class ReportController extends Controller
 
             return response()->json($report);
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Failed to generate revenue report: '.$e->getMessage()], 500);
+            Log::error('Failed to generate revenue report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate revenue report.'], 500);
         }
     }
 
@@ -63,7 +66,8 @@ class ReportController extends Controller
 
             return response()->json($report);
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Failed to generate incident report: '.$e->getMessage()], 500);
+            Log::error('Failed to generate incident report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate incident report.'], 500);
         }
     }
 
@@ -87,20 +91,7 @@ class ReportController extends Controller
         $report = $this->buildReport($type, $request);
         [$headers, $rows] = $this->tableData($type, $report);
 
-        return response()->streamDownload(function () use ($headers, $rows, $report) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Pedalya - '.ucfirst($type).' Report']);
-            fputcsv($out, ['Generated: '.now()->format('M d, Y h:i A').' | Report ID: '.$report['reportId']]);
-            fputcsv($out, []);
-            fputcsv($out, $headers);
-            foreach ($rows as $row) {
-                fputcsv($out, $row);
-            }
-            fclose($out);
-        }, strtolower($type).'-report-'.date('Ymd-His').'.xls', [
-            'Content-Type' => 'application/vnd.ms-excel',
-        ]);
+        return $this->streamExport($type, $report, $headers, $rows, true, '.xls', 'application/vnd.ms-excel');
     }
 
     public function exportCsv(Request $request): StreamedResponse
@@ -109,16 +100,35 @@ class ReportController extends Controller
         $report = $this->buildReport($type, $request);
         [$headers, $rows] = $this->tableData($type, $report);
 
-        return response()->streamDownload(function () use ($headers, $rows) {
+        return $this->streamExport($type, $report, $headers, $rows, false, '.csv', 'text/csv');
+    }
+
+    private function streamExport(
+        string $type,
+        array $report,
+        array $headers,
+        array $rows,
+        bool $withSpreadsheetTitle,
+        string $extension,
+        string $contentType
+    ): StreamedResponse {
+        return response()->streamDownload(function () use ($type, $report, $headers, $rows, $withSpreadsheetTitle) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
+
+            if ($withSpreadsheetTitle) {
+                fputcsv($out, ['Pedalya - '.ucfirst($type).' Report']);
+                fputcsv($out, ['Generated: '.now()->format('M d, Y h:i A').' | Report ID: '.$report['reportId']]);
+                fputcsv($out, []);
+            }
+
             fputcsv($out, $headers);
             foreach ($rows as $row) {
                 fputcsv($out, $row);
             }
             fclose($out);
-        }, strtolower($type).'-report-'.date('Ymd-His').'.csv', [
-            'Content-Type' => 'text/csv',
+        }, strtolower($type).'-report-'.date('Ymd-His').$extension, [
+            'Content-Type' => $contentType,
         ]);
     }
 

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Rider;
 
+use App\Exceptions\RentalException;
 use App\Http\Controllers\Controller;
 use App\Models\Bicycle;
 use App\Models\Rental;
 use App\Services\RentalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class RentController extends Controller
@@ -37,15 +39,16 @@ class RentController extends Controller
         $user = $request->user();
 
         try {
-          $this->rentalService->startRental(
-    $user,
-    $request->bicycleId,
-    (int) $request->durationHours * 60,
-    $request->paymentMethod,
-    $request->paymentMethod === 'gcash'
-        ? $request->paymentReference
-        : null,
-);
+            $this->rentalService->startRental(
+                $user,
+                $request->bicycleId,
+                (int) $request->durationHours * 60,
+                $request->paymentMethod,
+                $request->paymentMethod === 'gcash'
+                    ? $request->paymentReference
+                    : null,
+            );
+
             if ($request->paymentMethod === 'gcash') {
                 return redirect()->route('rider.rentals.index')
                     ->with('success', 'Rental submitted! Your payment is pending verification. You will be notified once approved.');
@@ -53,8 +56,11 @@ class RentController extends Controller
 
             return redirect()->route('rider.dashboard')
                 ->with('success', 'Rental started successfully. Pay at the station upon return.');
-        } catch (\Throwable $e) {
+        } catch (RentalException $e) {
             return back()->withErrors(['bicycleId' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::error('Rider failed to start rental', ['error' => $e->getMessage()]);
+            return back()->withErrors(['bicycleId' => 'Unable to start the rental. Please try again.']);
         }
     }
 
@@ -99,8 +105,11 @@ class RentController extends Controller
 
             return redirect()->route('rider.dashboard')
                 ->with('success', 'Rental returned successfully.');
-        } catch (\Throwable $e) {
+        } catch (RentalException $e) {
             return back()->withErrors(['return' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::error('Rider failed to return rental', ['error' => $e->getMessage()]);
+            return back()->withErrors(['return' => 'Unable to return the rental. Please try again.']);
         }
     }
 }

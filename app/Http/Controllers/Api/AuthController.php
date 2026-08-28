@@ -5,14 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\DocumentUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        protected DocumentUploadService $documentUploadService
+    ) {}
+
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -155,44 +159,18 @@ public function uploadIdVerification(Request $request): JsonResponse
         ],
     ]);
 
-    $idVerification = $user->idVerification ?? [];
+    $stored = $this->documentUploadService
+        ->storeIdVerification($request, $user->id);
 
-    if ($request->hasFile('id_image')) {
-        $path = $request->file('id_image')
-            ->store('id-verifications', 'public');
-
-        $idVerification['id_path'] = $path;
-        $idVerification['id_url'] =
-            Storage::disk('public')->url($path);
-    } elseif ($request->filled('id_image_base64')) {
-        $base64 = $request->input('id_image_base64');
-
-        $data = explode(',', $base64);
-
-        $mime = 'image/png';
-
-        if (str_contains($base64, 'data:image/jpeg')) {
-            $mime = 'image/jpeg';
-        }
-
-        $extension = $mime === 'image/jpeg'
-            ? 'jpg'
-            : 'png';
-
-        $filename =
-            'id-' . $user->id . '-' . time() . '.' . $extension;
-
-        $binary = base64_decode(end($data));
-
-        $path = 'id-verifications/' . $filename;
-
-        Storage::disk('public')->put($path, $binary);
-
-        $idVerification['id_path'] = $path;
-        $idVerification['id_url'] =
-            Storage::disk('public')->url($path);
+    if ($stored === null) {
+        return response()->json([
+            'message' => 'The provided document is not a valid JPEG, PNG or PDF image.',
+        ], 422);
     }
 
+    $idVerification = $user->idVerification ?? [];
+    $idVerification['id_path'] = $stored['id_path'];
+    $idVerification['id_url'] = $stored['id_url'];
     $idVerification['status'] = 'pending';
     $idVerification['submitted_at'] =
         now()->toIso8601String();
