@@ -235,7 +235,7 @@ class PaymentController extends Controller
                 'status' => $newStatus,
                 'payment' => $payment->fresh(),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['message' => 'Verification failed: ' . $e->getMessage()], 500);
         }
     }

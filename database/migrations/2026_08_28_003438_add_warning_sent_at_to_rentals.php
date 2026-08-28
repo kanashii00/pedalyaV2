@@ -16,14 +16,16 @@ return new class extends Migration
         // Backfill endTime for active/pending rentals created before the
         // countdown feature (endTime = startTime + selected duration) so the
         // server-side countdown and overdue checks work for existing rentals too.
-        DB::table('rentals')
-            ->whereNull('endTime')
-            ->whereNotNull('startTime')
-            ->whereIn('status', ['active', 'pending', 'overdue'])
-            ->whereNotNull('durationMinutes')
-            ->update([
-                'endTime' => DB::raw('DATE_ADD(startTime, INTERVAL durationMinutes MINUTE)'),
-            ]);
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::table('rentals')
+                ->whereNull('endTime')
+                ->whereNotNull('startTime')
+                ->whereIn('status', ['active', 'pending', 'overdue'])
+                ->whereNotNull('durationMinutes')
+                ->update([
+                    'endTime' => DB::raw('DATE_ADD(startTime, INTERVAL durationMinutes MINUTE)'),
+                ]);
+        }
     }
 
     public function down(): void

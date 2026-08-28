@@ -14,7 +14,9 @@ return new class extends Migration
             $table->timestamp('overdueAt')->nullable()->after('isOverdue');
         });
 
-        DB::statement('ALTER TABLE rentals MODIFY status ENUM("active","pending","completed","cancelled","overdue") NOT NULL DEFAULT "pending"');
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE rentals MODIFY status ENUM("active","pending","completed","cancelled","overdue") NOT NULL DEFAULT "pending"');
+        }
     }
 
     public function down(): void
@@ -23,6 +25,8 @@ return new class extends Migration
             $table->dropColumn(['isOverdue', 'overdueAt']);
         });
 
-        DB::statement('ALTER TABLE rentals MODIFY status ENUM("active","pending","completed","cancelled") NOT NULL DEFAULT "pending"');
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE rentals MODIFY status ENUM("active","pending","completed","cancelled") NOT NULL DEFAULT "pending"');
+        }
     }
 };

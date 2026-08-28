@@ -24,6 +24,19 @@ jobs:
           java-version: 17
           distribution: zulu
 
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, sqlite3, pdo_sqlite
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run tests with coverage
+        run: php artisan test --coverage-clover=coverage.xml
+
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:

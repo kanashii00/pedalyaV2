@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('status', ['active', 'pending', 'completed', 'cancelled'])->default('pending');
             $table->timestamp('startTime')->nullable();
             $table->timestamp('endTime')->nullable();
+            $table->timestamp('expectedEndTime')->nullable();
             $table->json('startLocation')->nullable();
             $table->json('endLocation')->nullable();
             $table->decimal('ratePerHour', 8, 2);
