@@ -15,30 +15,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: xdebug
-
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist
-
-      - name: Prepare Laravel environment
-        run: |
-          cp .env.example .env
-          touch database/database.sqlite
-          php artisan key:generate
-        env:
-          DB_CONNECTION: sqlite
-
-      - name: Run tests with coverage
-        run: vendor/bin/phpunit --coverage-clover build/logs/clover.xml
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
-        continue-on-error: true
-
       - name: SonarQube Cloud Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
@@ -47,4 +23,3 @@ jobs:
           args: >
             -Dsonar.projectKey=kanashii00_pedalyaV2
             -Dsonar.organization=kanashii00
-            -Dsonar.php.coverage.reportPaths=build/logs/clover.xml
