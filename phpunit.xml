@@ -4,6 +4,11 @@
          cacheDirectory=".phpunit.cache"
          processIsolation="false"
          stopOnFailure="false">
+    <source>
+        <include>
+            <directory suffix=".php">app</directory>
+        </include>
+    </source>
     <testsuites>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
