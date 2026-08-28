@@ -24,6 +24,13 @@ class PaymentWebhookController extends Controller
         $signature = $request->header('Paymongo-Signature');
         $payload = $request->getContent();
 
+        if (empty($signature) || !is_string($signature)) {
+            Log::warning('PayMongo webhook signature missing', [
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['message' => 'Invalid signature'], 401);
+        }
+
         if (!$this->payMongoService->verifyWebhookSignature($payload, $signature)) {
             Log::warning('PayMongo webhook signature verification failed', [
                 'ip' => $request->ip(),

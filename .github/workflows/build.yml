@@ -34,10 +34,19 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Setup environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+
       - name: Run tests with coverage
         env:
           XDEBUG_MODE: coverage
-        run: php artisan test --coverage-clover=coverage.xml --coverage-filter=app
+        run: |
+          php artisan test --coverage --coverage-clover=coverage.xml --coverage-filter=app
+          echo "=== Verifying coverage report was generated ==="
+          test -s coverage.xml && echo "coverage.xml generated OK" || { echo "ERROR: coverage.xml was not generated"; exit 1; }
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
@@ -54,3 +63,4 @@ jobs:
           args: >
             -Dsonar.projectKey=kanashii00_pedalyaV2
             -Dsonar.organization=kanashii00
+            -Dsonar.php.coverage.reportPaths=coverage.xml

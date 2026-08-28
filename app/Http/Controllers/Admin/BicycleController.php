@@ -11,6 +11,7 @@ use App\Services\MaintenanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 
 class BicycleController extends Controller
 {
@@ -214,7 +215,7 @@ class BicycleController extends Controller
         return back()->with('success', "Remote {$validated['action']} command sent to device.");
     }
 
-    public function telemetry(int $id): Response
+    public function telemetry(int $id): JsonResponse
     {
         $bicycle = Bicycle::findOrFail($id);
 

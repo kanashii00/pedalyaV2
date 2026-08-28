@@ -217,7 +217,7 @@ public function acknowledgeDeviceCommand(
     $bicycle->update([
         'lockStatus' => 'locked',
         'status' => $bicycle->currentRentalId
-            ? Bicycle::STATUS_LOCKED
+            ? Bicycle::STATUS_RENTED
             : Bicycle::STATUS_AVAILABLE,
         'lastLockAction' => Carbon::now(),
         'lockActionBy' => $command->issuedBy,

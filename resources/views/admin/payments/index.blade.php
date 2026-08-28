@@ -152,29 +152,23 @@
                             @endif
                         </td>
                         <td>
-                            <span class="payment-method-icon" style="background: {{ match($payment->paymentMethod) {
-                                'gcash' => '#007AFF22',
-                                'maya' => '#00B8E622',
-                                'grabpay' => '#00AA1322',
-                                'card' => '#6366F122',
-                                'online_banking' => '#0EA5E922',
-                                default => 'var(--surface-3)'
-                            }}; color: {{ match($payment->paymentMethod) {
-                                'gcash' => '#007AFF',
-                                'maya' => '#00B8E6',
-                                'grabpay' => '#00AA13',
-                                'card' => '#6366F1',
-                                'online_banking' => '#0EA5E9',
-                                default => 'var(--text-3)'
-                            }}; }}">
-                                <i class="bi {{ match($payment->paymentMethod) {
-                                    'gcash' => 'bi-phone',
-                                    'maya' => 'bi-phone',
-                                    'grabpay' => 'bi-bag',
-                                    'card' => 'bi-credit-card',
-                                    'online_banking' => 'bi-bank',
+                            @php
+                                $pmBg = match($payment->paymentMethod) {
+                                    'gcash' => '#007AFF22', 'maya' => '#00B8E622', 'grabpay' => '#00AA1322',
+                                    'card' => '#6366F122', 'online_banking' => '#0EA5E922', default => 'var(--surface-3)'
+                                };
+                                $pmColor = match($payment->paymentMethod) {
+                                    'gcash' => '#007AFF', 'maya' => '#00B8E6', 'grabpay' => '#00AA13',
+                                    'card' => '#6366F1', 'online_banking' => '#0EA5E9', default => 'var(--text-3)'
+                                };
+                                $pmIcon = match($payment->paymentMethod) {
+                                    'gcash' => 'bi-phone', 'maya' => 'bi-phone', 'grabpay' => 'bi-bag',
+                                    'card' => 'bi-credit-card', 'online_banking' => 'bi-bank',
                                     default => 'bi-currency-exchange'
-                                }} }}"></i>
+                                };
+                            @endphp
+                            <span class="payment-method-icon" style="background: {{ $pmBg }}; color: {{ $pmColor }};">
+                                <i class="bi {{ $pmIcon }}"></i>
                             </span>
                             <span class="ms-2 fw-medium">{{ $payment->getPaymentMethodLabel() }}</span>
                         </td>

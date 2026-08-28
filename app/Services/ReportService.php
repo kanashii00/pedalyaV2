@@ -26,10 +26,11 @@ class ReportService
 
         $rentals = Rental::selectRaw('
             SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_count,
-            SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today_total,
             SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_count,
             SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as reserved_count
         ')->first();
+
+        $todayTotal = Rental::whereDate('created_at', $today)->count();
 
         $returnedToday = Rental::where('status', 'completed')
             ->whereDate('updated_at', $today)
@@ -97,10 +98,14 @@ class ReportService
         }
 
         /* Peak rental hours (last 7 days) */
-        $hourCounts = Rental::where('created_at', '>=', Carbon::now()->subDays(7))
-            ->selectRaw('HOUR(created_at) as hr, COUNT(*) as c')
-            ->groupBy('hr')
-            ->pluck('c', 'hr');
+        $recentRentals = Rental::where('created_at', '>=', Carbon::now()->subDays(7))
+            ->get(['created_at']);
+
+        $hourCounts = [];
+        foreach ($recentRentals as $recentRental) {
+            $hour = (int) $recentRental->created_at->format('H');
+            $hourCounts[$hour] = ($hourCounts[$hour] ?? 0) + 1;
+        }
         $peakLabels = [];
         $peakData = [];
         for ($h = 0; $h < 24; $h++) {
@@ -144,7 +149,7 @@ class ReportService
             ],
             'rentals' => [
                 'active' => (int) ($rentals->active_count ?? 0),
-                'todayTotal' => (int) ($rentals->today_total ?? 0),
+                'todayTotal' => (int) $todayTotal,
                 'totalCompleted' => (int) ($rentals->completed_count ?? 0),
                 'reserved' => (int) ($rentals->reserved_count ?? 0),
                 'returnedToday' => $returnedToday,
