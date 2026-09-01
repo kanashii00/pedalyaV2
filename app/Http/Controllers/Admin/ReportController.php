@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
+    private const DATE_TIME_FORMAT = 'M d, Y h:i A';
+
     public function __construct(
         protected ReportService $reportService
     ) {}
@@ -118,7 +120,7 @@ class ReportController extends Controller
 
             if ($withSpreadsheetTitle) {
                 fputcsv($out, ['Pedalya - '.ucfirst($type).' Report']);
-                fputcsv($out, ['Generated: '.now()->format('M d, Y h:i A').' | Report ID: '.$report['reportId']]);
+                fputcsv($out, ['Generated: '.now()->format(self::DATE_TIME_FORMAT).' | Report ID: '.$report['reportId']]);
                 fputcsv($out, []);
             }
 
@@ -170,52 +172,80 @@ class ReportController extends Controller
 
     private function tableData(string $type, array $report): array
     {
-        $rows = [];
+        return match ($type) {
+            'revenue' => $this->revenueTable($report),
+            'incident' => $this->incidentTable($report),
+            default => $this->rentalTable($report),
+        };
+    }
 
-        if ($type === 'revenue') {
-            $headers = ['Period', 'Rentals', 'Total Revenue', 'Average Revenue', 'Duration (min)'];
-            foreach ($report['data'] as $row) {
-                $rows[] = [
-                    $row->period,
-                    (int) $row->total_rentals,
-                    (float) $row->total_revenue,
-                    round((float) $row->avg_revenue, 2),
-                    (int) $row->total_duration_minutes,
-                ];
-            }
-        } elseif ($type === 'incident') {
-            $headers = ['ID', 'Type', 'Severity', 'Bicycle', 'Description', 'Location', 'Status', 'Acknowledged', 'Timestamp'];
-            foreach ($report['data'] as $accident) {
-                $loc = is_array($accident->gpsLocation) ? $accident->gpsLocation : [];
-                $rows[] = [
-                    $accident->id,
-                    $accident->type,
-                    $accident->severity,
-                    $accident->bicycle?->name ?? $accident->bicycleId,
-                    $accident->description,
-                    isset($loc['lat'], $loc['lng']) ? $loc['lat'].', '.$loc['lng'] : '—',
-                    $accident->status,
-                    $accident->acknowledged ? 'Yes' : 'No',
-                    $accident->created_at?->format('M d, Y h:i A'),
-                ];
-            }
-        } else {
-            $headers = ['Rental ID', 'Rider', 'Bicycle', 'Start', 'End', 'Duration (min)', 'Fee', 'Status', 'Payment'];
-            foreach ($report['data'] as $rental) {
-                $rows[] = [
-                    $rental->rentalId,
-                    $rental->rider?->name ?? $rental->riderName,
-                    $rental->bicycle?->name ?? $rental->bicycleName,
-                    $rental->startTime?->format('M d, Y h:i A'),
-                    $rental->endTime?->format('M d, Y h:i A'),
-                    $rental->durationMinutes ?? 0,
-                    (float) $rental->totalFee,
-                    $rental->status,
-                    $rental->paymentStatus,
-                ];
-            }
+    private function revenueTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $row) {
+            $rows[] = [
+                $row->period,
+                (int) $row->total_rentals,
+                (float) $row->total_revenue,
+                round((float) $row->avg_revenue, 2),
+                (int) $row->total_duration_minutes,
+            ];
         }
 
-        return [$headers, $rows];
+        return [['Period', 'Rentals', 'Total Revenue', 'Average Revenue', 'Duration (min)'], $rows];
+    }
+
+    private function incidentTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $accident) {
+            $rows[] = [
+                $accident->id,
+                $accident->type,
+                $accident->severity,
+                $accident->bicycle?->name ?? $accident->bicycleId,
+                $accident->description,
+                $this->locationLabel($accident->gpsLocation),
+                $accident->status,
+                $accident->acknowledged ? 'Yes' : 'No',
+                $this->formatTimestamp($accident->created_at),
+            ];
+        }
+
+        return [['ID', 'Type', 'Severity', 'Bicycle', 'Description', 'Location', 'Status', 'Acknowledged', 'Timestamp'], $rows];
+    }
+
+    private function rentalTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $rental) {
+            $rows[] = [
+                $rental->rentalId,
+                $rental->rider?->name ?? $rental->riderName,
+                $rental->bicycle?->name ?? $rental->bicycleName,
+                $this->formatTimestamp($rental->startTime),
+                $this->formatTimestamp($rental->endTime),
+                $rental->durationMinutes ?? 0,
+                (float) $rental->totalFee,
+                $rental->status,
+                $rental->paymentStatus,
+            ];
+        }
+
+        return [['Rental ID', 'Rider', 'Bicycle', 'Start', 'End', 'Duration (min)', 'Fee', 'Status', 'Payment'], $rows];
+    }
+
+    private function locationLabel(mixed $gpsLocation): string
+    {
+        if (!is_array($gpsLocation) || !isset($gpsLocation['lat'], $gpsLocation['lng'])) {
+            return '—';
+        }
+
+        return $gpsLocation['lat'].', '.$gpsLocation['lng'];
+    }
+
+    private function formatTimestamp(?\Illuminate\Support\Carbon $value): ?string
+    {
+        return $value?->format(self::DATE_TIME_FORMAT);
     }
 }

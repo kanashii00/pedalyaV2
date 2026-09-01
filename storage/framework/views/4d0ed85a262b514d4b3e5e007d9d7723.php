@@ -14,6 +14,165 @@
         width: 100%;
         accent-color: var(--primary, #2563eb);
     }
+    .shape-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .shape-btn {
+        flex: 1 1 31%;
+        min-width: 120px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 10px;
+        border-radius: 10px;
+        background: var(--surface, #fff);
+        border: 1.5px solid var(--border, rgba(0,0,0,0.1));
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-2, #444);
+        transition: all .15s;
+        text-align: center;
+    }
+    .shape-btn:hover { border-color: var(--primary, #2563eb); color: var(--primary); }
+    .shape-btn.active {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    }
+    .shape-btn .shape-mini {
+        width: 18px;
+        height: 18px;
+        display: inline-block;
+        border: 2px solid currentColor;
+        flex-shrink: 0;
+    }
+    .shape-btn.active .shape-mini { color: #fff; }
+    .shape-mini.circle { border-radius: 50%; }
+    .shape-mini.oval-h { border-radius: 50%; width: 20px; height: 14px; }
+    .shape-mini.oval-v { border-radius: 50%; width: 14px; height: 20px; }
+    .shape-mini.rectangle { border-radius: 2px; }
+    .shape-mini.polygon {
+        width: 16px; height: 18px;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        background: currentColor;
+        border: none;
+    }
+    .control-group {
+        padding: 14px;
+        border: 1px solid var(--border, rgba(0,0,0,0.1));
+        border-radius: 12px;
+        margin-bottom: 16px;
+        background: var(--surface-soft, rgba(0,0,0,0.02));
+    }
+    .control-group-title {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted, #888);
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .polygon-hint {
+        font-size: 0.78rem;
+        color: var(--muted, #888);
+        margin-top: 8px;
+    }
+    .vertex-count {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--primary, #2563eb);
+    }
+    .draw-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .draw-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 9px;
+        border: 1.5px solid var(--border, rgba(0,0,0,0.1));
+        background: var(--surface, #fff);
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-2, #444);
+        cursor: pointer;
+        transition: all .15s;
+    }
+    .draw-btn:hover:not(:disabled) { border-color: var(--primary, #2563eb); color: var(--primary); }
+    .draw-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .draw-btn.primary {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: #fff;
+        border-color: transparent;
+    }
+    .draw-btn.primary:hover:not(:disabled) { color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+    .draw-btn.danger { color: #e74c3c; }
+    .draw-btn.danger:hover:not(:disabled) { border-color: #e74c3c; color: #e74c3c; }
+    .draw-btn.warning { color: #f39c12; }
+    .draw-btn.warning:hover:not(:disabled) { border-color: #f39c12; color: #f39c12; }
+    .draw-status {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.78rem;
+        color: var(--muted, #888);
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: var(--surface, rgba(0,0,0,0.03));
+        border: 1px dashed var(--border, rgba(0,0,0,0.1));
+    }
+    .draw-status .pulse {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: #27ae60;
+        animation: pulse-dot 1.4s infinite;
+        flex-shrink: 0;
+    }
+    .draw-status.counting .pulse { background: #7c3aed; }
+    .draw-status.closed .pulse { background: #27ae60; animation: none; }
+    @keyframes pulse-dot {
+        0% { box-shadow: 0 0 0 0 rgba(39,174,96,.5); }
+        70% { box-shadow: 0 0 0 6px rgba(39,174,96,0); }
+        100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
+    }
+    .vertex-chip {
+        color: #7c3aed;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .vertex-marker {
+        width: 24px; height: 24px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: #7c3aed;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,.35);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        transition: transform .12s ease, background .12s ease;
+    }
+    .vertex-marker.selected {
+        background: #e74c3c;
+        transform: rotate(-45deg) scale(1.25);
+        cursor: pointer;
+    }
+    .vertex-marker span {
+        transform: rotate(45deg);
+    }
     .breach-item {
         border-left: 3px solid var(--gray-300);
         padding: 10px 12px;
@@ -101,13 +260,19 @@
 
 <?php $__env->startSection('page-header'); ?>
     <h1>Geofence Management</h1>
-    <p>Configure the circular riding boundary — click the map or drag the marker to reposition</p>
+    <p>Configure the riding boundary — choose a shape, then click the map or drag the marker to reposition</p>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('actions'); ?>
     <span id="saveStatus" class="badge-admin badge-admin--success me-2" style="display:none;"></span>
+    <button class="btn-admin btn-admin--secondary me-2" id="resetShapeBtn" title="Reset the current shape to a default sized shape">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Shape
+    </button>
+    <button class="btn-admin btn-admin--secondary me-2 d-none" id="undoPointBtn" title="Remove the last drawn polygon point">
+        <i class="bi bi-arrow-return-left me-1"></i>Undo Point
+    </button>
     <button class="btn-admin btn-admin--primary" id="saveGeofenceBtn">
-        <i class="bi bi-save me-1"></i>Save Geofence Location
+        <i class="bi bi-save me-1"></i>Save Geofence
     </button>
 <?php $__env->stopSection(); ?>
 
@@ -169,6 +334,7 @@
                     <div><span class="line" style="background:#f39c12;"></span>Warning Zone</div>
                     <div><span class="line" style="background:#e74c3c;"></span>Breach Zone</div>
                     <div><span class="line" style="background:#2c3e50;"></span>Center (drag or click map to move)</div>
+                    <div id="polygonHint" style="display:none; color:#7c3aed;"><i class="bi bi-cursor-fill me-1"></i>Polygon mode: click map to add points</div>
                 </div>
             </div>
          <?php echo $__env->renderComponent(); ?>
@@ -275,7 +441,30 @@
 <?php endif; ?>
 <?php $component->withAttributes(['title' => 'Boundary Controls']); ?>
             <div class="admin-form">
-                <div class="mb-4">
+                <div class="control-group">
+                    <div class="control-group-title"><i class="bi bi-shapes me-1"></i>Geofence Shape</div>
+                    <div class="shape-picker">
+                        <button type="button" class="shape-btn active" data-shape="circle">
+                            <span class="shape-mini circle"></span> Circle
+                        </button>
+                        <button type="button" class="shape-btn" data-shape="oval_h">
+                            <span class="shape-mini oval-h"></span> Oval (H)
+                        </button>
+                        <button type="button" class="shape-btn" data-shape="oval_v">
+                            <span class="shape-mini oval-v"></span> Oval (V)
+                        </button>
+                        <button type="button" class="shape-btn" data-shape="rectangle">
+                            <span class="shape-mini rectangle"></span> Rectangle
+                        </button>
+                        <button type="button" class="shape-btn" data-shape="polygon">
+                            <span class="shape-mini polygon"></span> Polygon
+                        </button>
+                    </div>
+                </div>
+
+                
+                <div class="control-group" id="circleControls">
+                    <div class="control-group-title">Radius</div>
                     <label class="form-label d-flex justify-content-between">
                         <span>Radius</span>
                         <strong id="radiusValue"><?php echo e(number_format($config['radius'], 0)); ?> m</strong>
@@ -287,14 +476,84 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label d-flex justify-content-between">
-                        <span>Warning Threshold (inside boundary)</span>
-                        <strong id="thresholdValue"><?php echo e(number_format($warningThreshold, 0)); ?> m</strong>
-                    </label>
-                    <input type="range" class="radius-slider" id="thresholdSlider" min="10" max="500" step="5"
-                           value="<?php echo e($warningThreshold); ?>">
-                    <div class="form-text">Bicycles within this distance of the boundary are flagged as approaching.</div>
+                
+                <div class="control-group d-none" id="dimensionControls">
+                    <div class="control-group-title" id="dimensionTitle">Dimensions</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Width (m)</label>
+                            <input type="number" class="form-control form-control-sm" id="widthInput"
+                                   min="10" max="5000" value="<?php echo e(number_format($config['width'] ?? $config['radius'], 0)); ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Height (m)</label>
+                            <input type="number" class="form-control form-control-sm" id="heightInput"
+                                   min="10" max="5000" value="<?php echo e(number_format($config['height'] ?? $config['radius'], 0)); ?>">
+                        </div>
+                        <div class="col-12 d-none" id="rotationWrap">
+                            <label class="form-label">Rotation / Angle (°)</label>
+                            <input type="range" class="radius-slider" id="rotationSlider" min="0" max="360" step="1"
+                                   value="<?php echo e(number_format($config['rotation'] ?? 0, 0)); ?>">
+                            <div class="d-flex justify-content-between">
+                                <span id="rotationValue" class="text-muted" style="font-size:0.78rem;">0°</span>
+                                <span class="text-muted" style="font-size:0.78rem;">Clockwise from north</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="control-group d-none" id="polygonControls">
+                    <div class="control-group-title"><i class="bi bi-pencil-fill me-1"></i>Draw Boundary</div>
+                    <p class="polygon-hint mb-1">
+                        Click on the map to add points and trace your custom riding perimeter.
+                        Finish the boundary to enclose the area, then drag vertices or double-click an
+                        edge to fine-tune.
+                    </p>
+
+                    <div class="draw-status counting" id="drawStatus">
+                        <span class="pulse"></span>
+                        <span id="drawStatusText">Click the map to add boundary points…</span>
+                    </div>
+
+                    <div class="draw-toolbar">
+                        <button type="button" class="draw-btn primary" id="finishBoundaryBtn" disabled>
+                            <i class="bi bi-patch-check me-1"></i>Finish / Close Boundary
+                        </button>
+                        <button type="button" class="draw-btn" id="undoPointBtn2" disabled>
+                            <i class="bi bi-arrow-return-left me-1"></i>Undo Point
+                        </button>
+                        <button type="button" class="draw-btn warning" id="removePointBtn" disabled title="Remove the currently selected vertex">
+                            <i class="bi bi-x-lg me-1"></i>Remove Selected Point
+                        </button>
+                        <button type="button" class="draw-btn danger" id="clearBoundaryBtn" disabled>
+                            <i class="bi bi-trash me-1"></i>Clear Boundary
+                        </button>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <span class="vertex-count"><span id="vertexCount">0</span> boundary point(s)</span>
+                        <span class="vertex-chip"><i class="bi bi-dot me-1"></i>drag a point to move it</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-group-title">Warning & Transport Alerts</div>
+                    <div class="mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Warning Threshold (inside boundary)</span>
+                            <strong id="thresholdValue"><?php echo e(number_format($warningThreshold, 0)); ?> m</strong>
+                        </label>
+                        <input type="range" class="radius-slider" id="thresholdSlider" min="10" max="500" step="5"
+                               value="<?php echo e($warningThreshold); ?>">
+                        <div class="form-text">Bicycles within this distance of the boundary are flagged as approaching.</div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="alertToggle"
+                               <?php echo e($config['alertEnabled'] ? 'checked' : ''); ?>>
+                        <label class="form-check-label" for="alertToggle">Geofence alerts enabled (breach notifications & theft detection)</label>
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -327,12 +586,6 @@
                                value="<?php echo e(number_format($config['centerLng'], 6)); ?>" readonly>
                     </div>
                     <div class="form-text">Updated automatically when you click the map or drag the marker.</div>
-                </div>
-
-                <div class="form-check form-switch mb-4">
-                    <input class="form-check-input" type="checkbox" id="alertToggle"
-                           <?php echo e($config['alertEnabled'] ? 'checked' : ''); ?>>
-                    <label class="form-check-label" for="alertToggle">Geofence alerts enabled (breach notifications & theft detection)</label>
                 </div>
             </div>
          <?php echo $__env->renderComponent(); ?>
@@ -466,10 +719,102 @@
     var el = document.getElementById('geofenceMap');
     if (!el || typeof maplibregl === 'undefined') return;
 
+    var M_PER_DEG_LAT = 111320;
+
+    // ---- State ----
     var center = [config.centerLng, config.centerLat];
-    var radius = config.radius;
+    var shapeType = config.shapeType || 'circle';
+    var radius = config.radius || 500;
+    var width = config.width || radius || 800;
+    var height = config.height || radius || 500;
+    var rotation = config.rotation || 0;
+    var points = (config.points && config.points.length) ? config.points.slice() : null; // [{lat,lng}]
+    var polygonClosed = (shapeType === 'polygon' && points && points.length >= 3);
+    var selectedVertex = null; // index of currently selected polygon vertex
     var warningThreshold = initialThreshold;
 
+    // ---- Draw Boundary toolbar refs ----
+    var drawStatus = document.getElementById('drawStatus');
+    var drawStatusText = document.getElementById('drawStatusText');
+    var finishBoundaryBtn = document.getElementById('finishBoundaryBtn');
+    var clearBoundaryBtn = document.getElementById('clearBoundaryBtn');
+    var removePointBtn = document.getElementById('removePointBtn');
+    var undoPointBtn2 = document.getElementById('undoPointBtn2');
+
+    // ---- Local metre helpers (mirror the server) ----
+    function centerLatRad() { return center[1] * Math.PI / 180; }
+    function metersToLatLng(x, y) {
+        var latRad = centerLatRad();
+        return {
+            lng: center[0] + (x / (M_PER_DEG_LAT * Math.cos(latRad))),
+            lat: center[1] + (y / M_PER_DEG_LAT)
+        };
+    }
+
+    // ---- Shape -> boundary vertices (list of [lng, lat]) ----
+    function boundaryVertices() {
+        switch (shapeType) {
+            case 'rectangle': {
+                var a = width / 2, b = height / 2;
+                var th = rotation * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th);
+                var corners = [[a, b], [-a, b], [-a, -b], [a, -b]];
+                return corners.map(function (c) {
+                    var x = c[0] * cos - c[1] * sin;
+                    var y = c[0] * sin + c[1] * cos;
+                    var p = metersToLatLng(x, y);
+                    return [p.lng, p.lat];
+                });
+            }
+            case 'oval_h':
+            case 'oval_v': {
+                var a2 = Math.max(1, width / 2), b2 = Math.max(1, height / 2);
+                return sampleEllipse(a2, b2);
+            }
+            case 'polygon':
+                if (points && points.length) {
+                    return points.map(function (p) { return [p.lng, p.lat]; });
+                }
+                return sampleCircle();
+            case 'circle':
+            default:
+                return sampleCircle();
+        }
+    }
+
+    function sampleCircle() {
+        var coords = [];
+        var steps = 120;
+        for (var i = 0; i < steps; i++) {
+            var rad = (i / steps) * 2 * Math.PI;
+            coords.push(vert(Math.cos(rad) * radius, Math.sin(rad) * radius));
+        }
+        return coords;
+    }
+    function sampleEllipse(a, b) {
+        var coords = [];
+        var steps = 120;
+        for (var i = 0; i < steps; i++) {
+            var rad = (i / steps) * 2 * Math.PI;
+            coords.push(vert(Math.cos(rad) * a, Math.sin(rad) * b));
+        }
+        return coords;
+    }
+    function vert(x, y) {
+        var p = metersToLatLng(x, y);
+        return [p.lng, p.lat];
+    }
+
+    function polygonFeature(verts) {
+        var coords = verts.slice();
+        if (coords.length) coords.push(coords[0]);
+        return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
+    }
+
+    function polyLineFeature(verts) {
+        return { type: 'Feature', geometry: { type: 'LineString', coordinates: verts.slice() } };
+    }
+
+    // ---- Map init ----
     var map = new maplibregl.Map({
         container: el,
         style: 'https://tiles.openfreemap.org/styles/liberty',
@@ -483,113 +828,396 @@
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.addControl(new maplibregl.FullscreenControl(), 'top-right');
 
-    function circlePolygon(lng, lat, radiusMeters, segments) {
-        segments = segments || 96;
-        var coords = [];
-        var earth = 6371000;
-        var latRad = lat * Math.PI / 180;
-        var lngScale = earth * Math.cos(latRad);
-        var latScale = earth;
-        for (var i = 0; i <= segments; i++) {
-            var rad = (i / segments) * 2 * Math.PI;
-            var dLng = (Math.sin(rad) * radiusMeters) / lngScale;
-            var dLat = (Math.cos(rad) * radiusMeters) / latScale;
-            coords.push([lng + dLng * (180 / Math.PI), lat + dLat * (180 / Math.PI)]);
-        }
-        coords.push(coords[0]);
-        return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
-    }
-
     var centerMarker = new maplibregl.Marker({ color: '#2c3e50', draggable: true })
         .setLngLat(center)
         .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML('<strong>Geofence Center</strong><br><small>Drag to reposition</small>'))
         .addTo(map);
 
-    function renderCircle() {
+    var vertexMarkers = [];
+
+    // Warning-zone: an inset copy of the shape shrunk towards the center by the threshold distance.
+    function warningVertices() {
+        if (warningThreshold <= 0) return [];
+        var base = boundaryVertices();
+        var threshold = Math.min(warningThreshold, Math.max(width, height, radius) * 0.5);
+        var dlng = threshold / (M_PER_DEG_LAT * Math.cos(centerLatRad()));
+        var dlat = threshold / M_PER_DEG_LAT;
+        return base.map(function (v) {
+            var dx = v[0] - center[0];
+            var dy = v[1] - center[1];
+            var pd = normalize(dx, dy);
+            return [v[0] - pd.x * dlng, v[1] - pd.y * dlat];
+        });
+    }
+    function normalize(x, y) {
+        var m = Math.sqrt(x * x + y * y) || 1;
+        return { x: x / m, y: y / m };
+    }
+
+    function renderShape() {
+        var isClosedPolygon = shapeType === 'polygon' && polygonClosed;
+        var data = polygonFeature(boundaryVertices());
+
         if (!map.getSource('geofence')) {
-            map.addSource('geofence', { type: 'geojson', data: circlePolygon(center[0], center[1], radius) });
+            map.addSource('geofence', { type: 'geojson', data: data });
         } else {
-            map.getSource('geofence').setData(circlePolygon(center[0], center[1], radius));
+            map.getSource('geofence').setData(data);
+        }
+        if (!map.getLayer('geofence-fill')) {
+            map.addLayer({ id: 'geofence-fill', type: 'fill', source: 'geofence', paint: { 'fill-color': '#27ae60', 'fill-opacity': 0.18 } });
+            map.addLayer({ id: 'geofence-outline', type: 'line', source: 'geofence', paint: { 'line-color': '#1e8449', 'line-width': 3, 'line-dasharray': [0, 2, 2, 2] } });
         }
 
-        if (!map.getLayer('geofence-fill')) {
+        // For an open (still drawing) polygon we show a bold guide line instead of a solid fill.
+        if (map.getLayer('geofence-outline')) {
+            map.setPaintProperty('geofence-outline', 'line-color', isClosedPolygon ? '#1e8449' : '#7c3aed');
+            map.setPaintProperty('geofence-outline', 'line-width', isClosedPolygon ? 3 : 4);
+            map.setPaintProperty('geofence-outline', 'line-dasharray', isClosedPolygon ? [0, 2, 2, 2] : [2, 1]);
+        }
+        if (map.getLayer('geofence-fill')) {
+            map.setLayoutProperty('geofence-fill', 'visibility', isClosedPolygon ? 'visible' : 'none');
+        }
+
+        // Open drawing guide: line through the points + closing dashed segment to completion.
+        renderDrawGuide(isClosedPolygon);
+
+        var wVerts = warningVertices();
+        var wData = polygonFeature(wVerts);
+        if (!map.getSource('warning-zone')) {
+            map.addSource('warning-zone', { type: 'geojson', data: wData });
+        } else {
+            map.getSource('warning-zone').setData(wData);
+        }
+        if (!map.getLayer('warning-zone-fill')) {
+            map.addLayer({ id: 'warning-zone-fill', type: 'fill', source: 'warning-zone', paint: { 'fill-color': '#f39c12', 'fill-opacity': 0.06 } });
+        }
+        if (map.getLayer('warning-zone-fill')) {
+            map.setLayoutProperty('warning-zone-fill', 'visibility', isClosedPolygon ? 'visible' : 'none');
+        }
+
+        renderVertices();
+        updateDrawUI();
+    }
+
+    function renderDrawGuide(closed) {
+        if (shapeType !== 'polygon' || !points || points.length < 2) {
+            if (map.getLayer('draw-guide')) map.setLayoutProperty('draw-guide', 'visibility', 'none');
+            return;
+        }
+        var coords = points.map(function (p) { return [p.lng, p.lat]; });
+        if (!closed) coords.push(coords[0]); // show the closing dashed edge while drawing
+        if (!map.getSource('draw-guide')) {
+            map.addSource('draw-guide', { type: 'geojson', data: polyLineFeature(coords) });
+        } else {
+            map.getSource('draw-guide').setData(polyLineFeature(coords));
+        }
+        if (!map.getLayer('draw-guide')) {
             map.addLayer({
-                id: 'geofence-fill',
-                type: 'fill',
-                source: 'geofence',
-                paint: { 'fill-color': '#27ae60', 'fill-opacity': 0.18 }
-            });
-            map.addLayer({
-                id: 'geofence-outline',
+                id: 'draw-guide',
                 type: 'line',
-                source: 'geofence',
+                source: 'draw-guide',
                 paint: {
-                    'line-color': '#1e8449',
-                    'line-width': 3,
-                    'line-dasharray': [0, 2, 2, 2]
+                    'line-color': '#7c3aed',
+                    'line-width': 2,
+                    'line-dasharray': [2, 1],
+                    'line-opacity': 0.7
                 }
             });
         }
+        map.setLayoutProperty('draw-guide', 'visibility', (closed || points.length < 3) ? 'none' : 'visible');
+    }
 
-        if (!map.getSource('warning-zone')) {
-            map.addSource('warning-zone', { type: 'geojson', data: circlePolygon(center[0], center[1], Math.max(25, radius - warningThreshold)) });
-        } else {
-            map.getSource('warning-zone').setData(circlePolygon(center[0], center[1], Math.max(25, radius - warningThreshold)));
-        }
-        if (!map.getLayer('warning-zone-fill')) {
-            map.addLayer({
-                id: 'warning-zone-fill',
-                type: 'fill',
-                source: 'warning-zone',
-                paint: { 'fill-color': '#f39c12', 'fill-opacity': 0.06 }
+    function vertexElement(idx, isSel) {
+        var el = document.createElement('div');
+        el.className = 'vertex-marker' + (isSel ? ' selected' : '');
+        el.innerHTML = '<span>' + (idx + 1) + '</span>';
+        el.title = 'Vertex ' + (idx + 1) + ' — click to select';
+        el.addEventListener('click', function (e) { e.preventDefault(); });
+        return el;
+    }
+
+    function renderVertices() {
+        vertexMarkers.forEach(function (m) { m.remove(); });
+        vertexMarkers = [];
+        updateRemoveBtn();
+        if (shapeType !== 'polygon' || !points) return;
+        points.forEach(function (p, idx) {
+            var isSel = (idx === selectedVertex);
+            var m = new maplibregl.Marker({ element: vertexElement(idx, isSel), draggable: true })
+                .setLngLat([p.lng, p.lat])
+                .setPopup(new maplibregl.Popup({ offset: 20 }).setHTML('<strong>Vertex ' + (idx + 1) + '</strong><br><small>Drag to move · click to select</small>'))
+                .addTo(map);
+            m.getElement().addEventListener('click', function (e) {
+                e.stopPropagation();
+                selectedVertex = (selectedVertex === idx) ? null : idx;
+                renderVertices();
             });
+            m.on('dragend', function () {
+                var pos = m.getLngLat();
+                points[idx] = { lat: pos.lat, lng: pos.lng };
+                renderShape();
+            });
+            vertexMarkers.push(m);
+        });
+    }
+
+    function updateRemoveBtn() {
+        if (removePointBtn) removePointBtn.disabled = !(shapeType === 'polygon' && points && points.length > 0 && selectedVertex !== null);
+    }
+
+    function updateDrawUI() {
+        if (shapeType !== 'polygon') return;
+        var count = points ? points.length : 0;
+        document.getElementById('vertexCount').textContent = count;
+
+        finishBoundaryBtn.disabled = count < 3 || polygonClosed;
+        undoPointBtn2.disabled = count === 0 || polygonClosed;
+        clearBoundaryBtn.disabled = count === 0;
+        updateRemoveBtn();
+
+        drawStatus.classList.remove('counting', 'closed');
+        if (count === 0) {
+            drawStatus.classList.add('counting');
+            drawStatusText.textContent = 'Click the map to add boundary points…';
+        } else if (!polygonClosed) {
+            drawStatus.classList.add('counting');
+            drawStatusText.textContent = 'Placed ' + count + ' point(s). Click "Finish / Close Boundary" (or add ' + Math.max(0, 3 - count) + ' more) to enclose the area.';
+        } else {
+            drawStatus.classList.add('closed');
+            drawStatusText.textContent = 'Boundary closed with ' + count + ' points. Drag points or double-click an edge to edit.';
         }
     }
 
-    function moveCenter(lng, lat) {
-        center = [lng, lat];
-        centerMarker.setLngLat([lng, lat]);
-        renderCircle();
-        updateReadouts();
+    // ---- Shape UI wiring ----
+    function toggleMapInteractions() {
+        if (typeof map !== 'undefined' && map.doubleClickZoom) {
+            if (shapeType === 'polygon') map.doubleClickZoom.disable();
+            else map.doubleClickZoom.enable();
+        }
+    }
+    function showShapePanels() {
+        document.getElementById('circleControls').classList.toggle('d-none', shapeType !== 'circle');
+        document.getElementById('dimensionControls').classList.toggle('d-none', !(shapeType === 'oval_h' || shapeType === 'oval_v' || shapeType === 'rectangle'));
+        document.getElementById('polygonControls').classList.toggle('d-none', shapeType !== 'polygon');
+        document.getElementById('rotationWrap').classList.toggle('d-none', shapeType !== 'rectangle');
+        document.getElementById('polygonHint').style.display = shapeType === 'polygon' ? 'block' : 'none';
+        document.getElementById('undoPointBtn').classList.toggle('d-none', shapeType !== 'polygon');
+
+        var title = 'Dimensions';
+        if (shapeType === 'oval_h') title = 'Horizontal Oval (Width × Height)';
+        else if (shapeType === 'oval_v') title = 'Vertical Oval (Width × Height)';
+        else if (shapeType === 'rectangle') title = 'Rectangle (Width × Height × Rotation)';
+        document.getElementById('dimensionTitle').textContent = title;
+
+        document.querySelectorAll('.shape-btn').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-shape') === shapeType);
+        });
+
+        toggleMapInteractions();
+        if (shapeType === 'polygon') {
+            updateDrawUI();
+        }
     }
 
-    centerMarker.on('dragend', function () {
-        var pos = centerMarker.getLngLat();
-        moveCenter(pos.lng, pos.lat);
+    document.querySelectorAll('.shape-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var newShape = btn.getAttribute('data-shape');
+            if (newShape === shapeType) return;
+            shapeType = newShape;
+            if (shapeType === 'polygon') {
+                // Start a fresh manual draw if we don't already have a saved boundary.
+                if (!points) {
+                    points = [];
+                    polygonClosed = false;
+                    selectedVertex = null;
+                } else {
+                    polygonClosed = points.length >= 3;
+                }
+            } else {
+                points = null;
+                polygonClosed = false;
+                selectedVertex = null;
+            }
+            showShapePanels();
+            renderShape();
+            updateReadouts();
+        });
     });
 
-    map.on('click', function (e) {
-        moveCenter(e.lngLat.lng, e.lngLat.lat);
-    });
+    function selectShapeButtons() {
+        showShapePanels();
+    }
 
+    // ---- Controls ----
     var radiusSlider = document.getElementById('radiusSlider');
     var thresholdSlider = document.getElementById('thresholdSlider');
+    var widthInput = document.getElementById('widthInput');
+    var heightInput = document.getElementById('heightInput');
+    var rotationSlider = document.getElementById('rotationSlider');
+    var rotationValue = document.getElementById('rotationValue');
     var radiusValue = document.getElementById('radiusValue');
-    var thresholdValue = document.getElementById('thresholdValue');
 
     radiusSlider.addEventListener('input', function () {
         radius = parseInt(this.value, 10);
         radiusValue.textContent = numberFormat(radius) + ' m';
-        renderCircle();
+        renderShape();
+    });
+
+    widthInput.addEventListener('input', function () {
+        width = Math.max(10, parseInt(this.value, 10) || 10);
+        renderShape();
+    });
+    heightInput.addEventListener('input', function () {
+        height = Math.max(10, parseInt(this.value, 10) || 10);
+        renderShape();
+    });
+    rotationSlider.addEventListener('input', function () {
+        rotation = parseInt(this.value, 10);
+        rotationValue.textContent = rotation + '°';
+        renderShape();
     });
 
     thresholdSlider.addEventListener('input', function () {
         warningThreshold = parseInt(this.value, 10);
         thresholdValue.textContent = numberFormat(warningThreshold) + ' m';
-        renderCircle();
+        renderShape();
     });
 
     function numberFormat(n) {
         return n.toLocaleString('en-US');
     }
 
+    // ---- Center movement ----
+    centerMarker.on('dragend', function () {
+        var pos = centerMarker.getLngLat();
+        center = [pos.lng, pos.lat];
+        renderShape();
+        updateReadouts();
+    });
+
+    // Drawing / editing interactions on the map.
+    map.on('click', function (e) {
+        if (shapeType === 'polygon') {
+            // While the boundary is open (drawing), each click adds a point.
+            // Once closed, clicks are used to select/move points instead.
+            if (!polygonClosed) {
+                if (!points) points = [];
+                points.push({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+                if (points.length >= 3) selectedVertex = null;
+                renderShape();
+            }
+        } else {
+            center = [e.lngLat.lng, e.lngLat.lat];
+            centerMarker.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+            renderShape();
+            updateReadouts();
+        }
+    });
+
+    // Double-click a closed boundary edge to insert a new point there.
+    map.on('dblclick', function (e) {
+        if (shapeType === 'polygon' && polygonClosed && points && points.length >= 3) {
+            var idx = nearestEdgeIndex([e.lngLat.lng, e.lngLat.lat]);
+            if (idx >= 0) {
+                points.splice(idx, 0, { lat: e.lngLat.lat, lng: e.lngLat.lng });
+                polygonClosed = points.length >= 3;
+                renderShape();
+            }
+        }
+    });
+
+    // Find the boundary edge index whose midpoint is nearest a click, for point insertion.
+    function nearestEdgeIndex(mapLngLat) {
+        var best = -1, bestDist = Infinity;
+        for (var i = 0; i < points.length; i++) {
+            var a = points[i];
+            var b = points[(i + 1) % points.length];
+            var midLat = (a.lat + b.lat) / 2;
+            var midLng = (a.lng + b.lng) / 2;
+            var dy = (midLat - mapLngLat[1]) * M_PER_DEG_LAT;
+            var dx = (midLng - mapLngLat[0]) * (M_PER_DEG_LAT * Math.cos(centerLatRad()));
+            var d = Math.sqrt(dx * dx + dy * dy);
+            if (d < bestDist && d < Math.max(width, height, radius, 200)) {
+                bestDist = d;
+                best = i + 1;
+            }
+        }
+        return best;
+    }
+
+    function removeSelectedPoint() {
+        if (shapeType === 'polygon' && points && selectedVertex !== null && points.length > 0) {
+            points.splice(selectedVertex, 1);
+            if (points.length < 3) polygonClosed = false;
+            selectedVertex = null;
+            renderShape();
+        }
+    }
+    function undoPoint() {
+        if (shapeType === 'polygon' && points && points.length > 0 && !polygonClosed) {
+            points.pop();
+            selectedVertex = null;
+            renderShape();
+        }
+    }
+    function clearBoundary() {
+        if (shapeType === 'polygon') {
+            points = [];
+            polygonClosed = false;
+            selectedVertex = null;
+            renderShape();
+        }
+    }
+
+    // Draw Boundary toolbar actions.
+    if (finishBoundaryBtn) finishBoundaryBtn.addEventListener('click', function () {
+        if (points && points.length >= 3) {
+            polygonClosed = true;
+            selectedVertex = null;
+            renderShape();
+        }
+    });
+    if (undoPointBtn2) undoPointBtn2.addEventListener('click', undoPoint);
+    if (clearBoundaryBtn) clearBoundaryBtn.addEventListener('click', clearBoundary);
+    if (removePointBtn) removePointBtn.addEventListener('click', removeSelectedPoint);
+
+    // Header actions.
+    document.getElementById('undoPointBtn').addEventListener('click', undoPoint);
+
+    document.getElementById('resetShapeBtn').addEventListener('click', function () {
+        var base = shapeType;
+        if (base === 'polygon') {
+            clearBoundary();
+        } else if (base === 'circle') {
+            radius = 800;
+            radiusSlider.value = 800;
+            radiusValue.textContent = '800 m';
+            renderShape();
+        } else if (base === 'rectangle') {
+            width = 1600; height = 900; rotation = 0;
+            widthInput.value = 1600; heightInput.value = 900;
+            rotationSlider.value = 0; rotationValue.textContent = '0°';
+            renderShape();
+        } else { // ovals
+            width = 1600; height = 900;
+            widthInput.value = 1600; heightInput.value = 900;
+            renderShape();
+        }
+    });
+
     function updateReadouts() {
         document.getElementById('centerLatInput').value = center[1].toFixed(6);
         document.getElementById('centerLngInput').value = center[0].toFixed(6);
-        document.getElementById('centerReadout').textContent =
-            'Center: ' + center[1].toFixed(6) + ', ' + center[0].toFixed(6) + ' • Radius: ' + numberFormat(radius) + ' m';
+        var shapeLabel = document.getElementById('centerReadout');
+        var label = 'Center: ' + center[1].toFixed(6) + ', ' + center[0].toFixed(6);
+        if (shapeType === 'circle') label += ' • Radius: ' + numberFormat(radius) + ' m';
+        else if (shapeType === 'rectangle') label += ' • ' + numberFormat(width) + '×' + numberFormat(height) + ' m • ' + rotation + '°';
+        else if (shapeType === 'oval_h' || shapeType === 'oval_v') label += ' • ' + numberFormat(width) + '×' + numberFormat(height) + ' m (ov)';
+        else if (shapeType === 'polygon' && points) label += ' • Polygon: ' + points.length + ' pts';
+        shapeLabel.textContent = label;
     }
 
+    // ---- Search ----
     var searchInput = document.getElementById('searchLocationInput');
     var searchBtn = document.getElementById('searchLocationBtn');
     var clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -599,12 +1227,10 @@
     function performSearch() {
         var query = searchInput.value.trim();
         if (!query) return;
-
         searchBtn.disabled = true;
         searchBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         searchStatus.textContent = 'Searching...';
         searchStatus.className = 'form-text text-muted';
-
         fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query), {
             headers: { 'Accept': 'application/json' }
         })
@@ -618,10 +1244,11 @@
             var place = results[0];
             var lng = parseFloat(place.lon);
             var lat = parseFloat(place.lat);
-
             map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
-            moveCenter(lng, lat);
-
+            center = [lng, lat];
+            centerMarker.setLngLat([lng, lat]);
+            renderShape();
+            updateReadouts();
             searchStatus.textContent = 'Found: ' + place.display_name;
             searchStatus.className = 'form-text text-success';
             clearSearchBtn.classList.remove('d-none');
@@ -635,13 +1262,9 @@
             searchBtn.innerHTML = '<i class="bi bi-search"></i>';
         });
     }
-
     searchBtn.addEventListener('click', performSearch);
     searchInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            performSearch();
-        }
+        if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
     });
     searchInput.addEventListener('input', function () {
         clearTimeout(searchTimeout);
@@ -650,13 +1273,13 @@
             searchStatus.textContent = '';
         }
     });
-
     clearSearchBtn.addEventListener('click', function () {
         searchInput.value = '';
         searchStatus.textContent = '';
         clearSearchBtn.classList.add('d-none');
     });
 
+    // ---- Save ----
     var saveBtn = document.getElementById('saveGeofenceBtn');
     var saveStatus = document.getElementById('saveStatus');
 
@@ -667,10 +1290,31 @@
         var payload = {
             centerLat: center[1],
             centerLng: center[0],
-            radius: radius,
+            shapeType: shapeType,
             warningThreshold: warningThreshold,
             alertEnabled: document.getElementById('alertToggle').checked
         };
+
+        if (shapeType === 'circle') {
+            payload.radius = radius;
+        } else if (shapeType === 'rectangle') {
+            payload.radius = null;
+            payload.width = width;
+            payload.height = height;
+            payload.rotation = rotation;
+        } else if (shapeType === 'oval_h' || shapeType === 'oval_v') {
+            payload.radius = null;
+            payload.width = width;
+            payload.height = height;
+        } else if (shapeType === 'polygon') {
+            // A customer-drawn boundary must be finished (closed) with at least 3 points to save.
+            if (!points || points.length < 3 || !polygonClosed) {
+                showSaveError('Draw and finish your boundary (3+ points) before saving.');
+                return;
+            }
+            payload.radius = null;
+            payload.points = points;
+        }
 
         var url = <?php echo json_encode(route('admin.geofence.update')); ?>;
         fetch(url, {
@@ -690,18 +1334,25 @@
             setTimeout(function () { saveStatus.style.display = 'none'; }, 4000);
         })
         .catch(function (e) {
-            saveStatus.className = 'badge-admin badge-admin--danger';
-            saveStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i>' + e.message;
-            saveStatus.style.display = 'inline-flex';
+            showSaveError(e.message);
         })
         .finally(function () {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save Geofence Location';
+            saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save Geofence';
         });
     });
 
+    function showSaveError(msg) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save Geofence';
+        saveStatus.className = 'badge-admin badge-admin--danger';
+        saveStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i>' + msg;
+        saveStatus.style.display = 'inline-flex';
+    }
+
     map.on('load', function () {
-        renderCircle();
+        selectShapeButtons();
+        renderShape();
         updateReadouts();
     });
 })();

@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 
 class PayMongoService
 {
+    private const UNKNOWN_ERROR = 'Unknown error';
+
     private string $secretKey;
     private string $publicKey;
     private string $webhookSecret;
@@ -67,7 +69,7 @@ class PayMongoService
                 'status' => $response->status(),
                 'body' => $response->json(),
             ]);
-            throw new PaymentException('Failed to create payment intent: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
+            throw new PaymentException('Failed to create payment intent: ' . ($response->json()['errors'][0]['detail'] ?? self::UNKNOWN_ERROR));
         }
 
         return $response->json()['data'];
@@ -106,7 +108,7 @@ class PayMongoService
                 'status' => $response->status(),
                 'body' => $response->json(),
             ]);
-            throw new PaymentException('Failed to create checkout session: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
+            throw new PaymentException('Failed to create checkout session: ' . ($response->json()['errors'][0]['detail'] ?? self::UNKNOWN_ERROR));
         }
 
         return $response->json()['data'];
@@ -163,7 +165,7 @@ class PayMongoService
                 'status' => $response->status(),
                 'body' => $response->json(),
             ]);
-            throw new PaymentException('Failed to create refund: ' . ($response->json()['errors'][0]['detail'] ?? 'Unknown error'));
+            throw new PaymentException('Failed to create refund: ' . ($response->json()['errors'][0]['detail'] ?? self::UNKNOWN_ERROR));
         }
 
         return $response->json()['data'];

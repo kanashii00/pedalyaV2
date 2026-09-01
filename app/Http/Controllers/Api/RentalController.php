@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 
 class RentalController extends Controller
 {
+    private const RENTAL_NOT_FOUND = 'Rental not found';
+
     public function __construct(
         private RentalService $rentalService,
         private IoTService $iotService
@@ -85,7 +87,7 @@ class RentalController extends Controller
         $rental = Rental::with(['bicycle', 'rider'])->find($id);
 
         if (!$rental) {
-            return response()->json(['message' => 'Rental not found'], 404);
+            return response()->json(['message' => self::RENTAL_NOT_FOUND], 404);
         }
 
         $user = request()->user();
@@ -135,7 +137,7 @@ public function store(Request $request): JsonResponse
         $rental = Rental::find($id);
 
         if (!$rental) {
-            return response()->json(['message' => 'Rental not found'], 404);
+            return response()->json(['message' => self::RENTAL_NOT_FOUND], 404);
         }
 
         $user = $request->user();
@@ -184,7 +186,7 @@ public function store(Request $request): JsonResponse
         $rental = Rental::find($id);
 
         if (!$rental) {
-            return response()->json(['message' => 'Rental not found'], 404);
+            return response()->json(['message' => self::RENTAL_NOT_FOUND], 404);
         }
 
         if ($rental->status !== Rental::STATUS_PENDING) {
@@ -219,7 +221,7 @@ public function store(Request $request): JsonResponse
         $rental = Rental::find($id);
 
         if (!$rental) {
-            return response()->json(['message' => 'Rental not found'], 404);
+            return response()->json(['message' => self::RENTAL_NOT_FOUND], 404);
         }
 
         $user = $request->user();

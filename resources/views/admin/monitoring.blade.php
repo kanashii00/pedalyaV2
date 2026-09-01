@@ -521,10 +521,63 @@
         return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
     }
 
+    // Local metre helpers to build the selected geofence shape.
+    function metersToLatLngShape(start, x, y) {
+        var latRad = start.lat * Math.PI / 180;
+        return {
+            lng: start.lng + (x / (111320 * Math.cos(latRad))),
+            lat: start.lat + (y / 111320)
+        };
+    }
+    function shapeVertices(gf) {
+        var start = { lat: gf.centerLat, lng: gf.centerLng };
+        var type = gf.shapeType || 'circle';
+        var radius = gf.radius || 500;
+        var width = gf.width || radius || 500;
+        var height = gf.height || radius || 500;
+        if (type === 'rectangle') {
+            var a = width / 2, b = height / 2;
+            var th = (gf.rotation || 0) * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th);
+            var corners = [[a, b], [-a, b], [-a, -b], [a, -b]];
+            return corners.map(function (c) {
+                var x = c[0] * cos - c[1] * sin;
+                var y = c[0] * sin + c[1] * cos;
+                var p = metersToLatLngShape(start, x, y);
+                return [p.lng, p.lat];
+            });
+        }
+        if (type === 'oval_h' || type === 'oval_v') {
+            var a2 = Math.max(1, width / 2), b2 = Math.max(1, height / 2);
+            var el = [];
+            for (var i = 0; i < 96; i++) {
+                var rad = (i / 96) * 2 * Math.PI;
+                var p = metersToLatLngShape(start, Math.cos(rad) * a2, Math.sin(rad) * b2);
+                el.push([p.lng, p.lat]);
+            }
+            return el;
+        }
+        if (type === 'polygon' && gf.points && gf.points.length >= 3) {
+            return gf.points.map(function (p) { return [p.lng, p.lat]; });
+        }
+        // Circle fallback
+        var coords = [];
+        for (var i2 = 0; i2 < 96; i2++) {
+            var r2 = (i2 / 96) * 2 * Math.PI;
+            var p2 = metersToLatLngShape(start, Math.cos(r2) * radius, Math.sin(r2) * radius);
+            coords.push([p2.lng, p2.lat]);
+        }
+        return coords;
+    }
+    function shapeFeature(gf) {
+        var verts = shapeVertices(gf);
+        if (verts.length) verts.push(verts[0]);
+        return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [verts] } };
+    }
+
     function addGeofence() {
         map.addSource('geofence', {
             type: 'geojson',
-            data: circlePolygon(geofence.centerLng, geofence.centerLat, geofence.radius || 500)
+            data: shapeFeature(geofence)
         });
 
         map.addLayer({

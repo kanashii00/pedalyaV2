@@ -12,6 +12,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BicycleController extends Controller
 {
+    private const BICYCLE_NOT_FOUND = 'Bicycle not found';
+
     public function nearby(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -86,7 +88,7 @@ class BicycleController extends Controller
         $bicycle = Bicycle::with(['latestTelemetry', 'latestGpsLog'])->find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         return new BicycleResource($bicycle);
@@ -121,7 +123,7 @@ class BicycleController extends Controller
         $bicycle = Bicycle::find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         $validated = $request->validate([
@@ -149,7 +151,7 @@ class BicycleController extends Controller
         $bicycle = Bicycle::find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         $bicycle->delete();
@@ -162,7 +164,7 @@ class BicycleController extends Controller
         $bicycle = Bicycle::find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         $validated = $request->validate([
@@ -188,7 +190,7 @@ class BicycleController extends Controller
         $bicycle = Bicycle::with('latestTelemetry')->find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         return response()->json([

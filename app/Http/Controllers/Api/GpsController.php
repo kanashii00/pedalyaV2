@@ -128,29 +128,44 @@ class GpsController extends Controller
         $validated = $request->validate([
             'center_lat'    => 'required|numeric|between:-90,90',
             'center_lng'    => 'required|numeric|between:-180,180',
-            'radius'        => 'required|numeric|min:10|max:50000',
+            'radius'        => 'nullable|numeric|min:10|max:50000',
+            'shape_type'    => 'nullable|string|in:circle,oval_h,oval_v,rectangle,polygon',
+            'width'         => 'nullable|numeric|min:10|max:100000',
+            'height'        => 'nullable|numeric|min:10|max:100000',
+            'rotation'      => 'nullable|numeric|between:0,360',
+            'points'        => 'nullable|array|min:3',
+            'points.*.lat'  => 'required_with:points|numeric|between:-90,90',
+            'points.*.lng'  => 'required_with:points|numeric|between:-180,180',
             'name'          => 'nullable|string|max:255',
             'alert_enabled' => 'nullable|boolean',
         ]);
 
+        $shapeType = $validated['shape_type'] ?? 'circle';
+        $radius = $validated['radius'] ?? 25;
+
         $geofence = Geofence::updateOrCreate(
             ['isActive' => true],
             [
-                'centerLat'     => $validated['center_lat'],
-                'centerLng'     => $validated['center_lng'],
-                'radius'        => $validated['radius'],
-                'name'          => $validated['name'] ?? 'Azuela Cove Riding Zone',
-                'alertEnabled'  => $validated['alert_enabled'] ?? true,
+                'centerLat'    => $validated['center_lat'],
+                'centerLng'    => $validated['center_lng'],
+                'radius'       => $radius,
+                'shapeType'    => $shapeType,
+                'width'        => $validated['width'] ?? null,
+                'height'       => $validated['height'] ?? null,
+                'rotation'     => $validated['rotation'] ?? null,
+                'points'       => $shapeType === 'polygon' ? ($validated['points'] ?? null) : null,
+                'name'         => $validated['name'] ?? 'Azuela Cove Riding Zone',
+                'alertEnabled' => $validated['alert_enabled'] ?? true,
             ]
         );
 
-        Geofence::where('isActive', false)
+        Geofence::where('isActive', true)
             ->where('id', '!=', $geofence->id)
             ->update(['isActive' => false]);
 
         return response()->json([
             'message'  => 'Geofence updated successfully',
-            'geofence' => $geofence,
+            'geofence' => $this->geofenceService->getConfig(),
         ]);
     }
 

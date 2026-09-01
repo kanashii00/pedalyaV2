@@ -178,4 +178,84 @@ class AdminMaintenanceMonitoringGeofenceTest extends TestCase
             ->putJson(route('admin.geofence.update'), ['centerLat' => 200, 'centerLng' => 0, 'radius' => 10])
             ->assertStatus(422);
     }
+
+    public function test_geofence_update_rectangle_persists_shape(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->putJson(route('admin.geofence.update'), [
+                'centerLat' => 14.6,
+                'centerLng' => 120.99,
+                'shapeType' => 'rectangle',
+                'width' => 2000,
+                'height' => 1000,
+                'rotation' => 45,
+                'warningThreshold' => 120,
+                'alertEnabled' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Geofence updated successfully.')
+            ->assertJsonPath('geofence.shapeType', 'rectangle')
+            ->assertJsonPath('geofence.width', 2000)
+            ->assertJsonPath('geofence.height', 1000)
+            ->assertJsonPath('geofence.rotation', 45);
+
+        $this->assertDatabaseHas('geofences', [
+            'isActive' => true,
+            'shapeType' => 'rectangle',
+            'width' => 2000,
+            'height' => 1000,
+            'rotation' => 45,
+        ]);
+    }
+
+    public function test_geofence_update_polygon_persists_points(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $points = [
+            ['lat' => 14.6, 'lng' => 120.98],
+            ['lat' => 14.6, 'lng' => 121.00],
+            ['lat' => 14.7, 'lng' => 121.00],
+            ['lat' => 14.7, 'lng' => 120.98],
+        ];
+
+        $this->actingAs($admin)
+            ->putJson(route('admin.geofence.update'), [
+                'centerLat' => 14.65,
+                'centerLng' => 120.99,
+                'shapeType' => 'polygon',
+                'points' => $points,
+                'warningThreshold' => 80,
+                'alertEnabled' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('geofence.shapeType', 'polygon');
+
+        $latest = \App\Models\Geofence::where('isActive', true)->first();
+        $this->assertSame('polygon', $latest->shapeType);
+        $this->assertIsArray($latest->points);
+        $this->assertCount(4, $latest->points);
+    }
+
+    public function test_geofence_update_oval_persists_width_height(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->putJson(route('admin.geofence.update'), [
+                'centerLat' => 14.6,
+                'centerLng' => 120.99,
+                'shapeType' => 'oval_h',
+                'width' => 1600,
+                'height' => 900,
+                'warningThreshold' => 100,
+            ])
+            ->assertOk()
+            ->assertJsonPath('geofence.shapeType', 'oval_h')
+            ->assertJsonPath('geofence.width', 1600)
+            ->assertJsonPath('geofence.height', 900);
+    }
 }
+

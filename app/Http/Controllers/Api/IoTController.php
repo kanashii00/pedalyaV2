@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 
 class IoTController extends Controller
 {
+    private const BICYCLE_NOT_FOUND = 'Bicycle not found';
+
     public function __construct(
         private IoTService $iotService
     ) {}
@@ -89,7 +91,7 @@ class IoTController extends Controller
         $bicycle = Bicycle::find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         $commands = $this->iotService->getPendingCommands($bicycle->id);
@@ -109,7 +111,7 @@ class IoTController extends Controller
             ->find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         return response()->json([
@@ -163,7 +165,7 @@ class IoTController extends Controller
         $bicycle = Bicycle::find($id);
 
         if (!$bicycle) {
-            return response()->json(['message' => 'Bicycle not found'], 404);
+            return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         $validated = $request->validate([

@@ -24,67 +24,111 @@ class RentalService
     }
 
 public function startRental(
-    User $user,
-    int $bicycleId,
-    int $durationMinutes = 30,
-    string $paymentMethod = 'cash',
-    ?string $paymentReference = null
-): Rental {
-    if (!$user->verified) {
-        throw new RentalException(
-            'User must be verified to start a rental.'
-        );
+        User $user,
+        int $bicycleId,
+        int $durationMinutes = 30,
+        string $paymentMethod = 'cash',
+        ?string $paymentReference = null
+    ): Rental {
+        if (!$user->verified) {
+            throw new RentalException(
+                'User must be verified to start a rental.'
+            );
+        }
+
+        $activeRental = Rental::where('riderId', $user->id)
+            ->whereIn('status', [
+                'active',
+                'pending',
+                'overdue',
+            ])
+            ->first();
+
+        if ($activeRental) {
+            throw new RentalException(
+                'User already has an active rental.'
+            );
+        }
+
+        $bicycle = Bicycle::findOrFail($bicycleId);
+
+        if ($bicycle->status !== Bicycle::STATUS_AVAILABLE) {
+            throw new RentalException(
+                'Bicycle is not available for rental.'
+            );
+        }
+
+        if ($bicycle->batteryLevel < 20) {
+            throw new RentalException(
+                'Bicycle battery level is too low to rent.'
+            );
+        }
+
+        $ratePerHour = $bicycle->hourlyRate ?? 15.00;
+
+        $durationHours = $durationMinutes / 60;
+        $chargedHours = max((int) ceil($durationHours), 1);
+        $totalFee = round($ratePerHour * $chargedHours, 2);
+
+        $durationFormatted = $this->formatDuration($durationMinutes);
+
+        $isGcash = $paymentMethod === 'gcash';
+        $rental = DB::transaction(function () use (
+            $user,
+            $bicycle,
+            $durationMinutes,
+            $paymentMethod,
+            $paymentReference,
+            $ratePerHour,
+            $chargedHours,
+            $totalFee,
+            $durationFormatted,
+            $isGcash
+        ) {
+            return $this->persistRental(
+                $user,
+                $bicycle,
+                $durationMinutes,
+                $paymentMethod,
+                $paymentReference,
+                $ratePerHour,
+                $chargedHours,
+                $totalFee,
+                $durationFormatted,
+                $isGcash
+            );
+        });
+
+        // Queue unlock only after the rental transaction succeeds.
+        // The actual lockStatus changes only after the device acknowledges it.
+        if (!$isGcash) {
+            $this->iotService->sendCommand(
+                $bicycle->id,
+                'unlock',
+                [
+                    'reason' => 'rental_started',
+                    'rental_id' => $rental->id,
+                    'rental_code' => $rental->rentalId,
+                ],
+                $user
+            );
+        }
+
+        return $rental;
     }
 
-    $activeRental = Rental::where('riderId', $user->id)
-        ->whereIn('status', [
-            'active',
-            'pending',
-            'overdue',
-        ])
-        ->first();
-
-    if ($activeRental) {
-        throw new RentalException(
-            'User already has an active rental.'
-        );
-    }
-
-    $bicycle = Bicycle::findOrFail($bicycleId);
-
-    if ($bicycle->status !== Bicycle::STATUS_AVAILABLE) {
-        throw new RentalException(
-            'Bicycle is not available for rental.'
-        );
-    }
-
-    if ($bicycle->batteryLevel < 20) {
-        throw new RentalException(
-            'Bicycle battery level is too low to rent.'
-        );
-    }
-
-    $ratePerHour = $bicycle->hourlyRate ?? 15.00;
-
-    $durationHours = $durationMinutes / 60;
-    $chargedHours = max((int) ceil($durationHours), 1);
-    $totalFee = round($ratePerHour * $chargedHours, 2);
-
-    $durationFormatted = $this->formatDuration($durationMinutes);
-
-    $isGcash = $paymentMethod === 'gcash';
-    $rental = DB::transaction(function () use (
-        $user,
-        $bicycle,
-        $durationMinutes,
-        $paymentMethod,
-        $paymentReference,
-        $ratePerHour,
-        $chargedHours,
-        $totalFee,
-        $durationFormatted,
-        $isGcash
-    ) {
+    private function persistRental(
+        User $user,
+        Bicycle $bicycle,
+        int $durationMinutes,
+        string $paymentMethod,
+        ?string $paymentReference,
+        float $ratePerHour,
+        int $chargedHours,
+        float $totalFee,
+        string $durationFormatted,
+        bool $isGcash
+    ): Rental {
         $startTime = Carbon::now();
 
         $expectedEndTime = $startTime
@@ -176,25 +220,7 @@ public function startRental(
         );
 
         return $rental;
-    });
-
-    // Queue unlock only after the rental transaction succeeds.
-    // The actual lockStatus changes only after the device acknowledges it.
-    if (!$isGcash) {
-        $this->iotService->sendCommand(
-            $bicycle->id,
-            'unlock',
-            [
-                'reason' => 'rental_started',
-                'rental_id' => $rental->id,
-                'rental_code' => $rental->rentalId,
-            ],
-            $user
-        );
     }
-
-    return $rental;
-}
 
     public function returnRental(
         Rental $rental,

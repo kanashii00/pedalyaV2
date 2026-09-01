@@ -80,10 +80,29 @@ class GeofenceController extends Controller
         $validated = $request->validate([
             'centerLat' => ['required', 'numeric', 'between:-90,90'],
             'centerLng' => ['required', 'numeric', 'between:-180,180'],
-            'radius' => ['required', 'numeric', 'min:25', 'max:50000'],
+            'radius' => ['nullable', 'numeric', 'min:10', 'max:50000'],
+            'shapeType' => ['nullable', 'string', 'in:circle,oval_h,oval_v,rectangle,polygon'],
+            'width' => ['nullable', 'numeric', 'min:10', 'max:100000'],
+            'height' => ['nullable', 'numeric', 'min:10', 'max:100000'],
+            'rotation' => ['nullable', 'numeric', 'between:0,360'],
+            'points' => ['nullable', 'array', 'min:3'],
+            'points.*.lat' => ['required_with:points', 'numeric', 'between:-90,90'],
+            'points.*.lng' => ['required_with:points', 'numeric', 'between:-180,180'],
             'warningThreshold' => ['nullable', 'numeric', 'min:1', 'max:10000'],
             'alertEnabled' => ['sometimes', 'boolean'],
         ]);
+
+        $shapeType = $validated['shapeType'] ?? 'circle';
+        $width = $validated['width'] ?? null;
+        $height = $validated['height'] ?? null;
+        $rotation = $validated['rotation'] ?? null;
+        $points = $validated['points'] ?? null;
+
+        $radius = $validated['radius'] ?? 25;
+
+        if ($shapeType === 'circle' && ($validated['radius'] ?? null) === null) {
+            return response()->json(['message' => 'Radius is required for a circular geofence.'], 422);
+        }
 
         $geofence = Geofence::updateOrCreate(
             ['isActive' => true],
@@ -91,7 +110,12 @@ class GeofenceController extends Controller
                 'name' => 'Azuela Cove Riding Zone',
                 'centerLat' => $validated['centerLat'],
                 'centerLng' => $validated['centerLng'],
-                'radius' => $validated['radius'],
+                'radius' => $radius ?? 25,
+                'shapeType' => $shapeType,
+                'width' => $width,
+                'height' => $height,
+                'rotation' => $rotation,
+                'points' => $shapeType === 'polygon' ? $points : null,
                 'isActive' => true,
                 'alertEnabled' => $request->boolean('alertEnabled', true),
                 'warningThreshold' => $validated['warningThreshold'] ?? null,
@@ -108,7 +132,12 @@ class GeofenceController extends Controller
             'geofenceId' => $geofence->id,
             'centerLat' => $validated['centerLat'],
             'centerLng' => $validated['centerLng'],
-            'radius' => $validated['radius'],
+            'shapeType' => $shapeType,
+            'radius' => $radius,
+            'width' => $width,
+            'height' => $height,
+            'rotation' => $rotation,
+            'points' => $points,
             'warningThreshold' => $validated['warningThreshold'] ?? null,
         ]);
 

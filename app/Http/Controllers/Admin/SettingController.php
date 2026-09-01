@@ -107,11 +107,21 @@ class SettingController extends Controller
             'centerLat' => (float) $geofence->centerLat,
             'centerLng' => (float) $geofence->centerLng,
             'radius' => (float) $geofence->radius,
+            'shapeType' => $geofence->shapeType ?? 'circle',
+            'width' => $geofence->width !== null ? (float) $geofence->width : null,
+            'height' => $geofence->height !== null ? (float) $geofence->height : null,
+            'rotation' => $geofence->rotation !== null ? (float) $geofence->rotation : 0.0,
+            'points' => is_array($geofence->points) ? $geofence->points : [],
             'alertEnabled' => (bool) $geofence->alertEnabled,
         ] : [
             'centerLat' => (float) config('services.geofence.center_lat', 7.0990),
             'centerLng' => (float) config('services.geofence.center_lng', 125.6470),
             'radius' => (float) config('services.geofence.default_radius', 400),
+            'shapeType' => 'circle',
+            'width' => null,
+            'height' => null,
+            'rotation' => 0.0,
+            'points' => [],
             'alertEnabled' => true,
         ];
     }

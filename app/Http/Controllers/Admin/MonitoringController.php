@@ -56,27 +56,45 @@ class MonitoringController extends Controller
         }
 
         if ($request->filled('connectivity')) {
-            $online = $request->input('connectivity') === 'online';
-            $cutoff = now()->subMinutes(5);
-            if ($online) {
-                $query->where('lastHeartbeat', '>=', $cutoff);
-            } else {
-                $query->where(function ($q) use ($cutoff) {
-                    $q->whereNull('lastHeartbeat')->orWhere('lastHeartbeat', '<', $cutoff);
-                });
-            }
+            $this->applyConnectivityFilter($query, $request->input('connectivity'));
         }
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('serialNumber', 'like', "%{$search}%");
-            });
+            $this->applySearchFilter($query, $request->input('search'));
         }
 
         $bicycles = $query->orderBy('id')->get();
 
+        $summary = $this->buildStatusSummary($bicycles);
+
+        return response()->view('admin.bicycles-status', compact('bicycles', 'summary'));
+    }
+
+    private function applyConnectivityFilter($query, string $connectivity): void
+    {
+        $cutoff = now()->subMinutes(5);
+
+        if ($connectivity === 'online') {
+            $query->where('lastHeartbeat', '>=', $cutoff);
+
+            return;
+        }
+
+        $query->where(function ($q) use ($cutoff) {
+            $q->whereNull('lastHeartbeat')->orWhere('lastHeartbeat', '<', $cutoff);
+        });
+    }
+
+    private function applySearchFilter($query, string $search): void
+    {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+                ->orWhere('serialNumber', 'like', "%{$search}%");
+        });
+    }
+
+    private function buildStatusSummary($bicycles): array
+    {
         $summary = [
             'total'      => 0,
             'available'  => 0,
@@ -93,12 +111,23 @@ class MonitoringController extends Controller
             $online = $bike->lastHeartbeat !== null && $bike->lastHeartbeat->gt($cutoff);
             $summary['total']++;
             $summary[$bike->status] = ($summary[$bike->status] ?? 0) + 1;
-            $bike->lockStatus === 'locked' ? $summary['locked']++ : $summary['unlocked']++;
-            $online ? $summary['online']++ : $summary['offline']++;
+
+            if ($bike->lockStatus === 'locked') {
+                $summary['locked']++;
+            } else {
+                $summary['unlocked']++;
+            }
+
+            if ($online) {
+                $summary['online']++;
+            } else {
+                $summary['offline']++;
+            }
+
             $bike->connectivity = $online ? 'online' : 'offline';
         }
 
-        return response()->view('admin.bicycles-status', compact('bicycles', 'summary'));
+        return $summary;
     }
 
     public function bicycleStatus(int $id): JsonResponse

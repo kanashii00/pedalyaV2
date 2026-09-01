@@ -12005,3 +12005,311 @@ Did you mean one of these?
 #63 C:/Users/Administrator/pedalya/vendor/phpunit/phpunit/phpunit(104): PHPUnit/TextUI/Application->run(Array)
 #64 {main}
 "} 
+[2026-09-02 00:25:49] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "updated_at": "2026-09-02T00:25:49+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:25:49] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T00:25:49+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:27:10] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "updated_at": "2026-09-02T00:27:10+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:27:10] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T00:27:10+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:27:10] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "updated_at": "2026-09-02T00:27:10+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:27:10] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T00:27:10+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:27:22] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-02 00:27:22] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-02 00:27:23] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a96fceb48906"} 
+[2026-09-02 00:27:23] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-02 00:27:23] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a96fcebab568"} 
+[2026-09-02 00:27:23] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-02 00:27:23] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-02 00:27:24] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a96fcec4ca5a"} 
+[2026-09-02 00:27:24] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a96fcecaec14"} 
+[2026-09-02 00:27:25] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 00:27:25] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 00:27:25] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-02 00:27:25] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-02 00:27:26] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a96fcee211d5"} 
+[2026-09-02 00:27:26] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a96fcee83912"} 
+[2026-09-02 00:27:26] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-02 00:27:30] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-02 00:27:44] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-02 00:27:44] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-02 00:27:44] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-02 00:30:55] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "updated_at": "2026-09-02T00:30:55+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:30:55] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T00:30:55+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:44:13] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "updated_at": "2026-09-02T00:44:13+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:44:13] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T00:44:13+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:44:13] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "updated_at": "2026-09-02T00:44:13+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:44:13] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T00:44:13+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 00:44:25] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-02 00:44:25] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-02 00:44:25] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9700e9c84ae"} 
+[2026-09-02 00:44:25] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-02 00:44:26] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9700ea39b1e"} 
+[2026-09-02 00:44:26] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-02 00:44:26] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-02 00:44:26] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9700ead0585"} 
+[2026-09-02 00:44:27] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9700eb3ef00"} 
+[2026-09-02 00:44:27] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 00:44:27] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 00:44:27] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-02 00:44:28] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-02 00:44:28] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9700eca92c6"} 
+[2026-09-02 00:44:29] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9700ed17e5d"} 
+[2026-09-02 00:44:29] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-02 00:44:33] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-02 00:44:46] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-02 00:44:46] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-02 00:44:47] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-02 01:20:07] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "updated_at": "2026-09-02T01:20:07+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 01:20:07] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T01:20:07+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 01:20:07] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "updated_at": "2026-09-02T01:20:07+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 01:20:07] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T01:20:07+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 01:20:20] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-02 01:20:20] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-02 01:20:20] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a970954aa457"} 
+[2026-09-02 01:20:20] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-02 01:20:21] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9709551cb13"} 
+[2026-09-02 01:20:21] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-02 01:20:21] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-02 01:20:21] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a970955b5d53"} 
+[2026-09-02 01:20:22] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a970956281ce"} 
+[2026-09-02 01:20:22] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 01:20:22] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 01:20:22] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-02 01:20:23] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-02 01:20:23] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9709579ccb9"} 
+[2026-09-02 01:20:24] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9709580c064"} 
+[2026-09-02 01:20:24] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-02 01:20:28] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-02 01:20:41] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-02 01:20:41] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-02 01:20:42] testing.WARNING: PayMongo webhook secret not configured  

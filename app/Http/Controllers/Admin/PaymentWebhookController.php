@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentWebhookController extends Controller
 {
+    private const PAYMENT_NOT_FOUND = 'Payment not found';
+
     public function __construct(
         private PayMongoService $payMongoService,
         private RentalService $rentalService
@@ -75,7 +77,7 @@ class PaymentWebhookController extends Controller
 
         if (!$payment) {
             Log::warning('Payment not found for succeeded intent', ['intent_id' => $data['id']]);
-            return response()->json(['message' => 'Payment not found']);
+            return response()->json(['message' => self::PAYMENT_NOT_FOUND]);
         }
 
         if ($payment->status === 'paid') {
@@ -101,7 +103,7 @@ class PaymentWebhookController extends Controller
         $payment = Payment::where('paymongoPaymentId', $data['id'])->first();
 
         if (!$payment) {
-            return response()->json(['message' => 'Payment not found']);
+            return response()->json(['message' => self::PAYMENT_NOT_FOUND]);
         }
 
         $failureReason = $data['attributes']['last_payment_error']['message'] ?? 'Payment failed';
@@ -148,7 +150,7 @@ class PaymentWebhookController extends Controller
         $payment = Payment::find($paymentId);
 
         if (!$payment) {
-            return response()->json(['message' => 'Payment not found']);
+            return response()->json(['message' => self::PAYMENT_NOT_FOUND]);
         }
 
         if ($payment->status === 'paid') {

@@ -24,47 +24,11 @@ class IoTService
     {
         $timestamp = Carbon::now();
 
-        $bicycleId = $data['bicycleId'] ?? $data['bicycle_id'] ?? $data['bicycle'] ?? null;
+        $bicycleId = $this->bicycleIdFrom($data);
         $bicycle = $bicycleId ? Bicycle::find($bicycleId) : null;
 
         if ($bicycle) {
-            $updateData = [];
-            if (isset($data['lat'], $data['lng'])) {
-                $updateData['currentLat'] = $data['lat'];
-                $updateData['currentLng'] = $data['lng'];
-            }
-            if (($battery = $this->valueOf($data, ['batteryLevel', 'battery_level', 'battery'])) !== null) {
-                $updateData['batteryLevel'] = (int) max(0, min(100, (float) $battery));
-            }
-            if (array_key_exists('locked', $data)) {
-                $updateData['lockStatus'] = $data['locked']
-                    ? Bicycle::LOCK_LOCKED
-                    : Bicycle::LOCK_UNLOCKED;
-            }
-            $updateData['lastHeartbeat'] = $timestamp;
-            $bicycle->update($updateData);
-
-            DeviceStatus::create([
-                'bicycleId' => $bicycleId,
-                'gps' => isset($data['lat'], $data['lng'])
-                    ? ['lat' => $data['lat'], 'lng' => $data['lng'], 'speed' => $data['speed'] ?? $data['velocity'] ?? 0]
-                    : null,
-                'battery' => $battery !== null ? ['level' => (float) $battery] : null,
-                'lockStatus' => $bicycle->lockStatus,
-                'deviceVersion' => $data['firmware'] ?? null,
-                'uptime' => $data['uptime'] ?? null,
-                'type' => 'heartbeat',
-                'eventTimestamp' => $timestamp,
-            ]);
-
-            $impact = $this->valueOf($data, ['impact', 'impact_force', 'impactForce']);
-            if ($impact !== null && (float) $impact > 0) {
-                $this->handleImpactDetection($bicycle, (float) $impact, $data);
-            }
-
-            if (isset($data['lat'], $data['lng'])) {
-                $this->handleGeofenceCheck($bicycle, (float) $data['lat'], (float) $data['lng']);
-            }
+            $this->handleHeartbeatForBicycle($bicycle, $data, $timestamp);
         }
 
         return [
@@ -72,6 +36,79 @@ class IoTService
             'timestamp' => $timestamp->toIso8601String(),
             'commands' => $this->getPendingCommands((int) $bicycleId),
         ];
+    }
+
+    private function bicycleIdFrom(array $data): mixed
+    {
+        return $data['bicycleId'] ?? $data['bicycle_id'] ?? $data['bicycle'] ?? null;
+    }
+
+    private function handleHeartbeatForBicycle(Bicycle $bicycle, array $data, Carbon $timestamp): void
+    {
+        $bicycle->update($this->buildHeartbeatUpdateData($bicycle, $data, $timestamp));
+
+        DeviceStatus::create([
+            'bicycleId' => $bicycle->id,
+            'gps' => $this->gpsPayload($data),
+            'battery' => $this->batteryPayload($data),
+            'lockStatus' => $bicycle->lockStatus,
+            'deviceVersion' => $data['firmware'] ?? null,
+            'uptime' => $data['uptime'] ?? null,
+            'type' => 'heartbeat',
+            'eventTimestamp' => $timestamp,
+        ]);
+
+        $impact = $this->valueOf($data, ['impact', 'impact_force', 'impactForce']);
+        if ($impact !== null && (float) $impact > 0) {
+            $this->handleImpactDetection($bicycle, (float) $impact, $data);
+        }
+
+        if (isset($data['lat'], $data['lng'])) {
+            $this->handleGeofenceCheck($bicycle, (float) $data['lat'], (float) $data['lng']);
+        }
+    }
+
+    private function buildHeartbeatUpdateData(Bicycle $bicycle, array $data, Carbon $timestamp): array
+    {
+        $updateData = ['lastHeartbeat' => $timestamp];
+
+        if (isset($data['lat'], $data['lng'])) {
+            $updateData['currentLat'] = $data['lat'];
+            $updateData['currentLng'] = $data['lng'];
+        }
+
+        $battery = $this->valueOf($data, ['batteryLevel', 'battery_level', 'battery']);
+        if ($battery !== null) {
+            $updateData['batteryLevel'] = (int) max(0, min(100, (float) $battery));
+        }
+
+        if (array_key_exists('locked', $data)) {
+            $updateData['lockStatus'] = $data['locked']
+                ? Bicycle::LOCK_LOCKED
+                : Bicycle::LOCK_UNLOCKED;
+        }
+
+        return $updateData;
+    }
+
+    private function gpsPayload(array $data): ?array
+    {
+        if (!isset($data['lat'], $data['lng'])) {
+            return null;
+        }
+
+        return [
+            'lat' => $data['lat'],
+            'lng' => $data['lng'],
+            'speed' => $data['speed'] ?? $data['velocity'] ?? 0,
+        ];
+    }
+
+    private function batteryPayload(array $data): ?array
+    {
+        $battery = $this->valueOf($data, ['batteryLevel', 'battery_level', 'battery']);
+
+        return $battery !== null ? ['level' => (float) $battery] : null;
     }
 
     public function processAccidentReport(array $data): array
@@ -182,62 +219,61 @@ class IoTService
         return $deviceCommand;
     }
 public function acknowledgeDeviceCommand(
-    int $deviceCommandId,
-    ?string $result = null,
-    string $status = 'executed'
-): bool {
-    $command = DeviceCommand::find($deviceCommandId);
+        int $deviceCommandId,
+        ?string $result = null,
+        string $status = 'executed'
+    ): bool {
+        $command = DeviceCommand::find($deviceCommandId);
 
-    if (!$command) {
-        return false;
+        if (!$command) {
+            return false;
+        }
+
+        $validStatus = $this->normalizeCommandStatus($status);
+
+        $command->update([
+            'status' => $validStatus,
+            'executedAt' => $validStatus === 'executed' ? now() : null,
+            'response' => $result,
+        ]);
+
+        if ($validStatus === 'executed') {
+            $this->applyCommandEffect($command);
+        }
+
+        return true;
     }
 
-    $validStatus = in_array(
-        $status,
-        ['executed', 'failed', 'sent'],
-        true
-    )
-        ? $status
-        : 'executed';
+    private function normalizeCommandStatus(string $status): string
+    {
+        return in_array($status, ['executed', 'failed', 'sent'], true)
+            ? $status
+            : 'executed';
+    }
 
-    $command->update([
-        'status' => $validStatus,
-        'executedAt' =>
-            $validStatus === 'executed'
-                ? now()
-                : null,
-        'response' => $result,
-    ]);
+    private function applyCommandEffect(DeviceCommand $command): void
+    {
+        if (!in_array($command->command, ['lock', 'unlock'], true)) {
+            return;
+        }
 
-    if ($validStatus === 'executed') {
         $bicycle = Bicycle::find($command->bicycleId);
 
-        if ($bicycle) {
-      if ($command->command === 'lock') {
-    $bicycle->update([
-        'lockStatus' => 'locked',
-        'status' => $bicycle->currentRentalId
-            ? Bicycle::STATUS_RENTED
-            : Bicycle::STATUS_AVAILABLE,
-        'lastLockAction' => Carbon::now(),
-        'lockActionBy' => $command->issuedBy,
-    ]);
-}
-            if ($command->command === 'unlock') {
-                $bicycle->update([
-                    'lockStatus' => 'unlocked',
-                    'status' => $bicycle->currentRentalId
-                        ? Bicycle::STATUS_RENTED
-                        : Bicycle::STATUS_AVAILABLE,
-                    'lastLockAction' => Carbon::now(),
-                    'lockActionBy' => $command->issuedBy,
-                ]);
-            }
+        if (!$bicycle) {
+            return;
         }
-    }
 
-    return true;
-}
+        $bicycle->update([
+            'lockStatus' => $command->command === 'unlock'
+                ? Bicycle::LOCK_UNLOCKED
+                : Bicycle::LOCK_LOCKED,
+            'status' => $bicycle->currentRentalId
+                ? Bicycle::STATUS_RENTED
+                : Bicycle::STATUS_AVAILABLE,
+            'lastLockAction' => Carbon::now(),
+            'lockActionBy' => $command->issuedBy,
+        ]);
+    }
 
     public function getPendingCommands(int $bicycleId): array
     {
