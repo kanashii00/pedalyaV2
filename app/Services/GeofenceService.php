@@ -237,7 +237,7 @@ class GeofenceService
         foreach ($vertices as $v) {
             $coords[] = [(float) $v['lng'], (float) $v['lat']];
         }
-        if (count($coords) > 0) {
+        if (!empty($coords)) {
             $coords[] = $coords[0];
         }
 

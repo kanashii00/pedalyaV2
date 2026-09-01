@@ -192,7 +192,7 @@ class GpsController extends Controller
                 ->first();
 
             if (!$existingBreach) {
-                $breach = GeofenceBreach::create([
+                GeofenceBreach::create([
                     'bicycleId'   => $bicycle->id,
                     'geofenceId'  => $config['id'],
                     'lat'         => $lat,

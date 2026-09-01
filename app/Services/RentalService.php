@@ -244,7 +244,7 @@ public function startRental(
             $rental->ratePerHour
         );
 
-        $result = DB::transaction(function () use ($rental, $user, $endTime, $returnLat, $returnLng, $paymentMethod, $paymentReference, $notes, $fees) {
+        return DB::transaction(function () use ($rental, $user, $endTime, $returnLat, $returnLng, $paymentMethod, $paymentReference, $notes, $fees) {
             $rental->update([
                 'endTime' => $endTime,
                 'endLocation' => ['lat' => $returnLat, 'lng' => $returnLng],
@@ -282,8 +282,6 @@ public function startRental(
 
             return ['rental' => $rental->fresh(), 'fees' => $fees];
         });
-
-        return $result;
     }
 
     /**

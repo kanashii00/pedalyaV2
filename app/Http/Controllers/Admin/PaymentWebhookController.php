@@ -41,14 +41,13 @@ public function handle(Request $request): JsonResponse
 
         $eventType = $event['event'];
         $data = $event['data'];
-        $previousData = $event['previous_data'];
 
         Log::info('PayMongo webhook received', [
             'event' => $eventType,
             'payment_intent_id' => $data['id'] ?? $data['payment_intent'] ?? null,
         ]);
 
-        return DB::transaction(function () use ($eventType, $data, $previousData) {
+        return DB::transaction(function () use ($eventType, $data) {
             return match ($eventType) {
                 'payment_intent.succeeded' => $this->handlePaymentSucceeded($data),
                 'payment_intent.failed' => $this->handlePaymentFailed($data),
