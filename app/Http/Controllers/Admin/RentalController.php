@@ -101,7 +101,7 @@ class RentalController extends Controller
         return response()->view('admin.rentals.show', compact('rental'));
     }
 
-    public function approve(Request $request, int $id): RedirectResponse
+    public function approve(int $id): RedirectResponse
     {
         $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
 
@@ -147,7 +147,7 @@ class RentalController extends Controller
         return back()->with('success', 'Rental approved successfully.');
     }
 
-    public function verifyGcashPayment(Request $request, int $id): RedirectResponse
+    public function verifyGcashPayment(int $id): RedirectResponse
     {
         $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
 
@@ -204,25 +204,16 @@ class RentalController extends Controller
         return back()->with('success', 'GCash payment verified. Rental activated.');
     }
 
-    public function markPaid(Request $request, int $id): RedirectResponse
+    public function markPaid(int $id): RedirectResponse
     {
         $rental = Rental::with(['rider'])->findOrFail($id);
 
         // Only ongoing (active/overdue) rentals may be manually marked paid,
         // and only when payment is still pending.
-        if (! in_array($rental->status, [Rental::STATUS_ACTIVE, Rental::STATUS_OVERDUE], true)) {
-            return back()->withErrors(['rental' => 'Only active or overdue rentals can be marked as paid.']);
-        }
+        $markPaidError = $this->markPaidError($rental);
 
-        if ($rental->paymentStatus === 'paid') {
-            return back()->withErrors(['rental' => 'This rental is already marked as paid.']);
-        }
-
-        // Online / GCash payments are only marked paid after successful
-        // payment confirmation (gateway/webhook). Cash payments can be
-        // confirmed manually by the administrator.
-        if ($rental->paymentMethod === 'gcash') {
-            return back()->withErrors(['rental' => 'GCash payments can only be marked paid after payment confirmation.']);
+        if ($markPaidError !== null) {
+            return back()->withErrors(['rental' => $markPaidError]);
         }
 
         $rental->update([
@@ -257,18 +248,34 @@ class RentalController extends Controller
         return back()->with('success', 'Rental marked as paid.');
     }
 
-    public function endRide(Request $request, int $id): RedirectResponse
+    private function markPaidError(Rental $rental): ?string
+    {
+        $guards = [
+            [! in_array($rental->status, [Rental::STATUS_ACTIVE, Rental::STATUS_OVERDUE], true), 'Only active or overdue rentals can be marked as paid.'],
+            [$rental->paymentStatus === 'paid', 'This rental is already marked as paid.'],
+            [$rental->paymentMethod === 'gcash', 'GCash payments can only be marked paid after payment confirmation.'],
+        ];
+
+        foreach ($guards as $guard) {
+            if ($guard[0]) {
+                return $guard[1];
+            }
+        }
+
+        return null;
+    }
+
+    public function endRide(int $id): RedirectResponse
     {
         $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
 
-        if (! in_array($rental->status, [Rental::STATUS_ACTIVE, Rental::STATUS_OVERDUE], true)) {
-            return back()->withErrors(['rental' => 'Only active or overdue rides can be ended.']);
+        $endRideError = $this->endRideError($rental);
+
+        if ($endRideError !== null) {
+            return back()->withErrors(['rental' => $endRideError]);
         }
 
         $rider = User::find($rental->riderId);
-        if (! $rider) {
-            return back()->withErrors(['rental' => 'The rider account for this rental no longer exists.']);
-        }
 
         try {
             // Records the end time, computes the final fee from the elapsed
@@ -298,6 +305,19 @@ class RentalController extends Controller
             'Ride ended successfully. Final fee: ₱'.number_format($result['fees']['totalFee'], 2)
             .' · Bicycle "'.($rental->bicycle->name ?? $rental->bicycleId).'" is now available.'
         );
+    }
+
+    private function endRideError(Rental $rental): ?string
+    {
+        if (! in_array($rental->status, [Rental::STATUS_ACTIVE, Rental::STATUS_OVERDUE], true)) {
+            return 'Only active or overdue rides can be ended.';
+        }
+
+        if (User::find($rental->riderId) === null) {
+            return 'The rider account for this rental no longer exists.';
+        }
+
+        return null;
     }
 
     public function cancel(Request $request, int $id): RedirectResponse

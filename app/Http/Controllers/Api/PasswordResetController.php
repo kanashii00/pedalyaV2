@@ -74,28 +74,10 @@ class PasswordResetController extends Controller
             ->where('email', $validated['email'])
             ->first();
 
-        if (!$resetRecord) {
-            return response()->json([
-                'message' => 'No password reset request was found.',
-            ], 422);
-        }
+        $resetError = $this->resetError($validated, $resetRecord);
 
-        $createdAt = Carbon::parse($resetRecord->created_at);
-
-        if ($createdAt->lt(now()->subMinutes(10))) {
-            DB::table('password_reset_tokens')
-                ->where('email', $validated['email'])
-                ->delete();
-
-            return response()->json([
-                'message' => 'The password reset code has expired.',
-            ], 422);
-        }
-
-        if (!Hash::check($validated['code'], $resetRecord->token)) {
-            return response()->json([
-                'message' => 'The password reset code is incorrect.',
-            ], 422);
+        if ($resetError !== null) {
+            return response()->json(['message' => $resetError], 422);
         }
 
         $user = User::where('email', $validated['email'])->firstOrFail();
@@ -111,5 +93,31 @@ class PasswordResetController extends Controller
         return response()->json([
             'message' => 'Password reset successfully.',
         ]);
+    }
+
+    private function resetError(array $validated, ?object $resetRecord): ?string
+    {
+        $expired = $resetRecord !== null
+            && Carbon::parse($resetRecord->created_at)->lt(now()->subMinutes(10));
+
+        if ($expired) {
+            DB::table('password_reset_tokens')
+                ->where('email', $validated['email'])
+                ->delete();
+        }
+
+        $guards = [
+            [$resetRecord === null, 'No password reset request was found.'],
+            [$expired, 'The password reset code has expired.'],
+            [$resetRecord !== null && !Hash::check($validated['code'], $resetRecord->token), 'The password reset code is incorrect.'],
+        ];
+
+        foreach ($guards as $guard) {
+            if ($guard[0]) {
+                return $guard[1];
+            }
+        }
+
+        return null;
     }
 }

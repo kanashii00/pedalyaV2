@@ -6,6 +6,10 @@ use App\Models\Geofence;
 
 class GeofenceService
 {
+    public function __construct(
+        private GeofenceGeometryHelper $geometry
+    ) {}
+
     public function activeGeofence(): ?Geofence
     {
         return Geofence::where('isActive', true)->first();
@@ -107,24 +111,28 @@ class GeofenceService
     {
         $shapeType = $config['shapeType'] ?? self::SHAPE_CIRCLE;
 
-        if ($shapeType === self::SHAPE_POLYGON) {
-            $points = is_array($config['points'] ?? null) ? $config['points'] : [];
-            if (count($points) >= 3) {
-                return $this->isPointInPolygon($lat, $lng, $points);
-            }
-            // Fall back to a circle based on the first point distance if malformed.
-            return $this->haversineDistance($lat, $lng, (float) ($config['centerLat'] ?? 0), (float) ($config['centerLng'] ?? 0)) <= (float) ($config['radius'] ?? 500);
+        return match ($shapeType) {
+            self::SHAPE_POLYGON => $this->isInsidePolygon($lat, $lng, $config),
+            self::SHAPE_RECTANGLE => $this->geometry->isInRotatedRectangle($lat, $lng, $config),
+            self::SHAPE_OVAL_H, self::SHAPE_OVAL_V => $this->geometry->isInEllipse($lat, $lng, $config),
+            default => $this->isInsideCircle($lat, $lng, $config),
+        };
+    }
+
+    private function isInsidePolygon(float $lat, float $lng, array $config): bool
+    {
+        $points = is_array($config['points'] ?? null) ? $config['points'] : [];
+
+        if (count($points) >= 3) {
+            return $this->isPointInPolygon($lat, $lng, $points);
         }
 
-        if ($shapeType === self::SHAPE_RECTANGLE) {
-            return $this->isInRotatedRectangle($lat, $lng, $config);
-        }
+        // Fall back to a circle based on the first point distance if malformed.
+        return $this->haversineDistance($lat, $lng, (float) ($config['centerLat'] ?? 0), (float) ($config['centerLng'] ?? 0)) <= (float) ($config['radius'] ?? 500);
+    }
 
-        if ($shapeType === self::SHAPE_OVAL_H || $shapeType === self::SHAPE_OVAL_V) {
-            return $this->isInEllipse($lat, $lng, $config);
-        }
-
-        // Circle (default)
+    private function isInsideCircle(float $lat, float $lng, array $config): bool
+    {
         $centerLat = $config['centerLat'] ?? $config['lat'] ?? 0;
         $centerLng = $config['centerLng'] ?? $config['lng'] ?? 0;
         $radius = (float) ($config['radius'] ?? 500);
@@ -148,106 +156,13 @@ class GeofenceService
         $min = INF;
         $n = count($vertices);
         for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
-            $dist = $this->distanceToSegment($lat, $lng, $vertices[$j], $vertices[$i]);
+            $dist = $this->geometry->distanceToSegment($lat, $lng, $vertices[$j], $vertices[$i]);
             if ($dist < $min) {
                 $min = $dist;
             }
         }
 
         return $min;
-    }
-
-    /**
-     * Distance in meters from a point to a line segment (given by two vertices).
-     */
-    private function distanceToSegment(float $lat, float $lng, array $a, array $b): float
-    {
-        $latBase = $lat;
-        $mPerDegLat = 111320.0;
-        $mPerDegLng = 111320.0 * cos(deg2rad($latBase));
-
-        $ax = ($a['lng'] - $lng) * $mPerDegLng;
-        $ay = ($a['lat'] - $lat) * $mPerDegLat;
-        $bx = ($b['lng'] - $lng) * $mPerDegLng;
-        $by = ($b['lat'] - $lat) * $mPerDegLat;
-
-        $dx = $bx - $ax;
-        $dy = $by - $ay;
-
-        if ($dx === 0.0 && $dy === 0.0) {
-            return sqrt($ax * $ax + $ay * $ay);
-        }
-
-        $t = ((-$ax) * $dx + (-$ay) * $dy) / ($dx * $dx + $dy * $dy);
-        $t = max(0.0, min(1.0, $t));
-
-        $cx = $ax + $t * $dx;
-        $cy = $ay + $t * $dy;
-
-        return sqrt($cx * $cx + $cy * $cy);
-    }
-
-    /**
-     * Test whether a point is inside a rotated rectangle (in local meters).
-     */
-    private function isInRotatedRectangle(float $lat, float $lng, array $config): bool
-    {
-        ['x' => $x, 'y' => $y] = $this->localMeters($lat, $lng, $config);
-        $width = (float) ($config['width'] ?? $config['radius'] ?? 500);
-        $height = (float) ($config['height'] ?? $config['radius'] ?? 500);
-        $a = $width / 2;
-        $b = $height / 2;
-        $theta = deg2rad((float) ($config['rotation'] ?? 0));
-
-        $cos = cos($theta);
-        $sin = sin($theta);
-        $localX = $x * $cos - $y * $sin;
-        $localY = $x * $sin + $y * $cos;
-
-        return abs($localX) <= $a && abs($localY) <= $b;
-    }
-
-    /**
-     * Test whether a point is inside an axis-aligned ellipse (oval) in local meters.
-     */
-    private function isInEllipse(float $lat, float $lng, array $config): bool
-    {
-        ['x' => $x, 'y' => $y] = $this->localMeters($lat, $lng, $config);
-        $width = (float) ($config['width'] ?? $config['radius'] ?? 500);
-        $height = (float) ($config['height'] ?? $config['radius'] ?? 500);
-        $a = max(1.0, $width / 2);
-        $b = max(1.0, $height / 2);
-
-        return (($x * $x) / ($a * $a)) + (($y * $y) / ($b * $b)) <= 1;
-    }
-
-    /**
-     * Convert a geographic point to local (east-west, north-south) meters about the shape center.
-     */
-    private function localMeters(float $lat, float $lng, array $config): array
-    {
-        $centerLat = $config['centerLat'] ?? $config['lat'] ?? 0;
-        $centerLng = $config['centerLng'] ?? $config['lng'] ?? 0;
-        $latRad = deg2rad($centerLat);
-        $dLat = $lat - $centerLat;
-        $dLng = $lng - $centerLng;
-
-        return [
-            'x' => $dLng * (111320.0 * cos($latRad)),
-            'y' => $dLat * 111320.0,
-        ];
-    }
-
-    private function metersToLatLng(float $x, float $y, array $config): array
-    {
-        $centerLat = $config['centerLat'] ?? $config['lat'] ?? 0;
-        $centerLng = $config['centerLng'] ?? $config['lng'] ?? 0;
-        $latRad = deg2rad($centerLat);
-
-        return [
-            'lat' => $centerLat + ($y / 111320.0),
-            'lng' => $centerLng + ($x / (111320.0 * cos($latRad))),
-        ];
     }
 
     /**
@@ -260,80 +175,56 @@ class GeofenceService
         $centerLat = $config['centerLat'] ?? $config['lat'] ?? 0;
         $centerLng = $config['centerLng'] ?? $config['lng'] ?? 0;
 
-        switch ($shapeType) {
-            case self::SHAPE_POLYGON:
-                $points = is_array($config['points'] ?? null) ? $config['points'] : [];
-                if (count($points) >= 3) {
-                    return array_values(array_map(function ($p) {
-                        return ['lat' => (float) $p['lat'], 'lng' => (float) $p['lng']];
-                    }, $points));
-                }
-                break;
+        return match ($shapeType) {
+            self::SHAPE_POLYGON => $this->polygonVertices($config, $centerLat, $centerLng),
+            self::SHAPE_RECTANGLE => $this->rectangleVertices($config),
+            self::SHAPE_OVAL_H, self::SHAPE_OVAL_V => $this->ovalVertices($config),
+            default => $this->geometry->sampleCircle($centerLat, $centerLng, (float) ($config['radius'] ?? 500)),
+        };
+    }
 
-            case self::SHAPE_RECTANGLE:
-                $width = (float) ($config['width'] ?? $config['radius'] ?? 500);
-                $height = (float) ($config['height'] ?? $config['radius'] ?? 500);
-                $a = $width / 2;
-                $b = $height / 2;
-                $theta = deg2rad((float) ($config['rotation'] ?? 0));
-                $cos = cos($theta);
-                $sin = sin($theta);
-                $corners = [[$a, $b], [-$a, $b], [-$a, -$b], [$a, -$b]];
-                $result = [];
-                foreach ($corners as [$cx, $cy]) {
-                    $rx = $cx * $cos - $cy * $sin;
-                    $ry = $cx * $sin + $cy * $cos;
-                    $result[] = $this->metersToLatLng($rx, $ry, $config);
-                }
-                return $result;
+    private function polygonVertices(array $config, float $centerLat, float $centerLng): array
+    {
+        $points = is_array($config['points'] ?? null) ? $config['points'] : [];
 
-            case self::SHAPE_OVAL_H:
-            case self::SHAPE_OVAL_V:
-                $width = (float) ($config['width'] ?? $config['radius'] ?? 500);
-                $height = (float) ($config['height'] ?? $config['radius'] ?? 500);
-                $a = max(1.0, $width / 2);
-                $b = max(1.0, $height / 2);
-                return $this->sampleEllipse($a, $b, $config);
-
-            case self::SHAPE_CIRCLE:
-            default:
-                $radius = (float) ($config['radius'] ?? 500);
-                return $this->sampleCircle($centerLat, $centerLng, $radius);
+        if (count($points) >= 3) {
+            return array_values(array_map(function ($p) {
+                return ['lat' => (float) $p['lat'], 'lng' => (float) $p['lng']];
+            }, $points));
         }
 
         // Safe fallback for a malformed polygon.
-        $radius = (float) ($config['radius'] ?? 500);
-        return $this->sampleCircle($centerLat, $centerLng, $radius);
+        return $this->geometry->sampleCircle($centerLat, $centerLng, (float) ($config['radius'] ?? 500));
     }
 
-    private function sampleCircle(float $centerLat, float $centerLng, float $radius): array
+    private function rectangleVertices(array $config): array
     {
-        $points = [];
-        $steps = 120;
-        for ($i = 0; $i < $steps; $i++) {
-            $rad = ($i / $steps) * 2 * M_PI;
-            $points[] = $this->metersToLatLng(
-                cos($rad) * $radius,
-                sin($rad) * $radius,
-                ['centerLat' => $centerLat, 'centerLng' => $centerLng]
-            );
+        $width = (float) ($config['width'] ?? $config['radius'] ?? 500);
+        $height = (float) ($config['height'] ?? $config['radius'] ?? 500);
+        $a = $width / 2;
+        $b = $height / 2;
+        $theta = deg2rad((float) ($config['rotation'] ?? 0));
+        $cos = cos($theta);
+        $sin = sin($theta);
+        $corners = [[$a, $b], [-$a, $b], [-$a, -$b], [$a, -$b]];
+        $result = [];
+        foreach ($corners as [$cx, $cy]) {
+            $rx = $cx * $cos - $cy * $sin;
+            $ry = $cx * $sin + $cy * $cos;
+            $result[] = $this->geometry->metersToLatLng($rx, $ry, $config);
         }
-        return $points;
+
+        return $result;
     }
 
-    private function sampleEllipse(float $a, float $b, array $config): array
+    private function ovalVertices(array $config): array
     {
-        $points = [];
-        $steps = 120;
-        for ($i = 0; $i < $steps; $i++) {
-            $rad = ($i / $steps) * 2 * M_PI;
-            $points[] = $this->metersToLatLng(
-                cos($rad) * $a,
-                sin($rad) * $b,
-                $config
-            );
-        }
-        return $points;
+        $width = (float) ($config['width'] ?? $config['radius'] ?? 500);
+        $height = (float) ($config['height'] ?? $config['radius'] ?? 500);
+        $a = max(1.0, $width / 2);
+        $b = max(1.0, $height / 2);
+
+        return $this->geometry->sampleEllipse($a, $b, $config);
     }
 
     /**

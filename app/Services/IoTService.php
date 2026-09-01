@@ -45,7 +45,7 @@ class IoTService
 
     private function handleHeartbeatForBicycle(Bicycle $bicycle, array $data, Carbon $timestamp): void
     {
-        $bicycle->update($this->buildHeartbeatUpdateData($bicycle, $data, $timestamp));
+        $bicycle->update($this->buildHeartbeatUpdateData($data, $timestamp));
 
         DeviceStatus::create([
             'bicycleId' => $bicycle->id,
@@ -58,7 +58,7 @@ class IoTService
             'eventTimestamp' => $timestamp,
         ]);
 
-        $impact = $this->valueOf($data, ['impact', 'impact_force', 'impactForce']);
+        $impact = HelperService::valueOf($data, ['impact', 'impact_force', 'impactForce']);
         if ($impact !== null && (float) $impact > 0) {
             $this->handleImpactDetection($bicycle, (float) $impact, $data);
         }
@@ -68,7 +68,7 @@ class IoTService
         }
     }
 
-    private function buildHeartbeatUpdateData(Bicycle $bicycle, array $data, Carbon $timestamp): array
+    private function buildHeartbeatUpdateData(array $data, Carbon $timestamp): array
     {
         $updateData = ['lastHeartbeat' => $timestamp];
 
@@ -77,7 +77,7 @@ class IoTService
             $updateData['currentLng'] = $data['lng'];
         }
 
-        $battery = $this->valueOf($data, ['batteryLevel', 'battery_level', 'battery']);
+        $battery = HelperService::valueOf($data, ['batteryLevel', 'battery_level', 'battery']);
         if ($battery !== null) {
             $updateData['batteryLevel'] = (int) max(0, min(100, (float) $battery));
         }
@@ -106,7 +106,7 @@ class IoTService
 
     private function batteryPayload(array $data): ?array
     {
-        $battery = $this->valueOf($data, ['batteryLevel', 'battery_level', 'battery']);
+        $battery = HelperService::valueOf($data, ['batteryLevel', 'battery_level', 'battery']);
 
         return $battery !== null ? ['level' => (float) $battery] : null;
     }
@@ -136,7 +136,7 @@ class IoTService
             $bicycle->update(['status' => Bicycle::STATUS_MAINTENANCE]);
         }
 
-        $this->notifyAccident($accident, $bicycle, $severity);
+        $this->notifyAccident($accident, $severity);
 
         return [
             'accidentId' => $accident->id,
@@ -344,7 +344,7 @@ public function acknowledgeDeviceCommand(
         };
     }
 
-    private function notifyAccident(Accident $accident, ?Bicycle $bicycle, string $severity): void
+    private function notifyAccident(Accident $accident, string $severity): void
     {
         $this->notifyAdmins(
             'Accident Report',
@@ -359,16 +359,5 @@ public function acknowledgeDeviceCommand(
         if (!empty($admins)) {
             $this->notificationService->createForUsers($admins, $title, $message, 'system');
         }
-    }
-
-    private function valueOf(array $data, array $keys): mixed
-    {
-        foreach ($keys as $key) {
-            if (array_key_exists($key, $data) && $data[$key] !== null) {
-                return $data[$key];
-            }
-        }
-
-        return null;
     }
 }

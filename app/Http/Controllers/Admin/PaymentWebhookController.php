@@ -21,24 +21,15 @@ class PaymentWebhookController extends Controller
         private RentalService $rentalService
     ) {}
 
-    public function handle(Request $request): JsonResponse
+public function handle(Request $request): JsonResponse
     {
         $signature = $request->header('Paymongo-Signature');
         $payload = $request->getContent();
 
-        if (empty($signature) || !is_string($signature)) {
-            Log::warning('PayMongo webhook signature missing', [
-                'ip' => $request->ip(),
-            ]);
-            return response()->json(['message' => 'Invalid signature'], 401);
-        }
+        $signatureError = $this->signatureError($request, $payload, $signature);
 
-        if (!$this->payMongoService->verifyWebhookSignature($payload, $signature)) {
-            Log::warning('PayMongo webhook signature verification failed', [
-                'ip' => $request->ip(),
-                'signature' => $signature,
-            ]);
-            return response()->json(['message' => 'Invalid signature'], 401);
+        if ($signatureError !== null) {
+            return $signatureError;
         }
 
         try {
@@ -69,6 +60,26 @@ class PaymentWebhookController extends Controller
                 default => response()->json(['message' => 'Event acknowledged']),
             };
         });
+    }
+
+    private function signatureError(Request $request, string $payload, ?string $signature): ?JsonResponse
+    {
+        if (empty($signature)) {
+            Log::warning('PayMongo webhook signature missing', [
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['message' => 'Invalid signature'], 401);
+        }
+
+        if (!$this->payMongoService->verifyWebhookSignature($payload, $signature)) {
+            Log::warning('PayMongo webhook signature verification failed', [
+                'ip' => $request->ip(),
+                'signature' => $signature,
+            ]);
+            return response()->json(['message' => 'Invalid signature'], 401);
+        }
+
+        return null;
     }
 
     private function handlePaymentSucceeded(array $data): JsonResponse
@@ -142,21 +153,37 @@ class PaymentWebhookController extends Controller
         $metadata = $data['attributes']['metadata'] ?? [];
         $paymentId = $metadata['payment_id'] ?? null;
 
-        if (!$paymentId) {
-            Log::warning('Checkout completed but no payment_id in metadata');
-            return response()->json(['message' => 'No payment reference']);
+        $checkoutError = $this->checkoutError($paymentId);
+
+        if ($checkoutError !== null) {
+            return response()->json(['message' => $checkoutError]);
         }
 
         $payment = Payment::find($paymentId);
-
-        if (!$payment) {
-            return response()->json(['message' => self::PAYMENT_NOT_FOUND]);
-        }
 
         if ($payment->status === 'paid') {
             return response()->json(['message' => 'Already processed']);
         }
 
+        return $this->markPaidAndRespond($payment, $data, 'Checkout completed');
+    }
+
+    private function checkoutError(mixed $paymentId): ?string
+    {
+        if (!$paymentId) {
+            Log::warning('Checkout completed but no payment_id in metadata');
+            return 'No payment reference';
+        }
+
+        if (!Payment::find($paymentId)) {
+            return self::PAYMENT_NOT_FOUND;
+        }
+
+        return null;
+    }
+
+    private function markPaidAndRespond(Payment $payment, array $data, string $message): JsonResponse
+    {
         $payment->update([
             'status' => 'paid',
             'paymentDetails' => $data,
@@ -167,7 +194,7 @@ class PaymentWebhookController extends Controller
             $this->rentalService->createRentalFromPaidPayment($payment);
         }
 
-        return response()->json(['message' => 'Checkout completed']);
+        return response()->json(['message' => $message]);
     }
 
     private function handleCheckoutExpired(array $data): JsonResponse

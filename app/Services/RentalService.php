@@ -72,6 +72,13 @@ public function startRental(
 
         $durationFormatted = $this->formatDuration($durationMinutes);
 
+        $pricing = [
+            'ratePerHour' => $ratePerHour,
+            'chargedHours' => $chargedHours,
+            'totalFee' => $totalFee,
+            'durationFormatted' => $durationFormatted,
+        ];
+
         $isGcash = $paymentMethod === 'gcash';
         $rental = DB::transaction(function () use (
             $user,
@@ -79,11 +86,7 @@ public function startRental(
             $durationMinutes,
             $paymentMethod,
             $paymentReference,
-            $ratePerHour,
-            $chargedHours,
-            $totalFee,
-            $durationFormatted,
-            $isGcash
+            $pricing
         ) {
             return $this->persistRental(
                 $user,
@@ -91,11 +94,7 @@ public function startRental(
                 $durationMinutes,
                 $paymentMethod,
                 $paymentReference,
-                $ratePerHour,
-                $chargedHours,
-                $totalFee,
-                $durationFormatted,
-                $isGcash
+                $pricing
             );
         });
 
@@ -123,12 +122,14 @@ public function startRental(
         int $durationMinutes,
         string $paymentMethod,
         ?string $paymentReference,
-        float $ratePerHour,
-        int $chargedHours,
-        float $totalFee,
-        string $durationFormatted,
-        bool $isGcash
+        array $pricing
     ): Rental {
+        $isGcash = $paymentMethod === 'gcash';
+        $ratePerHour = $pricing['ratePerHour'];
+        $chargedHours = $pricing['chargedHours'];
+        $totalFee = $pricing['totalFee'];
+        $durationFormatted = $pricing['durationFormatted'];
+
         $startTime = Carbon::now();
 
         $expectedEndTime = $startTime
@@ -299,32 +300,17 @@ public function startRental(
      */
     public function settleBicycleForRental(Rental $rental, ?User $actor = null, array $extraAttributes = []): bool
     {
-        if ($rental->status !== Rental::STATUS_COMPLETED || strtolower((string) $rental->paymentStatus) !== 'paid') {
+        $bicycle = $this->settleableBicycle($rental);
+
+        if ($bicycle === null) {
             return false;
         }
 
-        if (!$rental->bicycleId) {
-            return false;
-        }
-
-        $bicycle = Bicycle::find($rental->bicycleId);
-        if (!$bicycle) {
-            return false;
-        }
-
-        // Never hijack a bicycle that another rental now holds.
-        // (currentRentalId historically stores either the rental PK or the
-        // REN- reference string, so both are recognised as self.)
-        if ($bicycle->currentRentalId !== null
-            && !in_array((string) $bicycle->currentRentalId, [(string) $rental->id, (string) $rental->rentalId], true)) {
-            return false;
-        }
-
-       $attributes = array_merge([
-    'status' => Bicycle::STATUS_AVAILABLE,
-    'currentRider' => null,
-    'currentRentalId' => null,
-], $extraAttributes);
+        $attributes = array_merge([
+            'status' => Bicycle::STATUS_AVAILABLE,
+            'currentRider' => null,
+            'currentRentalId' => null,
+        ], $extraAttributes);
 
         $bicycle->fill($attributes);
 
@@ -345,6 +331,32 @@ public function startRental(
         });
 
         return true;
+    }
+
+    /**
+     * Returns the bicycle that may be settled for this rental, or null when any
+     * settlement precondition fails (status, payment, or ownership).
+     */
+    private function settleableBicycle(Rental $rental): ?Bicycle
+    {
+        if ($rental->status !== Rental::STATUS_COMPLETED
+            || strtolower((string) $rental->paymentStatus) !== 'paid'
+            || !$rental->bicycleId) {
+            return null;
+        }
+
+        $bicycle = Bicycle::find($rental->bicycleId);
+
+        // Never hijack a bicycle that another rental now holds.
+        // (currentRentalId historically stores either the rental PK or the
+        // REN- reference string, so both are recognised as self.)
+        if ($bicycle === null
+            || ($bicycle->currentRentalId !== null
+                && !in_array((string) $bicycle->currentRentalId, [(string) $rental->id, (string) $rental->rentalId], true))) {
+            return null;
+        }
+
+        return $bicycle;
     }
 
     public function approveRental(Rental $rental, User $admin): Rental

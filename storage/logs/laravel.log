@@ -12313,3 +12313,85 @@ Did you mean one of these?
 [2026-09-02 01:20:41] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
 [2026-09-02 01:20:41] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
 [2026-09-02 01:20:42] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-02 02:16:20] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "updated_at": "2026-09-02T02:16:20+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 02:16:20] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T02:16:20+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 02:16:20] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "updated_at": "2026-09-02T02:16:20+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 02:16:20] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "updated_at": "2026-09-02T02:16:20+08:00"
+    },
+    "socket": null
+}  
+[2026-09-02 02:16:32] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-02 02:16:33] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-02 02:16:33] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a97168197e99"} 
+[2026-09-02 02:16:33] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-02 02:16:34] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9716820ad2c"} 
+[2026-09-02 02:16:34] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-02 02:16:34] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-02 02:16:34] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a971682a6e55"} 
+[2026-09-02 02:16:35] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a971683175c4"} 
+[2026-09-02 02:16:35] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 02:16:35] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-02 02:16:35] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-02 02:16:36] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-02 02:16:36] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a971684888fb"} 
+[2026-09-02 02:16:36] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a971684ee40e"} 
+[2026-09-02 02:16:37] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-02 02:16:41] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-02 02:16:54] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-02 02:16:54] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-02 02:16:55] testing.WARNING: PayMongo webhook secret not configured  

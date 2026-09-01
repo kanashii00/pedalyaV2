@@ -38,6 +38,12 @@ class RentController extends Controller
 
         $user = $request->user();
 
+        $redirect = $request->paymentMethod === 'gcash'
+            ? redirect()->route('rider.rentals.index')
+                ->with('success', 'Rental submitted! Your payment is pending verification. You will be notified once approved.')
+            : redirect()->route('rider.dashboard')
+                ->with('success', 'Rental started successfully. Pay at the station upon return.');
+
         try {
             $this->rentalService->startRental(
                 $user,
@@ -48,20 +54,14 @@ class RentController extends Controller
                     ? $request->paymentReference
                     : null,
             );
-
-            if ($request->paymentMethod === 'gcash') {
-                return redirect()->route('rider.rentals.index')
-                    ->with('success', 'Rental submitted! Your payment is pending verification. You will be notified once approved.');
-            }
-
-            return redirect()->route('rider.dashboard')
-                ->with('success', 'Rental started successfully. Pay at the station upon return.');
         } catch (RentalException $e) {
             return back()->withErrors(['bicycleId' => $e->getMessage()]);
         } catch (\Throwable $e) {
             Log::error('Rider failed to start rental', ['error' => $e->getMessage()]);
             return back()->withErrors(['bicycleId' => 'Unable to start the rental. Please try again.']);
         }
+
+        return $redirect;
     }
 
     public function history(Request $request): View

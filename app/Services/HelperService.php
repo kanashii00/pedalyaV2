@@ -62,6 +62,17 @@ class HelperService
         return $prefix ? $prefix . '-' . $timestamp . '-' . $unique : $timestamp . '-' . $unique;
     }
 
+    public static function valueOf(array $data, array $keys): mixed
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data) && $data[$key] !== null) {
+                return $data[$key];
+            }
+        }
+
+        return null;
+    }
+
     public static function sanitizeUserData(User $user): array
     {
         return [

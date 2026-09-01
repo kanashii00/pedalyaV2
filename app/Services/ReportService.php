@@ -11,24 +11,15 @@ use Carbon\Carbon;
 
 class ReportService
 {
-    public function getDashboardStats(): array
+public function getDashboardStats(): array
     {
         $today = Carbon::today();
         $monthStart = Carbon::now()->startOfMonth();
 
-        $bicycles = Bicycle::selectRaw('
-            COUNT(*) as total,
-            SUM(CASE WHEN status = "available" THEN 1 ELSE 0 END) as available_count,
-            SUM(CASE WHEN status = "rented" THEN 1 ELSE 0 END) as rented_count,
-            SUM(CASE WHEN status = "maintenance" THEN 1 ELSE 0 END) as maintenance_count,
-            SUM(CASE WHEN batteryLevel < 20 THEN 1 ELSE 0 END) as low_battery_count
-        ')->first();
-
-        $rentals = Rental::selectRaw('
-            SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_count,
-            SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_count,
-            SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as reserved_count
-        ')->first();
+        $bicycles = $this->bicycleCounts();
+        $rentals = $this->rentalCounts();
+        $users = $this->userCounts();
+        $battery = $this->batteryDistribution();
 
         $todayTotal = Rental::whereDate('created_at', $today)->count();
 
@@ -47,12 +38,6 @@ class ReportService
 
         $maintenanceRequests = MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
 
-        $users = User::selectRaw('
-            COUNT(*) as total,
-            SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified_count,
-            SUM(CASE WHEN verified = 0 THEN 1 ELSE 0 END) as pending_count
-        ')->first();
-
         $todayRevenue = Rental::where('status', 'completed')
             ->whereDate('updated_at', $today)
             ->sum('totalFee');
@@ -66,74 +51,10 @@ class ReportService
 
         $monthlyRentals = Rental::where('created_at', '>=', $monthStart)->count();
 
-        $monthlyRevenueLabels = [];
-        $monthlyRevenueData = [];
-        $monthlyRentalsLabels = [];
-        $monthlyRentalsData = [];
-
-        for ($i = 11; $i >= 0; $i--) {
-            $month = Carbon::now()->subMonths($i);
-            $monthlyRevenueLabels[] = $month->format('M');
-            $monthlyRentalsLabels[] = $month->format('M');
-
-            $monthRevenue = Rental::where('status', 'completed')
-                ->whereYear('updated_at', $month->year)
-                ->whereMonth('updated_at', $month->month)
-                ->sum('totalFee');
-            $monthlyRevenueData[] = (float) $monthRevenue;
-
-            $monthRentals = Rental::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->count();
-            $monthlyRentalsData[] = (int) $monthRentals;
-        }
-
-        /* Weekly rental trend (last 7 days) */
-        $weeklyLabels = [];
-        $weeklyData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $day = Carbon::today()->subDays($i);
-            $weeklyLabels[] = $day->format('D');
-            $weeklyData[] = Rental::whereDate('created_at', $day->toDateString())->count();
-        }
-
-        /* Peak rental hours (last 7 days) */
-        $recentRentals = Rental::where('created_at', '>=', Carbon::now()->subDays(7))
-            ->get(['created_at']);
-
-        $hourCounts = [];
-        foreach ($recentRentals as $recentRental) {
-            $hour = (int) $recentRental->created_at->format('H');
-            $hourCounts[$hour] = ($hourCounts[$hour] ?? 0) + 1;
-        }
-        $peakLabels = [];
-        $peakData = [];
-        for ($h = 0; $h < 24; $h++) {
-            $peakLabels[] = Carbon::createFromTime($h, 0)->format('gA');
-            $peakData[] = (int) ($hourCounts[$h] ?? 0);
-        }
-
-        /* Battery distribution */
-        $battery = Bicycle::selectRaw('
-            SUM(batteryLevel <= 20) as low,
-            SUM(batteryLevel > 20 AND batteryLevel <= 50) as mid,
-            SUM(batteryLevel > 50 AND batteryLevel <= 80) as good,
-            SUM(batteryLevel > 80) as full
-        ')->first();
-
-        /* Incident trends (12 months) */
-        $theftTrendData = [];
-        $accidentTrendData = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $month = Carbon::now()->subMonths($i);
-            $theftTrendData[] = Accident::where('type', 'theft')
-                ->whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->count();
-            $accidentTrendData[] = Accident::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->count();
-        }
+        $monthlyTrends = $this->monthlyTrends();
+        $weeklyTrend = $this->weeklyTrend();
+        $peakHours = $this->peakHours();
+        $incidentTrends = $this->incidentTrends();
 
         $utilization = ((int) ($bicycles->total ?? 0) > 0)
             ? round(((int) ($rentals->active_count ?? 0) / (int) $bicycles->total) * 100, 1)
@@ -180,14 +101,14 @@ class ReportService
                 'unacknowledged' => $unacknowledgedIncidents,
             ],
             'monthlyRentals' => $monthlyRentals,
-            'monthlyRevenueLabels' => $monthlyRevenueLabels,
-            'monthlyRevenueData' => $monthlyRevenueData,
-            'monthlyRentalsLabels' => $monthlyRentalsLabels,
-            'monthlyRentalsData' => $monthlyRentalsData,
-            'weeklyLabels' => $weeklyLabels,
-            'weeklyData' => $weeklyData,
-            'peakLabels' => $peakLabels,
-            'peakData' => $peakData,
+            'monthlyRevenueLabels' => $monthlyTrends['monthlyRevenueLabels'],
+            'monthlyRevenueData' => $monthlyTrends['monthlyRevenueData'],
+            'monthlyRentalsLabels' => $monthlyTrends['monthlyRentalsLabels'],
+            'monthlyRentalsData' => $monthlyTrends['monthlyRentalsData'],
+            'weeklyLabels' => $weeklyTrend['weeklyLabels'],
+            'weeklyData' => $weeklyTrend['weeklyData'],
+            'peakLabels' => $peakHours['peakLabels'],
+            'peakData' => $peakHours['peakData'],
             'battery' => [
                 'low' => (int) ($battery->low ?? 0),
                 'mid' => (int) ($battery->mid ?? 0),
@@ -195,9 +116,127 @@ class ReportService
                 'full' => (int) ($battery->full ?? 0),
             ],
             'utilization' => $utilization,
-            'theftTrendData' => $theftTrendData,
-            'accidentTrendData' => $accidentTrendData,
+            'theftTrendData' => $incidentTrends['theftTrendData'],
+            'accidentTrendData' => $incidentTrends['accidentTrendData'],
         ];
+    }
+
+    private function bicycleCounts(): ?object
+    {
+        return Bicycle::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN status = "available" THEN 1 ELSE 0 END) as available_count,
+            SUM(CASE WHEN status = "rented" THEN 1 ELSE 0 END) as rented_count,
+            SUM(CASE WHEN status = "maintenance" THEN 1 ELSE 0 END) as maintenance_count,
+            SUM(CASE WHEN batteryLevel < 20 THEN 1 ELSE 0 END) as low_battery_count
+        ')->first();
+    }
+
+    private function rentalCounts(): ?object
+    {
+        return Rental::selectRaw('
+            SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_count,
+            SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_count,
+            SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as reserved_count
+        ')->first();
+    }
+
+    private function userCounts(): ?object
+    {
+        return User::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified_count,
+            SUM(CASE WHEN verified = 0 THEN 1 ELSE 0 END) as pending_count
+        ')->first();
+    }
+
+    private function batteryDistribution(): ?object
+    {
+        return Bicycle::selectRaw('
+            SUM(batteryLevel <= 20) as low,
+            SUM(batteryLevel > 20 AND batteryLevel <= 50) as mid,
+            SUM(batteryLevel > 50 AND batteryLevel <= 80) as good,
+            SUM(batteryLevel > 80) as full
+        ')->first();
+    }
+
+    private function monthlyTrends(): array
+    {
+        $monthlyRevenueLabels = [];
+        $monthlyRevenueData = [];
+        $monthlyRentalsLabels = [];
+        $monthlyRentalsData = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $monthlyRevenueLabels[] = $month->format('M');
+            $monthlyRentalsLabels[] = $month->format('M');
+
+            $monthRevenue = Rental::where('status', 'completed')
+                ->whereYear('updated_at', $month->year)
+                ->whereMonth('updated_at', $month->month)
+                ->sum('totalFee');
+            $monthlyRevenueData[] = (float) $monthRevenue;
+
+            $monthRentals = Rental::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
+            $monthlyRentalsData[] = (int) $monthRentals;
+        }
+
+        return compact('monthlyRevenueLabels', 'monthlyRevenueData', 'monthlyRentalsLabels', 'monthlyRentalsData');
+    }
+
+    private function weeklyTrend(): array
+    {
+        $weeklyLabels = [];
+        $weeklyData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $day = Carbon::today()->subDays($i);
+            $weeklyLabels[] = $day->format('D');
+            $weeklyData[] = Rental::whereDate('created_at', $day->toDateString())->count();
+        }
+
+        return compact('weeklyLabels', 'weeklyData');
+    }
+
+    private function peakHours(): array
+    {
+        $recentRentals = Rental::where('created_at', '>=', Carbon::now()->subDays(7))
+            ->get(['created_at']);
+
+        $hourCounts = [];
+        foreach ($recentRentals as $recentRental) {
+            $hour = (int) $recentRental->created_at->format('H');
+            $hourCounts[$hour] = ($hourCounts[$hour] ?? 0) + 1;
+        }
+
+        $peakLabels = [];
+        $peakData = [];
+        for ($h = 0; $h < 24; $h++) {
+            $peakLabels[] = Carbon::createFromTime($h, 0)->format('gA');
+            $peakData[] = (int) ($hourCounts[$h] ?? 0);
+        }
+
+        return compact('peakLabels', 'peakData');
+    }
+
+    private function incidentTrends(): array
+    {
+        $theftTrendData = [];
+        $accidentTrendData = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $theftTrendData[] = Accident::where('type', 'theft')
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
+            $accidentTrendData[] = Accident::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
+        }
+
+        return compact('theftTrendData', 'accidentTrendData');
     }
 
     public function getRentalReport(array $filters): array

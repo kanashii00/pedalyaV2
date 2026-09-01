@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Bicycle;
 use App\Models\DeviceCommand;
 use App\Models\DeviceStatus;
 use App\Models\Rental;
@@ -60,45 +61,11 @@ class CheckOverdueGraceLocks extends Command
             return;
         }
 
-        if ($bicycle->lockStatus === 'locked') {
-            $this->info("Bicycle #{$bicycle->id} is already locked.");
+        $lockIssue = $this->lockIssue($bicycle);
 
-            return;
-        }
-
-        if ($this->hasPendingLockCommand($bicycle->id)) {
-            $this->info("Bicycle #{$bicycle->id} already has a pending lock command.");
-
-            return;
-        }
-
-        $latestHeartbeat = $this->latestHeartbeat($bicycle->id);
-
-        if (!$latestHeartbeat) {
-            $this->warn("Bicycle #{$bicycle->id}: no heartbeat available. Lock skipped.");
-
-            return;
-        }
-
-        if ($this->isHeartbeatStale($latestHeartbeat)) {
-            $this->warn("Bicycle #{$bicycle->id}: heartbeat is stale. Lock skipped.");
-
-            return;
-        }
-
-        $gps = $latestHeartbeat->gps;
-        $speed = is_array($gps) ? ($gps['speed'] ?? null) : null;
-
-        if ($speed === null) {
-            $this->warn("Bicycle #{$bicycle->id}: speed unavailable. Lock skipped.");
-
-            return;
-        }
-
-        $speed = (float) $speed;
-
-        if ($speed > 0.5) {
-            $this->info("Bicycle #{$bicycle->id} is still moving (speed: {$speed}). Lock postponed.");
+        if ($lockIssue !== null) {
+            [$level, $message] = $lockIssue;
+            $this->{$level}($message);
 
             return;
         }
@@ -115,6 +82,42 @@ class CheckOverdueGraceLocks extends Command
         );
 
         $this->info("Safe lock command queued for bicycle #{$bicycle->id}.");
+    }
+
+    private function lockIssue(Bicycle $bicycle): ?array
+    {
+        $latestHeartbeat = $this->latestHeartbeat($bicycle->id);
+
+        $guards = [
+            [$bicycle->lockStatus === 'locked', 'info', "Bicycle #{$bicycle->id} is already locked."],
+            [$this->hasPendingLockCommand($bicycle->id), 'info', "Bicycle #{$bicycle->id} already has a pending lock command."],
+            [$latestHeartbeat === null, 'warn', "Bicycle #{$bicycle->id}: no heartbeat available. Lock skipped."],
+            [$latestHeartbeat !== null && $this->isHeartbeatStale($latestHeartbeat), 'warn', "Bicycle #{$bicycle->id}: heartbeat is stale. Lock skipped."],
+        ];
+
+        foreach ($guards as $guard) {
+            if ($guard[0]) {
+                return [$guard[1], $guard[2]];
+            }
+        }
+
+        $speed = $this->heartbeatSpeed($latestHeartbeat);
+
+        if ($speed === null) {
+            return ['warn', "Bicycle #{$bicycle->id}: speed unavailable. Lock skipped."];
+        }
+
+        return $speed > 0.5
+            ? ['info', "Bicycle #{$bicycle->id} is still moving (speed: {$speed}). Lock postponed."]
+            : null;
+    }
+
+    private function heartbeatSpeed(DeviceStatus $heartbeat): ?float
+    {
+        $gps = $heartbeat->gps;
+        $speed = is_array($gps) ? ($gps['speed'] ?? null) : null;
+
+        return $speed === null ? null : (float) $speed;
     }
 
     private function hasPendingLockCommand(int $bicycleId): bool

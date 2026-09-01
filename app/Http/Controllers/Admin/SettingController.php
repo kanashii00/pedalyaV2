@@ -103,7 +103,14 @@ class SettingController extends Controller
     {
         $geofence = Geofence::where('isActive', true)->first();
 
-        return $geofence ? [
+        return $geofence
+            ? $this->geofenceArrayFromModel($geofence)
+            : $this->defaultGeofenceConfig();
+    }
+
+    private function geofenceArrayFromModel(Geofence $geofence): array
+    {
+        return [
             'centerLat' => (float) $geofence->centerLat,
             'centerLng' => (float) $geofence->centerLng,
             'radius' => (float) $geofence->radius,
@@ -113,7 +120,12 @@ class SettingController extends Controller
             'rotation' => $geofence->rotation !== null ? (float) $geofence->rotation : 0.0,
             'points' => is_array($geofence->points) ? $geofence->points : [],
             'alertEnabled' => (bool) $geofence->alertEnabled,
-        ] : [
+        ];
+    }
+
+    private function defaultGeofenceConfig(): array
+    {
+        return [
             'centerLat' => (float) config('services.geofence.center_lat', 7.0990),
             'centerLng' => (float) config('services.geofence.center_lng', 125.6470),
             'radius' => (float) config('services.geofence.default_radius', 400),

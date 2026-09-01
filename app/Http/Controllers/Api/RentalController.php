@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\RentalResource;
 use App\Models\Bicycle;
 use App\Models\Rental;
+use App\Models\User;
 use App\Services\IoTService;
 use App\Services\RentalService;
 use Illuminate\Http\JsonResponse;
@@ -140,8 +141,7 @@ public function store(Request $request): JsonResponse
             return response()->json(['message' => self::RENTAL_NOT_FOUND], 404);
         }
 
-        $user = $request->user();
-        if ($user->role !== 'admin' && $rental->riderId !== $user->id) {
+        if (!$this->isAuthorizedFor($request->user(), $rental)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -153,6 +153,11 @@ public function store(Request $request): JsonResponse
             'notes'           => 'nullable|string',
         ]);
 
+        return $this->completeReturn($rental, $request->user(), $validated);
+    }
+
+    private function completeReturn(Rental $rental, User $user, array $validated): JsonResponse
+    {
         try {
             $result = $this->rentalService->returnRental(
                 $rental,
@@ -179,6 +184,11 @@ public function store(Request $request): JsonResponse
                 'message' => 'Unable to return the rental.',
             ], 500);
         }
+    }
+
+    private function isAuthorizedFor(User $user, Rental $rental): bool
+    {
+        return $user->role === 'admin' || $rental->riderId === $user->id;
     }
 
     public function approve(Request $request, int $id): JsonResponse
@@ -216,22 +226,17 @@ public function store(Request $request): JsonResponse
         ]);
     }
 
-    public function cancel(Request $request, int $id): JsonResponse
+public function cancel(Request $request, int $id): JsonResponse
     {
         $rental = Rental::find($id);
 
-        if (!$rental) {
-            return response()->json(['message' => self::RENTAL_NOT_FOUND], 404);
+        $cancelRefusal = $this->cancelRefusal($request->user(), $rental);
+
+        if ($cancelRefusal !== null) {
+            return response()->json(['message' => $cancelRefusal[1]], $cancelRefusal[0]);
         }
 
         $user = $request->user();
-        if ($user->role !== 'admin' && $rental->riderId !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        if (in_array($rental->status, [Rental::STATUS_COMPLETED, Rental::STATUS_CANCELLED], true)) {
-            return response()->json(['message' => 'Rental is already ' . $rental->status], 422);
-        }
 
         $rental->update([
             'status' => Rental::STATUS_CANCELLED,
@@ -257,5 +262,25 @@ public function store(Request $request): JsonResponse
             'message' => 'Rental cancelled successfully',
             'rental'  => new RentalResource($rental->fresh()->load(['bicycle', 'rider'])),
         ]);
+    }
+
+    private function cancelRefusal(User $user, ?Rental $rental): ?array
+    {
+        if ($rental === null) {
+            return [404, self::RENTAL_NOT_FOUND];
+        }
+
+        $guards = [
+            [$user->role !== 'admin' && $rental->riderId !== $user->id, [403, 'Unauthorized']],
+            [in_array($rental->status, [Rental::STATUS_COMPLETED, Rental::STATUS_CANCELLED], true), [422, 'Rental is already ' . $rental->status]],
+        ];
+
+        foreach ($guards as $guard) {
+            if ($guard[0]) {
+                return $guard[1];
+            }
+        }
+
+        return null;
     }
 }

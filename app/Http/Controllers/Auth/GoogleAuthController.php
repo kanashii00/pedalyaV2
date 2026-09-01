@@ -47,16 +47,15 @@ class GoogleAuthController extends Controller
             ]);
         }
 
-        $email = $googleUser->getEmail();
-        $user = User::where('google_id', $googleUser->getId())
-            ->orWhere('email', $email)
-            ->first();
+        return $this->loginResponse($request, $googleUser, $this->findUser($googleUser));
+    }
 
-        // New Google user: send them to registration, pre-filling their Google info.
-        if (! $user) {
+    private function loginResponse(Request $request, SocialiteUser $googleUser, ?User $user): RedirectResponse
+    {
+        if ($user === null) {
             $request->session()->put('pending_oauth', [
                 'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Google User',
-                'email' => $email,
+                'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
                 'google_id' => $googleUser->getId(),
             ]);
@@ -79,11 +78,16 @@ class GoogleAuthController extends Controller
 
         $this->recordLogin($user);
 
-        if ($user->isAdmin()) {
-            return redirect()->intended(route('admin.dashboard'));
-        }
+        return $user->isAdmin()
+            ? redirect()->intended(route('admin.dashboard'))
+            : redirect()->intended(route('rider.dashboard'));
+    }
 
-        return redirect()->intended(route('rider.dashboard'));
+    private function findUser(SocialiteUser $googleUser): ?User
+    {
+        return User::where('google_id', $googleUser->getId())
+            ->orWhere('email', $googleUser->getEmail())
+            ->first();
     }
 
     /**
@@ -116,24 +120,13 @@ class GoogleAuthController extends Controller
             ], 401);
         }
 
-        $email = $googleUser->getEmail();
-        $user = User::where('google_id', $googleUser->getId())
-            ->orWhere('email', $email)
-            ->first();
+        return $this->apiLoginResponse($request, $googleUser, $this->findUser($googleUser));
+    }
 
-        // New Google user: tell the mobile app to send them to registration.
-        if (! $user) {
-            return response()->json([
-                'needs_registration' => true,
-                'message' => 'No account exists. Please complete registration.',
-                'provider' => 'google',
-                'profile' => [
-                    'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Google User',
-                    'email' => $email,
-                    'avatar' => $googleUser->getAvatar(),
-                    'google_id' => $googleUser->getId(),
-                ],
-            ]);
+    private function apiLoginResponse(Request $request, SocialiteUser $googleUser, ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->registrationPayload($googleUser);
         }
 
         if (! $user->isActive()) {
@@ -151,6 +144,22 @@ class GoogleAuthController extends Controller
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => new UserResource($user),
+        ]);
+    }
+
+    private function registrationPayload(SocialiteUser $googleUser): JsonResponse
+    {
+        // New Google user: tell the mobile app to send them to registration.
+        return response()->json([
+            'needs_registration' => true,
+            'message' => 'No account exists. Please complete registration.',
+            'provider' => 'google',
+            'profile' => [
+                'name' => $googleUser->getName() ?? $googleUser->getNickname() ?? 'Google User',
+                'email' => $googleUser->getEmail(),
+                'avatar' => $googleUser->getAvatar(),
+                'google_id' => $googleUser->getId(),
+            ],
         ]);
     }
 

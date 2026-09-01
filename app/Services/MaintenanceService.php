@@ -81,14 +81,9 @@ class MaintenanceService
      */
     public function releaseBicycleForRecord(MaintenanceRecord $record): bool
     {
-        if (! in_array($record->status, [MaintenanceRecord::STATUS_COMPLETED, MaintenanceRecord::STATUS_CANCELLED])
-            || ! $record->bicycleId) {
-            return false;
-        }
+        $bicycle = $this->completedBicycle($record);
 
-        $bicycle = Bicycle::find($record->bicycleId);
-
-        if (! $bicycle || $bicycle->status !== Bicycle::STATUS_MAINTENANCE) {
+        if ($bicycle === null || $bicycle->status !== Bicycle::STATUS_MAINTENANCE) {
             return false;
         }
 
@@ -104,5 +99,15 @@ class MaintenanceService
         ]);
 
         return true;
+    }
+
+    private function completedBicycle(MaintenanceRecord $record): ?Bicycle
+    {
+        if (! in_array($record->status, [MaintenanceRecord::STATUS_COMPLETED, MaintenanceRecord::STATUS_CANCELLED])
+            || ! $record->bicycleId) {
+            return null;
+        }
+
+        return Bicycle::find($record->bicycleId);
     }
 }

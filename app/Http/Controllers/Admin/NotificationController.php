@@ -16,7 +16,7 @@ class NotificationController extends Controller
         private NotificationService $notificationService
     ) {}
 
-    public function index(Request $request): Response
+    public function index(): Response
     {
         $notifications = Notification::with('user')->latest()->paginate(20);
         $users = User::where('role', User::ROLE_RIDER)->orderBy('name')->get();

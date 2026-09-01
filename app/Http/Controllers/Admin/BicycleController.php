@@ -138,10 +138,8 @@ class BicycleController extends Controller
                 return back()->withErrors(['status' => 'Cannot move a rented bicycle to maintenance. End the active rental first.']);
             }
 
-            if ($newStatus !== 'maintenance' && $previousStatus === 'maintenance') {
-                if (! $this->maintenanceService->canReleaseBicycle($bicycle)) {
-                    return back()->withErrors(['status' => 'Cannot change status while active maintenance records exist. Complete or cancel them first.']);
-                }
+            if ($newStatus !== 'maintenance' && $previousStatus === 'maintenance' && ! $this->maintenanceService->canReleaseBicycle($bicycle)) {
+                return back()->withErrors(['status' => 'Cannot change status while active maintenance records exist. Complete or cancel them first.']);
             }
 
             if ($newStatus === 'maintenance') {

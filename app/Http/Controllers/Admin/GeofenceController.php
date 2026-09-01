@@ -21,7 +21,7 @@ class GeofenceController extends Controller
         private GeofenceService $geofenceService
     ) {}
 
-    public function index(Request $request): Response
+    public function index(): Response
     {
         $config = $this->geofenceService->getConfig();
         $geofence = Geofence::where('isActive', true)->first();

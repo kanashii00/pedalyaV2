@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentUploadService
@@ -10,23 +11,33 @@ class DocumentUploadService
     public function storeIdVerification(Request $request, int $userId): ?array
     {
         if ($request->hasFile('id_image')) {
-            $path = $request->file('id_image')
-                ->store('id-verifications', 'public');
-
-            return [
-                'id_path' => $path,
-                'id_url' => Storage::disk('public')->url($path),
-            ];
+            return $this->storeUploadedFile($request->file('id_image'));
         }
 
         if (!$request->filled('id_image_base64')) {
             return null;
         }
 
-        $decoded = $this->decodeBase64DataUri(
-            (string) $request->input('id_image_base64')
+        return $this->storeDecoded(
+            $this->decodeBase64DataUri(
+                (string) $request->input('id_image_base64')
+            ),
+            $userId
         );
+    }
 
+    private function storeUploadedFile(UploadedFile $file): array
+    {
+        $path = $file->store('id-verifications', 'public');
+
+        return [
+            'id_path' => $path,
+            'id_url' => Storage::disk('public')->url($path),
+        ];
+    }
+
+    private function storeDecoded(?array $decoded, int $userId): ?array
+    {
         if ($decoded === null) {
             return null;
         }
@@ -65,14 +76,21 @@ class DocumentUploadService
             return null;
         }
 
+        $mime = $this->detectMimeType($binary);
+
+        return $mime === null ? null : [$mime, $binary];
+    }
+
+    private function detectMimeType(string $binary): ?string
+    {
         $info = @getimagesizefromstring($binary);
 
         if ($info !== false && in_array($info['mime'], ['image/jpeg', 'image/png'], true)) {
-            return [$info['mime'], $binary];
+            return $info['mime'];
         }
 
         if (substr($binary, 0, 5) === '%PDF-') {
-            return ['application/pdf', $binary];
+            return 'application/pdf';
         }
 
         return null;
