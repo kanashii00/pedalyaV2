@@ -16337,3 +16337,11 @@ Did you mean one of these?
 [2026-09-04 00:52:15] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
 [2026-09-04 00:52:15] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
 [2026-09-04 00:52:15] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 02:27:43] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
