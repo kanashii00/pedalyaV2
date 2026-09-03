@@ -6,7 +6,6 @@ use App\Models\Accident;
 use App\Models\Bicycle;
 use App\Models\DeviceCommand;
 use App\Models\DeviceStatus;
-use App\Models\SystemSetting;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -16,10 +15,31 @@ class IoTService
 
     protected GeofenceService $geofenceService;
 
-    public function __construct(NotificationService $notificationService, GeofenceService $geofenceService)
+    protected DeviceCommandService $deviceCommands;
+
+    public function __construct(NotificationService $notificationService, GeofenceService $geofenceService, DeviceCommandService $deviceCommands)
     {
         $this->notificationService = $notificationService;
         $this->geofenceService = $geofenceService;
+        $this->deviceCommands = $deviceCommands;
+    }
+
+    public function sendCommand(int $bicycleId, string $command, array $params, ?User $user = null): DeviceCommand
+    {
+        return $this->deviceCommands->sendCommand($bicycleId, $command, $params, $user);
+    }
+
+    public function acknowledgeDeviceCommand(
+        int $deviceCommandId,
+        ?string $result = null,
+        string $status = 'executed'
+    ): bool {
+        return $this->deviceCommands->acknowledgeDeviceCommand($deviceCommandId, $result, $status);
+    }
+
+    public function getPendingCommands(int $bicycleId): array
+    {
+        return $this->deviceCommands->getPendingCommands($bicycleId);
     }
 
     public function processHeartbeat(array $data): array
@@ -212,106 +232,6 @@ class IoTService
             ->first();
     }
 
-    public function sendCommand(int $bicycleId, string $command, array $params, ?User $user = null): DeviceCommand
-    {
-        $bicycle = Bicycle::find($bicycleId);
-
-        $deviceCommand = DeviceCommand::create([
-            'bicycleId' => $bicycleId,
-            'command' => $command,
-            'params' => $params ?: null,
-            'status' => 'pending',
-            'issuedBy' => $user?->id,
-        ]);
-
-        if ($bicycle) {
-            DeviceStatus::create([
-                'bicycleId' => $bicycleId,
-                'command' => $command,
-                'params' => $params ?: null,
-                'commandIssuedBy' => $user?->id,
-                'commandIssuedAt' => Carbon::now(),
-                'type' => 'command',
-                'eventTimestamp' => Carbon::now(),
-            ]);
-        }
-
-        return $deviceCommand;
-    }
-
-    public function acknowledgeDeviceCommand(
-        int $deviceCommandId,
-        ?string $result = null,
-        string $status = 'executed'
-    ): bool {
-        $command = DeviceCommand::find($deviceCommandId);
-
-        if (! $command) {
-            return false;
-        }
-
-        $validStatus = $this->normalizeCommandStatus($status);
-
-        $command->update([
-            'status' => $validStatus,
-            'executedAt' => $validStatus === 'executed' ? now() : null,
-            'response' => $result,
-        ]);
-
-        if ($validStatus === 'executed') {
-            $this->applyCommandEffect($command);
-        }
-
-        return true;
-    }
-
-    private function normalizeCommandStatus(string $status): string
-    {
-        return in_array($status, ['executed', 'failed', 'sent'], true)
-            ? $status
-            : 'executed';
-    }
-
-    private function applyCommandEffect(DeviceCommand $command): void
-    {
-        if (! in_array($command->command, ['lock', 'unlock'], true)) {
-            return;
-        }
-
-        $bicycle = Bicycle::find($command->bicycleId);
-
-        if (! $bicycle) {
-            return;
-        }
-
-        $bicycle->update([
-            'lockStatus' => $command->command === 'unlock'
-                ? Bicycle::LOCK_UNLOCKED
-                : Bicycle::LOCK_LOCKED,
-            'status' => $bicycle->currentRentalId
-                ? Bicycle::STATUS_RENTED
-                : Bicycle::STATUS_AVAILABLE,
-            'lastLockAction' => Carbon::now(),
-            'lockActionBy' => $command->issuedBy,
-        ]);
-    }
-
-    public function getPendingCommands(int $bicycleId): array
-    {
-        return DeviceCommand::where('bicycleId', $bicycleId)
-            ->where('status', 'pending')
-            ->orderBy('id', 'asc')
-            ->take(5)
-            ->get()
-            ->map(fn (DeviceCommand $cmd) => [
-                'id' => $cmd->id,
-                'command' => $cmd->command,
-                'params' => $cmd->params,
-                'issued_at' => $cmd->created_at,
-            ])
-            ->toArray();
-    }
-
     private function handleImpactDetection(Bicycle $bicycle, float $impact, array $data): void
     {
         if ($impact < 2.0) {
@@ -393,19 +313,6 @@ class IoTService
             'Geofence Warning',
             "Bicycle {$bicycle->id} is approaching the geofence boundary (".round($result['distanceToBoundary'] ?? 0, 1).'m from boundary).'
         );
-    }
-
-    private function autoLockOnTheft(Bicycle $bicycle): void
-    {
-        $enabled = filter_var(SystemSetting::getValue('auto_lock_on_theft', true), FILTER_VALIDATE_BOOLEAN);
-
-        if (! $enabled) {
-            return;
-        }
-
-        $this->sendCommand($bicycle->id, 'lock', ['reason' => 'geofence_breach']);
-
-        $bicycle->update(['lockStatus' => Bicycle::LOCK_LOCKED]);
     }
 
     private function determineSeverity(float $impact): string

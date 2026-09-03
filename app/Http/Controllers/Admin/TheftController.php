@@ -73,13 +73,6 @@ class TheftController extends Controller
 
     public function live(): JsonResponse
     {
-        $alerts = Accident::with(['bicycle.currentRiderUser'])
-            ->where('type', TheftDetectionService::TYPE_THEFT)
-            ->where('status', TheftDetectionService::STATUS_OPEN)
-            ->latest()
-            ->limit(50)
-            ->get();
-
         $geofence = $this->geofenceService->getConfig();
 
         $bicycles = Bicycle::where('status', '!=', 'removed')

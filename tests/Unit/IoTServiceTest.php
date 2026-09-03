@@ -6,7 +6,7 @@ use App\Models\Accident;
 use App\Models\Bicycle;
 use App\Models\DeviceCommand;
 use App\Models\DeviceStatus;
-use App\Models\User;
+use App\Services\DeviceCommandService;
 use App\Services\GeofenceService;
 use App\Services\IoTService;
 use App\Services\NotificationService;
@@ -17,11 +17,13 @@ use Tests\TestCase;
 
 class IoTServiceTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesTestData;
+    use RefreshDatabase;
 
     private $notificationService;
+
     private $geofenceService;
+
     private IoTService $service;
 
     protected function setUp(): void
@@ -34,7 +36,11 @@ class IoTServiceTest extends TestCase
         $this->app->instance(NotificationService::class, $this->notificationService);
         $this->app->instance(GeofenceService::class, $this->geofenceService);
 
-        $this->service = new IoTService($this->notificationService, $this->geofenceService);
+        $this->service = new IoTService(
+            $this->notificationService,
+            $this->geofenceService,
+            new DeviceCommandService
+        );
     }
 
     public function test_process_heartbeat_updates_bicycle_and_creates_status(): void

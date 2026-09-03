@@ -63,11 +63,13 @@ class GpsController extends Controller
             $bicycle,
             (float) $validated['lat'],
             (float) $validated['lng'],
-            isset($validated['speed']) ? (float) $validated['speed'] : null,
-            (int) ($validated['battery'] ?? $bicycle->batteryLevel),
-            $bicycle->lockStatus,
-            $geofence['level'] ?? null,
-            $geofence['distance'] ?? null
+            [
+                'speed' => isset($validated['speed']) ? (float) $validated['speed'] : null,
+                'battery' => (int) ($validated['battery'] ?? $bicycle->batteryLevel),
+                'lock_status' => $bicycle->lockStatus,
+                'zone' => $geofence['level'] ?? null,
+                'zone_distance' => $geofence['distance'] ?? null,
+            ]
         ));
 
         return response()->json([
