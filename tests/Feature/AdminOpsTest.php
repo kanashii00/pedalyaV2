@@ -191,7 +191,21 @@ class AdminOpsTest extends TestCase
         config(['services.device_api_key' => 'pedalya-iot-device-key-2024']);
         $this->adminAuth();
 
-        // Bicycle placed OUTSIDE the default active geofence (center 7.0990/125.6470, radius 500).
+        // Create an explicit active geofence so this test is deterministic and
+        // independent of any config/DB state leaked by earlier tests in the suite.
+        Geofence::query()->update(['isActive' => false]);
+        Geofence::create([
+            'name' => 'Test Riding Zone',
+            'centerLat' => 7.0990,
+            'centerLng' => 125.6470,
+            'radius' => 500,
+            'warningThreshold' => 100,
+            'shapeType' => 'circle',
+            'isActive' => true,
+            'alertEnabled' => true,
+        ]);
+
+        // Bicycle placed OUTSIDE the active geofence (center 7.0990/125.6470, radius 500).
         $bike = $this->makeBicycle(['status' => Bicycle::STATUS_RENTED]);
         $bike->refresh();
 
