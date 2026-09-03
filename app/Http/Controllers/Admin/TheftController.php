@@ -152,6 +152,8 @@ class TheftController extends Controller
             $bike->zone = $result;
 
             if (! ($result['inside'] ?? false)) {
+                // Only a true outside (red) pin is a theft; green/orange approached
+                // resulting in an "approaching"/"warning" level are not.
                 Log::debug('[TheftController] reconcile outside pin -> ensure alert', [
                     'bicycleId' => $bike->id,
                     'lat' => $lat,
@@ -167,9 +169,6 @@ class TheftController extends Controller
                     $result['distanceOutside'] ?? null,
                     $result
                 );
-            } elseif (in_array($result['level'] ?? null, ['approaching', 'warning'], true)) {
-                // Only a true outside (red) pin is a theft; green/orange are not.
-                continue;
             }
         }
     }
