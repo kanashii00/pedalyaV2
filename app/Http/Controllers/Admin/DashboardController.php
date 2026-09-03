@@ -9,6 +9,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\Rental;
 use App\Services\ReportService;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -18,7 +19,11 @@ class DashboardController extends Controller
 
     public function index(): Response
     {
-        $stats = $this->reportService->getDashboardStats();
+        $stats = Cache::remember(
+            'admin.dashboard.stats',
+            now()->addSeconds(30),
+            fn () => $this->reportService->getDashboardStats()
+        );
 
         $lowBatteryBicycles = Bicycle::where('status', '!=', 'removed')
             ->where('batteryLevel', '<=', 20)
