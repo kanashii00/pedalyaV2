@@ -159,7 +159,7 @@ class IoTServiceTest extends TestCase
         ]);
 
         $this->assertSame('logged', $result['status']);
-        $accident = Accident::where('type', 'geofence_breach')->first();
+        $accident = Accident::where('type', 'theft')->first();
         $this->assertSame(150.5, (float) $accident->breachDistance);
     }
 

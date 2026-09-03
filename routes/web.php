@@ -89,8 +89,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/geofence', [AdminGeofence::class, 'update'])->name('geofence.update');
 
     // Theft alerts
-    Route::get('/theft', [AdminTheft::class, 'index'])->name('theft-alerts.index');
-    Route::post('/theft/{id}/acknowledge', [AdminTheft::class, 'acknowledge'])->name('theft-alerts.acknowledge');
+Route::get('/theft', [AdminTheft::class, 'index'])->name('theft-alerts.index');
+Route::get('/theft/live', [AdminTheft::class, 'live'])->name('theft-alerts.live');
+Route::post('/theft/{id}/acknowledge', [AdminTheft::class, 'acknowledge'])->name('theft-alerts.acknowledge');
 
     // Accidents
     Route::get('/accidents', [AdminAccident::class, 'index'])->name('accidents.index');

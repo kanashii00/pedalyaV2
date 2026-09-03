@@ -24,7 +24,11 @@ class GpsUpdate implements ShouldBroadcast
 
     public string $lockStatus;
 
-    public function __construct(Bicycle $bicycle, float $lat, float $lng, ?float $speed = null, int $batteryLevel = 0, string $lockStatus = 'locked')
+    public ?string $zoneLevel;
+
+    public ?float $zoneDistance;
+
+    public function __construct(Bicycle $bicycle, float $lat, float $lng, ?float $speed = null, int $batteryLevel = 0, string $lockStatus = 'locked', ?string $zoneLevel = null, ?float $zoneDistance = null)
     {
         $this->bicycle = $bicycle;
         $this->lat = $lat;
@@ -32,6 +36,8 @@ class GpsUpdate implements ShouldBroadcast
         $this->speed = $speed;
         $this->batteryLevel = $batteryLevel;
         $this->lockStatus = $lockStatus;
+        $this->zoneLevel = $zoneLevel;
+        $this->zoneDistance = $zoneDistance;
     }
 
     public function broadcastOn(): array
@@ -58,6 +64,8 @@ class GpsUpdate implements ShouldBroadcast
                 'battery' => $this->batteryLevel,
                 'locked' => $this->lockStatus === 'locked',
                 'status' => $this->bicycle->status,
+                'zone' => $this->zoneLevel,
+                'zone_distance' => $this->zoneDistance,
                 'updated_at' => now()->toIso8601String(),
             ],
         ];

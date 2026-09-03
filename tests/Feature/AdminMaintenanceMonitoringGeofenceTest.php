@@ -16,6 +16,12 @@ class AdminMaintenanceMonitoringGeofenceTest extends TestCase
     use RefreshDatabase;
     use CreatesTestData;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['broadcasting.default' => 'log']);
+    }
+
     public function test_maintenance_index_active_and_history(): void
     {
         $admin = $this->makeAdmin();

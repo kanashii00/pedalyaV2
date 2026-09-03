@@ -56,6 +56,8 @@ class GeofenceAlert implements ShouldBroadcast
                 'status' => $this->bicycle->status,
                 'battery' => $this->bicycle->batteryLevel,
                 'locked' => $this->bicycle->lockStatus === 'locked',
+                'zone' => $this->level,
+                'zone_distance' => $this->distance,
                 'updated_at' => now()->toIso8601String(),
             ],
         ];

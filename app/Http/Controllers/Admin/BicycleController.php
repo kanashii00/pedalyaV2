@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Bicycle;
 use App\Models\DeviceStatus;
+use App\Services\GeofenceService;
 use App\Services\IoTService;
 use App\Services\MaintenanceService;
+use App\Services\TheftDetectionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class BicycleController extends Controller
 {
@@ -92,6 +95,10 @@ class BicycleController extends Controller
 
         AuditLog::record('bicycle_created', auth()->id(), ['bicycleId' => $bicycle->id]);
 
+        if ($bicycle->currentLat !== null && $bicycle->currentLng !== null) {
+            $this->reconcilePosition($bicycle);
+        }
+
         return redirect()->route('admin.bicycles.index')->with('success', 'Bicycle "'.$bicycle->name.'" ('.$serialNumber.') added successfully.');
     }
 
@@ -163,9 +170,52 @@ class BicycleController extends Controller
 
         $bicycle->update($validated);
 
+        if (array_key_exists('currentLat', $validated) || array_key_exists('currentLng', $validated)) {
+            $this->reconcilePosition($bicycle);
+        }
+
         AuditLog::record('bicycle_updated', auth()->id(), ['bicycleId' => $bicycle->id]);
 
         return back()->with('success', 'Bicycle updated successfully.');
+    }
+
+    /**
+     * Evaluate the geofence whenever a bicycle's coordinates are written so an
+     * outside position immediately gets a single open theft alert and an inside
+     * position resolves it — keeping red pins on the shared map and the Theft
+     * Alert Log in sync no matter which path wrote the position.
+     */
+    private function reconcilePosition(Bicycle $bicycle): void
+    {
+        $lat = $bicycle->currentLat;
+        $lng = $bicycle->currentLng;
+        if ($lat === null || $lng === null) {
+            return;
+        }
+
+        $geofenceService = app(GeofenceService::class);
+        $theftService = app(TheftDetectionService::class);
+        $result = $geofenceService->checkPointInGeofence((float) $lat, (float) $lng);
+
+        Log::debug('[AdminBicycle] reconcile position', [
+            'bicycleId' => $bicycle->id,
+            'lat' => $lat,
+            'lng' => $lng,
+            'inside' => $result['inside'] ?? null,
+            'level' => $result['level'] ?? null,
+        ]);
+
+        if (! ($result['inside'] ?? false)) {
+            $theftService->ensureActiveAlertForOutside(
+                $bicycle,
+                (float) $lat,
+                (float) $lng,
+                $result['distanceOutside'] ?? null,
+                $result
+            );
+        } elseif (! in_array($result['level'] ?? null, ['approaching', 'warning'], true)) {
+            $theftService->resolveAlertOnReturn($bicycle);
+        }
     }
 
     public function destroy(int $id): RedirectResponse

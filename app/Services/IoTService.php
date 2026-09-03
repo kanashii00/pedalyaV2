@@ -6,12 +6,14 @@ use App\Models\Accident;
 use App\Models\Bicycle;
 use App\Models\DeviceCommand;
 use App\Models\DeviceStatus;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Carbon\Carbon;
 
 class IoTService
 {
     protected NotificationService $notificationService;
+
     protected GeofenceService $geofenceService;
 
     public function __construct(NotificationService $notificationService, GeofenceService $geofenceService)
@@ -93,7 +95,7 @@ class IoTService
 
     private function gpsPayload(array $data): ?array
     {
-        if (!isset($data['lat'], $data['lng'])) {
+        if (! isset($data['lat'], $data['lng'])) {
             return null;
         }
 
@@ -151,18 +153,36 @@ class IoTService
         $riderId = $data['riderId'] ?? $data['rider_id'] ?? null;
         $distance = isset($data['distance']) ? (float) $data['distance'] : null;
 
-        $accident = Accident::create([
-            'bicycleId' => $bicycleId,
-            'type' => 'geofence_breach',
-            'severity' => 'moderate',
-            'gpsLocation' => isset($data['lat'], $data['lng']) ? ['lat' => $data['lat'], 'lng' => $data['lng']] : null,
-            'description' => $data['description'] ?? 'Geofence boundary breached',
-            'status' => 'open',
-            'acknowledged' => false,
-            'alertSent' => true,
-            'reportedBy' => $data['device_id'] ?? 'iot_device',
-            'breachDistance' => $distance,
-        ]);
+        // Reuse the currently open theft alert for this bicycle to prevent
+        // duplicate active alerts while it remains outside the geofence.
+        $accident = Accident::where('bicycleId', $bicycleId)
+            ->where('type', TheftDetectionService::TYPE_THEFT)
+            ->where('status', 'open')
+            ->latest('id')
+            ->first();
+
+        if (! $accident) {
+            $accident = Accident::create([
+                'bicycleId' => $bicycleId,
+                'type' => TheftDetectionService::TYPE_THEFT,
+                'severity' => 'moderate',
+                'gpsLocation' => isset($data['lat'], $data['lng']) ? ['lat' => $data['lat'], 'lng' => $data['lng']] : null,
+                'description' => $data['description'] ?? 'Geofence boundary breached',
+                'status' => 'open',
+                'acknowledged' => false,
+                'alertSent' => true,
+                'reportedBy' => $data['device_id'] ?? 'iot_device',
+                'breachDistance' => $distance,
+            ]);
+        } else {
+            $accident->update([
+                'gpsLocation' => isset($data['lat'], $data['lng']) ? ['lat' => $data['lat'], 'lng' => $data['lng']] : $accident->gpsLocation,
+                'breachDistance' => $distance,
+                'description' => $data['description'] ?? 'Geofence boundary breached',
+                'status' => 'open',
+                'updated_at' => now(),
+            ]);
+        }
 
         if ($riderId) {
             $this->notificationService->create(
@@ -176,7 +196,7 @@ class IoTService
         $this->notifyAdmins(
             'Geofence Breach Alert',
             "Bicycle {$bicycleId} has breached its geofence boundary."
-                . ($distance !== null ? ' Distance outside boundary: ' . round($distance, 1) . 'm.' : '')
+                .($distance !== null ? ' Distance outside boundary: '.round($distance, 1).'m.' : '')
         );
 
         return [
@@ -218,14 +238,15 @@ class IoTService
 
         return $deviceCommand;
     }
-public function acknowledgeDeviceCommand(
+
+    public function acknowledgeDeviceCommand(
         int $deviceCommandId,
         ?string $result = null,
         string $status = 'executed'
     ): bool {
         $command = DeviceCommand::find($deviceCommandId);
 
-        if (!$command) {
+        if (! $command) {
             return false;
         }
 
@@ -253,13 +274,13 @@ public function acknowledgeDeviceCommand(
 
     private function applyCommandEffect(DeviceCommand $command): void
     {
-        if (!in_array($command->command, ['lock', 'unlock'], true)) {
+        if (! in_array($command->command, ['lock', 'unlock'], true)) {
             return;
         }
 
         $bicycle = Bicycle::find($command->bicycleId);
 
-        if (!$bicycle) {
+        if (! $bicycle) {
             return;
         }
 
@@ -306,7 +327,7 @@ public function acknowledgeDeviceCommand(
             'gpsLocation' => isset($data['lat'], $data['lng']) ? ['lat' => $data['lat'], 'lng' => $data['lng']] : null,
             'accelerometerData' => $data['accelerometer'] ?? null,
             'impactForce' => $impact,
-            'description' => 'Impact detected with force: ' . $impact . 'g',
+            'description' => 'Impact detected with force: '.$impact.'g',
             'status' => 'open',
             'acknowledged' => false,
             'reportedBy' => $data['device_id'] ?? 'iot_device',
@@ -323,15 +344,68 @@ public function acknowledgeDeviceCommand(
         $geofenceService = app(GeofenceService::class);
         $result = $geofenceService->checkPointInGeofence($lat, $lng);
 
-        if (!$result['inside']) {
-            $this->processGeofenceAlert([
-                'bicycleId' => $bicycle->id,
-                'lat' => $lat,
-                'lng' => $lng,
-                'distance' => $result['distanceOutside'] ?? null,
-                'riderId' => $bicycle->currentRider,
-            ]);
+        $theftService = app(TheftDetectionService::class);
+
+        if (! $result['inside']) {
+            // Open (or update) the single active theft alert for this bicycle.
+            $theftService->openOrUpdateTheftAlert(
+                $bicycle,
+                $lat,
+                $lng,
+                $result['distanceOutside'] ?? null,
+                $result
+            );
+        } elseif (in_array($result['level'] ?? null, ['approaching', 'warning'], true)) {
+            $this->recordWarningEvent($bicycle, $lat, $lng, $result);
+        } else {
+            // Bicycle returned inside the safe zone → resolve alert, keep history.
+            $theftService->resolveAlertOnReturn($bicycle);
         }
+    }
+
+    private function recordWarningEvent(Bicycle $bicycle, float $lat, float $lng, array $result): void
+    {
+        $lastWarning = Accident::where('bicycleId', $bicycle->id)
+            ->where('type', 'geofence_alert')
+            ->where('warningLevel', '!=', 'breach')
+            ->latest('id')
+            ->first();
+
+        if ($lastWarning && $lastWarning->created_at->diffInMinutes(now()) < 15) {
+            return;
+        }
+
+        Accident::create([
+            'bicycleId' => $bicycle->id,
+            'type' => 'geofence_alert',
+            'severity' => 'minor',
+            'gpsLocation' => ['lat' => $lat, 'lng' => $lng],
+            'description' => 'Bicycle is approaching the geofence boundary ('.round($result['distanceToBoundary'] ?? 0, 1).'m from boundary).',
+            'status' => 'open',
+            'acknowledged' => false,
+            'alertSent' => true,
+            'reportedBy' => 'iot_device',
+            'warningLevel' => $result['level'] ?? 'approaching',
+            'distanceFromBoundary' => $result['distanceToBoundary'] ?? 0,
+        ]);
+
+        $this->notifyAdmins(
+            'Geofence Warning',
+            "Bicycle {$bicycle->id} is approaching the geofence boundary (".round($result['distanceToBoundary'] ?? 0, 1).'m from boundary).'
+        );
+    }
+
+    private function autoLockOnTheft(Bicycle $bicycle): void
+    {
+        $enabled = filter_var(SystemSetting::getValue('auto_lock_on_theft', true), FILTER_VALIDATE_BOOLEAN);
+
+        if (! $enabled) {
+            return;
+        }
+
+        $this->sendCommand($bicycle->id, 'lock', ['reason' => 'geofence_breach']);
+
+        $bicycle->update(['lockStatus' => Bicycle::LOCK_LOCKED]);
     }
 
     private function determineSeverity(float $impact): string
@@ -356,7 +430,7 @@ public function acknowledgeDeviceCommand(
     {
         $admins = User::where('role', User::ROLE_ADMIN)->pluck('id')->all();
 
-        if (!empty($admins)) {
+        if (! empty($admins)) {
             $this->notificationService->createForUsers($admins, $title, $message, 'system');
         }
     }

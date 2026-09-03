@@ -156,7 +156,7 @@ class ApiDeviceTest extends TestCase
         ], $this->deviceHeaders())->assertOk();
 
         $this->assertDatabaseHas('geofence_breaches', ['bicycleId' => $bike->id]);
-        $this->assertDatabaseHas('accidents', ['bicycleId' => $bike->id, 'type' => 'geofence_breach']);
+        $this->assertDatabaseHas('accidents', ['bicycleId' => $bike->id, 'type' => 'theft']);
     }
 
     public function test_gps_track_and_current_require_auth(): void

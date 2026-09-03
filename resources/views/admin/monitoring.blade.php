@@ -55,6 +55,18 @@
         border: 2px solid rgba(255,255,255,0.8);
         box-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
+    .map-legend .legend-count {
+        display: inline-block;
+        min-width: 18px;
+        text-align: center;
+        margin-left: 6px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: rgba(0,0,0,0.07);
+        color: #555;
+        font-weight: 700;
+        font-size: 0.72rem;
+    }
     .section-tabs {
         display: flex;
         gap: 8px;
@@ -141,10 +153,10 @@
     <x-slot:tools>
         <small class="text-muted me-3" id="fleetCount">{{ count($bicycles ?? []) }} bicycle(s)</small>
         <small class="text-muted">
-            Geofence: {{ number_format($geofence['radius'], 0) }}m
-            @if($geofence['alertEnabled'])
+            Geofence: <span id="geofenceRadiusText">{{ number_format($geofence['radius'], 0) }}m</span>
+            <span id="geofenceAlertBadge">@if($geofence['alertEnabled'])
                 <x-admin.badge type="success" label="Alerts ON"/>
-            @endif
+            @endif</span>
         </small>
         <div class="ms-auto d-flex gap-2">
             <button class="btn-admin btn-admin--ghost btn-admin--sm" id="centerMapBtn" title="Center on geofence">
@@ -160,9 +172,9 @@
     </x-slot:tools>
     <div id="monitoringMap"></div>
     <div class="map-legend">
-        <div><span class="dot" style="background:#2ecc71;"></span>Inside zone</div>
-        <div><span class="dot" style="background:#f1c40f;"></span>Near boundary</div>
-        <div><span class="dot" style="background:#e74c3c;"></span>Outside zone</div>
+        <div><span class="dot" style="background:#2ecc71;"></span>Inside Zone <span class="legend-count" data-count="safe">0</span></div>
+        <div><span class="dot" style="background:#f39c12;"></span>Near Boundary <span class="legend-count" data-count="near">0</span></div>
+        <div><span class="dot" style="background:#e74c3c;"></span>Outside Zone <span class="legend-count" data-count="outside">0</span></div>
         <div><span class="dot" style="background:#27ae60;"></span>Geofence Boundary</div>
     </div>
 </x-admin.card>
@@ -185,7 +197,7 @@
             $zoneLevel = $bike->zone['level'] ?? 'unknown';
             $zonePill = match ($zoneLevel) {
                 'breach' => ['bg' => '#e74c3c', 'label' => 'Outside Zone'],
-                'warning', 'approaching' => ['bg' => '#f1c40f', 'label' => 'Near Boundary'],
+                'warning', 'approaching' => ['bg' => '#f39c12', 'label' => 'Near Boundary'],
                 'safe' => ['bg' => '#2ecc71', 'label' => 'Inside Zone'],
                 default => ['bg' => '#95a5a6', 'label' => 'No GPS'],
             };
@@ -279,7 +291,7 @@
                     $zoneLevel = $bike->zone['level'] ?? 'unknown';
                     $zoneStyle = match ($zoneLevel) {
                         'breach' => ['#e74c3c', 'Outside Zone'],
-                        'warning', 'approaching' => ['#f1c40f', 'Near Boundary'],
+                        'warning', 'approaching' => ['#f39c12', 'Near Boundary'],
                         'safe' => ['#2ecc71', 'Inside Zone'],
                         default => ['#95a5a6', 'No GPS'],
                     };
@@ -473,289 +485,27 @@
         'distance' => $b->zone['distance'] ?? null,
     ])->values();
 @endphp
+<script src="{{ asset('js/geolibre-map.js') }}"></script>
 <script>
 (function () {
     var geofence = {!! json_encode($geofence) !!};
     var bicycles = {!! $bicycleLocations->toJson() !!};
 
-    var el = document.getElementById('monitoringMap');
-    if (!el || typeof maplibregl === 'undefined') return;
-
-    var map = new maplibregl.Map({
-        container: el,
-        style: 'https://tiles.openfreemap.org/styles/liberty',
-        center: [geofence.centerLng, geofence.centerLat],
+    window.PedalyaGeoLibre.init({
+        container: 'monitoringMap',
+        geofence: geofence,
+        bicycles: bicycles,
+        liveUrl: {!! json_encode(route('admin.monitoring.live')) !!},
+        pollMs: 15000,
         zoom: 15,
         pitch: 55,
         bearing: -15,
-        attributionControl: true
+        readout: { radius: 'geofenceRadiusText', alertBadge: 'geofenceAlertBadge' },
+        buttons: { center: 'centerMapBtn', refresh: 'refreshMapBtn', fullscreen: 'fullscreenMapBtn' },
+        legendCounts: true,
+        bikeCardSelector: '.bike-monitor-card',
+        fleetCount: 'fleetCount'
     });
-
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.addControl(new maplibregl.FullscreenControl(), 'top-right');
-
-    var markers = {};
-
-    var zoneColor = {
-        safe: '#2ecc71',
-        approaching: '#f1c40f',
-        warning: '#f39c12',
-        breach: '#e74c3c',
-        unknown: '#95a5a6'
-    };
-
-    function circlePolygon(lng, lat, radiusMeters, segments) {
-        segments = segments || 96;
-        var coords = [];
-        var earth = 6371000;
-        var latRad = lat * Math.PI / 180;
-        var lngScale = earth * Math.cos(latRad);
-        var latScale = earth;
-        for (var i = 0; i <= segments; i++) {
-            var rad = (i / segments) * 2 * Math.PI;
-            var dLng = (Math.sin(rad) * radiusMeters) / lngScale;
-            var dLat = (Math.cos(rad) * radiusMeters) / latScale;
-            coords.push([lng + dLng * (180 / Math.PI), lat + dLat * (180 / Math.PI)]);
-        }
-        coords.push(coords[0]);
-        return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
-    }
-
-    // Local metre helpers to build the selected geofence shape.
-    function metersToLatLngShape(start, x, y) {
-        var latRad = start.lat * Math.PI / 180;
-        return {
-            lng: start.lng + (x / (111320 * Math.cos(latRad))),
-            lat: start.lat + (y / 111320)
-        };
-    }
-    function shapeVertices(gf) {
-        var start = { lat: gf.centerLat, lng: gf.centerLng };
-        var type = gf.shapeType || 'circle';
-        var radius = gf.radius || 500;
-        var width = gf.width || radius || 500;
-        var height = gf.height || radius || 500;
-        if (type === 'rectangle') {
-            var a = width / 2, b = height / 2;
-            var th = (gf.rotation || 0) * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th);
-            var corners = [[a, b], [-a, b], [-a, -b], [a, -b]];
-            return corners.map(function (c) {
-                var x = c[0] * cos - c[1] * sin;
-                var y = c[0] * sin + c[1] * cos;
-                var p = metersToLatLngShape(start, x, y);
-                return [p.lng, p.lat];
-            });
-        }
-        if (type === 'oval_h' || type === 'oval_v') {
-            var a2 = Math.max(1, width / 2), b2 = Math.max(1, height / 2);
-            var el = [];
-            for (var i = 0; i < 96; i++) {
-                var rad = (i / 96) * 2 * Math.PI;
-                var p = metersToLatLngShape(start, Math.cos(rad) * a2, Math.sin(rad) * b2);
-                el.push([p.lng, p.lat]);
-            }
-            return el;
-        }
-        if (type === 'polygon' && gf.points && gf.points.length >= 3) {
-            return gf.points.map(function (p) { return [p.lng, p.lat]; });
-        }
-        // Circle fallback
-        var coords = [];
-        for (var i2 = 0; i2 < 96; i2++) {
-            var r2 = (i2 / 96) * 2 * Math.PI;
-            var p2 = metersToLatLngShape(start, Math.cos(r2) * radius, Math.sin(r2) * radius);
-            coords.push([p2.lng, p2.lat]);
-        }
-        return coords;
-    }
-    function shapeFeature(gf) {
-        var verts = shapeVertices(gf);
-        if (verts.length) verts.push(verts[0]);
-        return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [verts] } };
-    }
-
-    function addGeofence() {
-        map.addSource('geofence', {
-            type: 'geojson',
-            data: shapeFeature(geofence)
-        });
-
-        map.addLayer({
-            id: 'geofence-fill',
-            type: 'fill',
-            source: 'geofence',
-            paint: {
-                'fill-color': '#27ae60',
-                'fill-opacity': 0.12
-            }
-        });
-
-        map.addLayer({
-            id: 'geofence-outline',
-            type: 'line',
-            source: 'geofence',
-            paint: {
-                'line-color': '#1e8449',
-                'line-width': 3,
-                'line-dasharray': [0, 2, 2, 2],
-                'line-opacity': 0.9
-            }
-        });
-    }
-
-    function markerColor(bike) {
-        return zoneColor[bike.zone] || zoneColor[bike.status] || '#95a5a6';
-    }
-
-    function addMarker(bike) {
-        if (!bike.lat || !bike.lng) return;
-
-        var color = markerColor(bike);
-        var dist = bike.distance !== null && bike.distance !== undefined
-            ? '<br><small>Distance: ' + Math.round(bike.distance) + ' m</small>' : '';
-        var marker = new maplibregl.Marker({ color: color, pitchAlignment: 'auto', rotationAlignment: 'auto' })
-            .setLngLat([bike.lng, bike.lat])
-            .setPopup(new maplibregl.Popup({ offset: 30 }).setHTML(
-                '<strong>' + bike.name + '</strong><br>' +
-                '<small>Status: ' + bike.status + '</small><br>' +
-                '<small>Battery: ' + bike.battery + '%</small><br>' +
-                '<small>Lock: ' + (bike.locked ? 'Locked' : 'Unlocked') + '</small>' + dist +
-                '<br><small>Last heartbeat: ' + (bike.heartbeat ? new Date(bike.heartbeat).toLocaleString() : 'Never') + '</small>'
-            ))
-            .addTo(map);
-
-        markers[bike.id] = { marker: marker, bike: bike };
-    }
-
-    function updateMarker(bike) {
-        if (!bike.lat || !bike.lng) {
-            if (markers[bike.id]) {
-                markers[bike.id].marker.remove();
-                delete markers[bike.id];
-            }
-            return;
-        }
-        var isBreach = bike.zone === 'breach' || bike.zone === 'outside';
-        var color = isBreach ? '#e74c3c' : markerColor(bike);
-        if (markers[bike.id]) {
-            markers[bike.id].marker.setLngLat([bike.lng, bike.lat]);
-            markers[bike.id].marker.setColor(color);
-            // Toggle breach flash class
-            var markerEl = markers[bike.id].marker.getElement();
-            if (markerEl) {
-                if (isBreach) markerEl.classList.add('marker-breach');
-                else markerEl.classList.remove('marker-breach');
-            }
-            markers[bike.id].bike = bike;
-        } else {
-            addMarker(bike);
-            if (isBreach) {
-                var markerEl = markers[bike.id].marker.getElement();
-                if (markerEl) markerEl.classList.add('marker-breach');
-            }
-        }
-    }
-
-    map.on('load', function () {
-        addGeofence();
-        bicycles.forEach(addMarker);
-
-        // Map control buttons
-        var centerBtn = document.getElementById('centerMapBtn');
-        if (centerBtn) {
-            centerBtn.addEventListener('click', function () {
-                map.flyTo({
-                    center: [geofence.centerLng, geofence.centerLat],
-                    zoom: 15,
-                    pitch: 55,
-                    bearing: -15,
-                    duration: 1000
-                });
-            });
-        }
-
-        var refreshBtn = document.getElementById('refreshMapBtn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', function () {
-                var url = {!! json_encode(route('admin.monitoring.live')) !!};
-                fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-                    .then(function (r) { return r.json(); })
-                    .then(function (data) {
-                        (data.bicycles || []).forEach(function (bike) {
-                            updateMarker({
-                                id: bike.id,
-                                name: bike.name,
-                                lat: bike.current_lat !== undefined ? parseFloat(bike.current_lat) : bike.currentLat,
-                                lng: bike.current_lng !== undefined ? parseFloat(bike.current_lng) : bike.currentLng,
-                                status: bike.status,
-                                battery: bike.battery_level !== undefined ? bike.battery_level : bike.batteryLevel,
-                                locked: bike.lock_status === 'locked' || bike.lockStatus === 'locked',
-                                heartbeat: bike.last_heartbeat || bike.lastHeartbeat,
-                                zone: bike.zone_level || (bike.zone ? bike.zone.level : null) || 'unknown',
-                                distance: bike.zone_distance || (bike.zone ? bike.zone.distance : null) || null
-                            });
-                        });
-                    });
-            });
-        }
-
-        var fsBtn = document.getElementById('fullscreenMapBtn');
-        if (fsBtn) {
-            fsBtn.addEventListener('click', function () {
-                var mapContainer = document.getElementById('monitoringMap');
-                if (mapContainer.requestFullscreen) {
-                    mapContainer.requestFullscreen();
-                } else if (mapContainer.webkitRequestFullscreen) {
-                    mapContainer.webkitRequestFullscreen();
-                } else if (mapContainer.msRequestFullscreen) {
-                    mapContainer.msRequestFullscreen();
-                }
-            });
-        }
-
-        // WebSocket live updates via Laravel Echo + Reverb (fallback to polling)
-        if (window.Pedalya && window.Pedalya.broadcastEnabled && window.Echo) {
-            window.Echo.private('geofence-alerts').listen('GeofenceAlert', function (e) {
-                if (e && e.bicycle) updateMarker(e.bicycle);
-            });
-
-            bicycles.forEach(function (bike) {
-                window.Echo.private('gps.' + bike.id).listen('GpsUpdate', function (e) {
-                    if (e && e.bicycle) updateMarker(e.bicycle);
-                });
-            });
-        } else {
-            startPolling();
-        }
-    });
-
-    var pollingTimer = null;
-    function startPolling() {
-        if (pollingTimer) return;
-        pollingTimer = setInterval(function () {
-            var url = {!! json_encode(route('admin.monitoring.live')) !!};
-            fetch(url, {
-                headers: { 'Accept': 'application/json' },
-                credentials: 'same-origin'
-            }).then(function (r) { return r.json(); })
-              .then(function (data) {
-                  (data.bicycles || []).forEach(function (bike) {
-                      updateMarker({
-                          id: bike.id,
-                          name: bike.name,
-                          lat: bike.current_lat !== undefined ? parseFloat(bike.current_lat) : bike.currentLat,
-                          lng: bike.current_lng !== undefined ? parseFloat(bike.current_lng) : bike.currentLng,
-                          status: bike.status,
-                          battery: bike.battery_level !== undefined ? bike.battery_level : bike.batteryLevel,
-                          locked: bike.lock_status === 'locked' || bike.lockStatus === 'locked',
-                          heartbeat: bike.last_heartbeat || bike.lastHeartbeat,
-                          zone: bike.zone_level || (bike.zone ? bike.zone.level : null) || 'unknown',
-                          distance: bike.zone_distance || (bike.zone ? bike.zone.distance : null) || null
-                      });
-                  });
-              }).catch(function () {});
-        }, 15000);
-    }
 })();
 </script>
 @endif

@@ -170,6 +170,6 @@ class MonitoringController extends Controller
             ];
         }
 
-        return response()->json(['bicycles' => $data]);
+        return response()->json(['bicycles' => $data, 'geofence' => $geofence]);
     }
 }

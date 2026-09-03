@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BicycleResource;
 use App\Models\Bicycle;
-use App\Models\GpsLog;
+use App\Services\GeofenceService;
+use App\Services\IoTService;
+use App\Services\TheftDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
 
 class BicycleController extends Controller
 {
@@ -17,8 +20,8 @@ class BicycleController extends Controller
     public function nearby(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'lat'    => 'required|numeric|between:-90,90',
-            'lng'    => 'required|numeric|between:-180,180',
+            'lat' => 'required|numeric|between:-90,90',
+            'lng' => 'required|numeric|between:-180,180',
             'radius' => 'nullable|numeric|min:100|max:10000',
         ]);
 
@@ -38,6 +41,7 @@ class BicycleController extends Controller
             ->get()
             ->map(function ($bicycle) use ($lat, $lng) {
                 $bicycle->distance = $this->haversine($lat, $lng, $bicycle->currentLat, $bicycle->currentLng);
+
                 return $bicycle;
             })
             ->sortBy('distance')
@@ -45,8 +49,8 @@ class BicycleController extends Controller
 
         return response()->json([
             'bicycles' => BicycleResource::collection($bicycles),
-            'count'    => $bicycles->count(),
-            'radius'   => $radiusMeters,
+            'count' => $bicycles->count(),
+            'radius' => $radiusMeters,
         ]);
     }
 
@@ -54,26 +58,26 @@ class BicycleController extends Controller
     {
         $validated = $request->validate([
             'status' => 'nullable|string|in:available,rented,maintenance,removed',
-            'model'  => 'nullable|string',
+            'model' => 'nullable|string',
             'search' => 'nullable|string',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         $query = Bicycle::query();
 
-        if (!empty($validated['status'])) {
+        if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
         }
 
-        if (!empty($validated['model'])) {
+        if (! empty($validated['model'])) {
             $query->where('model', $validated['model']);
         }
 
-        if (!empty($validated['search'])) {
+        if (! empty($validated['search'])) {
             $search = $validated['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('serialNumber', 'like', "%{$search}%");
+                    ->orWhere('serialNumber', 'like', "%{$search}%");
             });
         }
 
@@ -87,7 +91,7 @@ class BicycleController extends Controller
     {
         $bicycle = Bicycle::with(['latestTelemetry', 'latestGpsLog'])->find($id);
 
-        if (!$bicycle) {
+        if (! $bicycle) {
             return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
@@ -97,13 +101,13 @@ class BicycleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'         => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'serialNumber' => 'required|string|unique:bicycles,serialNumber',
-            'model'        => 'nullable|string|max:255',
-            'description'  => 'nullable|string',
-            'hourlyRate'   => 'nullable|numeric|min:0',
-            'currentLat'   => 'nullable|numeric|between:-90,90',
-            'currentLng'   => 'nullable|numeric|between:-180,180',
+            'model' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'hourlyRate' => 'nullable|numeric|min:0',
+            'currentLat' => 'nullable|numeric|between:-90,90',
+            'currentLng' => 'nullable|numeric|between:-180,180',
             'batteryLevel' => 'nullable|numeric|between:0,100',
         ]);
 
@@ -113,8 +117,8 @@ class BicycleController extends Controller
         $bicycle = Bicycle::create($validated);
 
         return response()->json([
-            'message'  => 'Bicycle created successfully',
-            'bicycle'  => new BicycleResource($bicycle),
+            'message' => 'Bicycle created successfully',
+            'bicycle' => new BicycleResource($bicycle),
         ], 201);
     }
 
@@ -122,35 +126,78 @@ class BicycleController extends Controller
     {
         $bicycle = Bicycle::find($id);
 
-        if (!$bicycle) {
+        if (! $bicycle) {
             return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
         $validated = $request->validate([
-            'name'         => 'sometimes|string|max:255',
-            'serialNumber' => 'sometimes|string|unique:bicycles,serialNumber,' . $id,
-            'model'        => 'nullable|string|max:255',
-            'description'  => 'nullable|string',
-            'hourlyRate'   => 'nullable|numeric|min:0',
-            'currentLat'   => 'nullable|numeric|between:-90,90',
-            'currentLng'   => 'nullable|numeric|between:-180,180',
+            'name' => 'sometimes|string|max:255',
+            'serialNumber' => 'sometimes|string|unique:bicycles,serialNumber,'.$id,
+            'model' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'hourlyRate' => 'nullable|numeric|min:0',
+            'currentLat' => 'nullable|numeric|between:-90,90',
+            'currentLng' => 'nullable|numeric|between:-180,180',
             'batteryLevel' => 'nullable|numeric|between:0,100',
-            'status'       => 'nullable|string|in:available,rented,maintenance,removed',
+            'status' => 'nullable|string|in:available,rented,maintenance,removed',
         ]);
 
         $bicycle->update($validated);
 
+        if (array_key_exists('currentLat', $validated) || array_key_exists('currentLng', $validated)) {
+            $this->reconcilePosition($bicycle);
+        }
+
         return response()->json([
-            'message'  => 'Bicycle updated successfully',
-            'bicycle'  => new BicycleResource($bicycle->fresh()),
+            'message' => 'Bicycle updated successfully',
+            'bicycle' => new BicycleResource($bicycle->fresh()),
         ]);
+    }
+
+    /**
+     * When a bicycle's coordinates are written directly (admin/API edit, seed,
+     * etc.), evaluate the geofence so an outside position immediately gets a
+     * single open theft alert and an inside position resolves it. This keeps the
+     * red pins on the shared map and the Theft Alert Log in sync.
+     */
+    private function reconcilePosition(Bicycle $bicycle): void
+    {
+        $lat = $bicycle->currentLat;
+        $lng = $bicycle->currentLng;
+        if ($lat === null || $lng === null) {
+            return;
+        }
+
+        $geofenceService = app(GeofenceService::class);
+        $theftService = app(TheftDetectionService::class);
+        $result = $geofenceService->checkPointInGeofence((float) $lat, (float) $lng);
+
+        Log::debug('[ApiBicycle] reconcile position', [
+            'bicycleId' => $bicycle->id,
+            'lat' => $lat,
+            'lng' => $lng,
+            'inside' => $result['inside'] ?? null,
+            'level' => $result['level'] ?? null,
+        ]);
+
+        if (! ($result['inside'] ?? false)) {
+            $theftService->ensureActiveAlertForOutside(
+                $bicycle,
+                (float) $lat,
+                (float) $lng,
+                $result['distanceOutside'] ?? null,
+                $result
+            );
+        } elseif (! in_array($result['level'] ?? null, ['approaching', 'warning'], true)) {
+            $theftService->resolveAlertOnReturn($bicycle);
+        }
     }
 
     public function destroy(int $id): JsonResponse
     {
         $bicycle = Bicycle::find($id);
 
-        if (!$bicycle) {
+        if (! $bicycle) {
             return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
@@ -163,7 +210,7 @@ class BicycleController extends Controller
     {
         $bicycle = Bicycle::find($id);
 
-        if (!$bicycle) {
+        if (! $bicycle) {
             return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 
@@ -171,7 +218,7 @@ class BicycleController extends Controller
             'locked' => 'required|boolean',
         ]);
 
-        $command = app(\App\Services\IoTService::class)->sendCommand(
+        $command = app(IoTService::class)->sendCommand(
             $bicycle->id,
             $validated['locked'] ? 'lock' : 'unlock',
             [],
@@ -179,9 +226,9 @@ class BicycleController extends Controller
         );
 
         return response()->json([
-            'message'  => $validated['locked'] ? 'Lock command queued' : 'Unlock command queued',
-            'command'  => $command,
-            'bicycle'  => new BicycleResource($bicycle->fresh()),
+            'message' => $validated['locked'] ? 'Lock command queued' : 'Unlock command queued',
+            'command' => $command,
+            'bicycle' => new BicycleResource($bicycle->fresh()),
         ]);
     }
 
@@ -189,7 +236,7 @@ class BicycleController extends Controller
     {
         $bicycle = Bicycle::with('latestTelemetry')->find($id);
 
-        if (!$bicycle) {
+        if (! $bicycle) {
             return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
 

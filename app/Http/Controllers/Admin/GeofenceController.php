@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\GeofenceUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Accident;
 use App\Models\AuditLog;
@@ -123,6 +124,8 @@ class GeofenceController extends Controller
         );
 
         Geofence::where('isActive', true)->where('id', '!=', $geofence->id)->update(['isActive' => false]);
+
+        event(new GeofenceUpdated($this->geofenceService->getConfig()));
 
         if (isset($validated['warningThreshold'])) {
             SystemSetting::setValue('geofenceWarningThreshold', (string) $validated['warningThreshold']);

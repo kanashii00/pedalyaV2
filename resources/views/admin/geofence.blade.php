@@ -321,8 +321,8 @@
                 <div id="geofenceMap"></div>
                 <div class="geofence-legend">
                     <div><span class="line" style="background:#27ae60;"></span>Geofence Boundary</div>
-                    <div><span class="line" style="background:#f39c12;"></span>Warning Zone</div>
-                    <div><span class="line" style="background:#e74c3c;"></span>Breach Zone</div>
+                    <div><span class="line" style="background:#d5f5e3; border:1px solid #27ae60;"></span>Safe Zone (inside)</div>
+                    <div><span class="line" style="background:#ef5350;"></span>Warning Band (near boundary)</div>
                     <div><span class="line" style="background:#2c3e50;"></span>Center (drag or click map to move)</div>
                     <div id="polygonHint" style="display:none; color:#7c3aed;"><i class="bi bi-cursor-fill me-1"></i>Polygon mode: click map to add points</div>
                 </div>
@@ -735,19 +735,37 @@
 
     var vertexMarkers = [];
 
-    // Warning-zone: an inset copy of the shape shrunk towards the center by the threshold distance.
-    function warningVertices() {
+    // Warning-zone: a transparent band running along the inside of the boundary.
+    // It is rendered as a donut (outer boundary with the inner "safe" ring cut out),
+    // so only the region between the boundary line and the shrunk safe area shows
+    // the red/orange warning fill while the centre stays translucent green.
+    function safeRingVertices() {
         if (warningThreshold <= 0) return [];
-        var base = boundaryVertices();
-        var threshold = Math.min(warningThreshold, Math.max(width, height, radius) * 0.5);
+        return shrinkRing(boundaryVertices(), Math.min(warningThreshold, Math.max(width, height, radius) * 0.5));
+    }
+    function shrinkRing(verts, threshold) {
         var dlng = threshold / (M_PER_DEG_LAT * Math.cos(centerLatRad()));
         var dlat = threshold / M_PER_DEG_LAT;
-        return base.map(function (v) {
+        return verts.map(function (v) {
             var dx = v[0] - center[0];
             var dy = v[1] - center[1];
             var pd = normalize(dx, dy);
             return [v[0] - pd.x * dlng, v[1] - pd.y * dlat];
         });
+    }
+    // Outer boundary (closed) with the inner safe ring reversed so it becomes a hole.
+    function warningBandFeature() {
+        var outer = boundaryVertices().slice();
+        if (outer.length) outer.push(outer[0]);
+        if (warningThreshold <= 0) {
+            return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [outer] } };
+        }
+        var inner = safeRingVertices().slice().reverse();
+        if (inner.length) inner.push(inner[0]);
+        return {
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [outer, inner] }
+        };
     }
     function normalize(x, y) {
         var m = Math.sqrt(x * x + y * y) || 1;
@@ -755,7 +773,9 @@
     }
 
     function renderShape() {
-        var isClosedPolygon = shapeType === 'polygon' && polygonClosed;
+        // A shape is "rendered filled" when it is inherently closed (circle / oval / rectangle)
+        // or when a polygon has been finished (closed) with 3+ points.
+        var canRenderFill = shapeType !== 'polygon' || polygonClosed;
         var data = polygonFeature(boundaryVertices());
 
         if (!map.getSource('geofence')) {
@@ -763,37 +783,59 @@
         } else {
             map.getSource('geofence').setData(data);
         }
+        // Order matters for correct z-stacking:
+        //   geofence-fill (green) -> warning-band (red/orange) -> geofence-outline (on top).
         if (!map.getLayer('geofence-fill')) {
             map.addLayer({ id: 'geofence-fill', type: 'fill', source: 'geofence', paint: { 'fill-color': '#27ae60', 'fill-opacity': 0.18 } });
+        }
+
+        // Red/orange warning band inside the boundary (donut around the green safe core).
+        var bandData = warningBandFeature();
+        if (!map.getSource('warning-band')) {
+            map.addSource('warning-band', { type: 'geojson', data: bandData });
+        } else {
+            map.getSource('warning-band').setData(bandData);
+        }
+        if (!map.getLayer('warning-band-fill')) {
+            map.addLayer({ id: 'warning-band-fill', type: 'fill', source: 'warning-band', paint: { 'fill-color': '#ef5350', 'fill-opacity': 0.5 } });
+        }
+        // Dashed inner edge of the danger zone (where the safe area begins).
+        var ringVerts = safeRingVertices();
+        if (ringVerts.length) ringVerts.push(ringVerts[0]);
+        var ringFeature = { type: 'Feature', geometry: { type: 'LineString', coordinates: ringVerts } };
+        if (!map.getSource('safe-ring')) {
+            map.addSource('safe-ring', { type: 'geojson', data: ringFeature });
+        } else {
+            map.getSource('safe-ring').setData(ringFeature);
+        }
+        if (!map.getLayer('safe-ring-line')) {
+            map.addLayer({ id: 'safe-ring-line', type: 'line', source: 'safe-ring', paint: { 'line-color': '#e67e22', 'line-width': 2, 'line-opacity': 0.9, 'line-dasharray': [3, 2] } });
+        }
+        if (map.getLayer('safe-ring-line')) {
+            map.setLayoutProperty('safe-ring-line', 'visibility', canRenderFill && warningThreshold > 0 ? 'visible' : 'none');
+        }
+
+        if (!map.getLayer('geofence-outline')) {
             map.addLayer({ id: 'geofence-outline', type: 'line', source: 'geofence', paint: { 'line-color': '#1e8449', 'line-width': 3, 'line-dasharray': [0, 2, 2, 2] } });
         }
 
         // For an open (still drawing) polygon we show a bold guide line instead of a solid fill.
         if (map.getLayer('geofence-outline')) {
-            map.setPaintProperty('geofence-outline', 'line-color', isClosedPolygon ? '#1e8449' : '#7c3aed');
-            map.setPaintProperty('geofence-outline', 'line-width', isClosedPolygon ? 3 : 4);
-            map.setPaintProperty('geofence-outline', 'line-dasharray', isClosedPolygon ? [0, 2, 2, 2] : [2, 1]);
+            map.setPaintProperty('geofence-outline', 'line-color', canRenderFill ? '#1e8449' : '#7c3aed');
+            map.setPaintProperty('geofence-outline', 'line-width', canRenderFill ? 3 : 4);
+            map.setPaintProperty('geofence-outline', 'line-dasharray', canRenderFill ? [0, 2, 2, 2] : [2, 1]);
         }
         if (map.getLayer('geofence-fill')) {
-            map.setLayoutProperty('geofence-fill', 'visibility', isClosedPolygon ? 'visible' : 'none');
+            map.setLayoutProperty('geofence-fill', 'visibility', canRenderFill ? 'visible' : 'none');
+        }
+
+        // The band is only meaningful once the boundary is enclosed; hide it while drawing.
+        if (map.getLayer('warning-band-fill')) {
+            map.setLayoutProperty('warning-band-fill', 'visibility', canRenderFill && warningThreshold > 0 ? 'visible' : 'none');
         }
 
         // Open drawing guide: line through the points + closing dashed segment to completion.
-        renderDrawGuide(isClosedPolygon);
-
-        var wVerts = warningVertices();
-        var wData = polygonFeature(wVerts);
-        if (!map.getSource('warning-zone')) {
-            map.addSource('warning-zone', { type: 'geojson', data: wData });
-        } else {
-            map.getSource('warning-zone').setData(wData);
-        }
-        if (!map.getLayer('warning-zone-fill')) {
-            map.addLayer({ id: 'warning-zone-fill', type: 'fill', source: 'warning-zone', paint: { 'fill-color': '#f39c12', 'fill-opacity': 0.06 } });
-        }
-        if (map.getLayer('warning-zone-fill')) {
-            map.setLayoutProperty('warning-zone-fill', 'visibility', isClosedPolygon ? 'visible' : 'none');
-        }
+        renderDrawGuide(canRenderFill);
 
         renderVertices();
         updateDrawUI();

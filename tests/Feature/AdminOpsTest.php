@@ -118,22 +118,64 @@ class AdminOpsTest extends TestCase
 
     // ---- Theft ----
 
-    public function test_theft_index_lists_alerts(): void
+    public function test_theft_index_lists_only_open_alerts(): void
     {
         $this->adminAuth();
         $bike = $this->makeBicycle(['status' => Bicycle::STATUS_RENTED]);
-        $this->makeBicycle(['status' => Bicycle::STATUS_MAINTENANCE]);
-        Accident::create(['bicycleId' => $bike->id, 'type' => 'geofence_breach', 'severity' => 'major']);
+        $bike->update(['name' => 'Thief Bike X']);
+        Accident::create(['bicycleId' => $bike->id, 'type' => 'theft', 'severity' => 'major', 'status' => 'open', 'acknowledged' => false]);
+        // A returned (resolved) alert must NOT appear in the theft log.
+        Accident::create(['bicycleId' => $bike->id, 'type' => 'theft', 'severity' => 'major', 'status' => 'returned', 'acknowledged' => true]);
         GeofenceBreach::create(['bicycleId' => $bike->id, 'lat' => 14.5995, 'lng' => 120.9842, 'distance' => 500, 'acknowledged' => false]);
 
-        $this->get(route('admin.theft-alerts.index'))->assertOk();
+        $this->get(route('admin.theft-alerts.index'))
+            ->assertOk()
+            ->assertSee('Thief Bike X');
+    }
+
+    public function test_theft_live_returns_only_open_alerts(): void
+    {
+        $this->adminAuth();
+        $bike = $this->makeBicycle(['status' => Bicycle::STATUS_RENTED]);
+        Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'severity' => 'major',
+            'acknowledged' => false,
+            'status' => 'open',
+            'gpsLocation' => ['lat' => 14.5995, 'lng' => 120.9842],
+            'breachDistance' => 500,
+        ]);
+        // A returned alert should be excluded from the live red-pin log.
+        Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'severity' => 'major',
+            'acknowledged' => true,
+            'status' => 'returned',
+        ]);
+        GeofenceBreach::create(['bicycleId' => $bike->id, 'lat' => 14.5995, 'lng' => 120.9842, 'distance' => 500, 'acknowledged' => false]);
+
+        $this->getJson(route('admin.theft-alerts.live'))
+            ->assertOk()
+            ->assertJsonPath('alerts.0.bicycleId', $bike->id)
+            ->assertJsonPath('alerts.0.status', 'open')
+            ->assertJsonMissingPath('alerts.1')
+            ->assertJsonPath('unacknowledged', 1)
+            ->assertJsonPath('openBreaches', 1)
+            ->assertJsonPath('atRisk', 1)
+            ->assertJsonStructure([
+                'geofence' => ['centerLat', 'centerLng', 'radius', 'warningThreshold', 'shapeType'],
+                'bicycles',
+                'alerts',
+            ]);
     }
 
     public function test_theft_alert_acknowledge(): void
     {
         $this->adminAuth();
         $bike = $this->makeBicycle();
-        $alert = Accident::create(['bicycleId' => $bike->id, 'type' => 'geofence_alert', 'severity' => 'major', 'acknowledged' => false]);
+        $alert = Accident::create(['bicycleId' => $bike->id, 'type' => 'theft', 'severity' => 'major', 'acknowledged' => false]);
         $breach = GeofenceBreach::create(['bicycleId' => $bike->id, 'lat' => 14.5995, 'lng' => 120.9842, 'distance' => 500, 'acknowledged' => false]);
 
         $this->post(route('admin.theft-alerts.acknowledge', $alert->id))
@@ -142,6 +184,65 @@ class AdminOpsTest extends TestCase
         $this->assertDatabaseHas('accidents', ['id' => $alert->id, 'acknowledged' => true]);
         $this->assertDatabaseHas('geofence_breaches', ['id' => $breach->id, 'acknowledged' => true]);
         $this->assertDatabaseHas('audit_logs', ['action' => 'theft_alert_acknowledged']);
+    }
+
+    public function test_outside_red_pin_creates_alert_no_duplicate_and_return_resolves(): void
+    {
+        config(['services.device_api_key' => 'pedalya-iot-device-key-2024']);
+        $this->adminAuth();
+
+        // Bicycle placed OUTSIDE the default active geofence (center 7.0990/125.6470, radius 500).
+        $bike = $this->makeBicycle(['status' => Bicycle::STATUS_RENTED]);
+        $bike->refresh();
+
+        // 1) A red pin (zone_level=breach) must have a matching open theft alert
+        //    auto-created on the read path and appear in the live theft log.
+        $this->getJson(route('admin.theft-alerts.live'))
+            ->assertOk()
+            ->assertJsonPath('bicycles.0.id', $bike->id)
+            ->assertJsonPath('bicycles.0.zone_level', 'breach')
+            ->assertJsonPath('alerts.0.bicycleId', $bike->id)
+            ->assertJsonPath('alerts.0.status', 'open');
+
+        $this->assertDatabaseHas('accidents', [
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'status' => 'open',
+        ]);
+
+        // 2) Repeated polling must NOT create duplicate open alerts for the same red pin.
+        $this->getJson(route('admin.theft-alerts.live'))->assertOk();
+        $this->getJson(route('admin.theft-alerts.live'))->assertOk();
+        $this->getJson(route('admin.theft-alerts.live'))->assertOk();
+
+        $this->assertSame(
+            1,
+            Accident::where('bicycleId', $bike->id)->where('type', 'theft')->where('status', 'open')->count()
+        );
+
+        // 3) Bicycle returns INSIDE via the live GPS ingestion path → the open
+        //    alert is resolved (kept for history), not deleted, and drops off the log.
+        $this->postJson('/api/gps/location', [
+            'bicycle_id' => $bike->id,
+            'lat' => 7.0990,
+            'lng' => 125.6470,
+        ], ['X-API-Key' => config('services.device_api_key')])
+            ->assertOk();
+
+        $this->assertDatabaseHas('accidents', [
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'status' => 'returned',
+        ]);
+        $this->assertSame(
+            0,
+            Accident::where('bicycleId', $bike->id)->where('type', 'theft')->where('status', 'open')->count()
+        );
+
+        $this->getJson(route('admin.theft-alerts.live'))
+            ->assertOk()
+            ->assertJsonPath('bicycles.0.zone_level', 'safe')
+            ->assertJsonMissingPath('alerts.0');
     }
 
     // ---- Audit ----
