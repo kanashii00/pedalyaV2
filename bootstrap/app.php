@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\ApiGateway;
+use App\Http\Middleware\DeviceAuth;
+use App\Http\Middleware\RoleCheck;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,8 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'device.auth' => \App\Http\Middleware\DeviceAuth::class,
-            'role' => \App\Http\Middleware\RoleCheck::class,
+            'device.auth' => DeviceAuth::class,
+            'role' => RoleCheck::class,
+        ]);
+
+        $middleware->appendToGroup('api', [
+            ApiGateway::class,
         ]);
 
         $middleware->statefulApi();
