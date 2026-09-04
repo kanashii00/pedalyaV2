@@ -533,18 +533,14 @@ public function startRental(
 
         $bicycle = Bicycle::find($rental->bicycleId);
 
-        // Never hijack a bicycle that another rental now holds.
-        // (currentRentalId historically stores either the rental PK or the
-        // REN- reference string, so both are recognised as self.)
+        // Never hijack a bicycle that another rental now holds (currentRentalId
+        // historically stores either the rental PK or the REN- reference string,
+        // so both are recognised as self), and never auto-release one that has
+        // already been routed to maintenance (e.g. by a damaged return).
         if ($bicycle === null
+            || $bicycle->status === Bicycle::STATUS_MAINTENANCE
             || ($bicycle->currentRentalId !== null
                 && !in_array((string) $bicycle->currentRentalId, [(string) $rental->id, (string) $rental->rentalId], true))) {
-            return null;
-        }
-
-        // A bicycle already routed to maintenance (e.g. by a damaged return)
-        // must not be auto-released to Available by the settle flow.
-        if ($bicycle->status === Bicycle::STATUS_MAINTENANCE) {
             return null;
         }
 

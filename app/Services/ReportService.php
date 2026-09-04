@@ -12,6 +12,19 @@ use Carbon\Carbon;
 class ReportService
 {
     /**
+     * Suffix appended to an end-date filter so it covers the entire final day.
+     */
+    private const END_OF_DAY = ' 23:59:59';
+
+    /**
+     * True when the filter key is present and not empty.
+     */
+    private function hasFilter(array $filters, string $key): bool
+    {
+        return isset($filters[$key]) && $filters[$key] !== '';
+    }
+
+    /**
      * Rental statuses that represent completed/settled rides. Revenue and
      * return-count queries use this so both "completed" (legacy) and
      * "returned" (confirmed Returns) rentals stay in sync.
@@ -257,7 +270,7 @@ public function getDashboardStats(): array
             $query->where('created_at', '>=', $filters['start_date']);
         }
         if (isset($filters['end_date']) && $filters['end_date'] !== '') {
-            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
+            $query->where('created_at', '<=', $filters['end_date'] . self::END_OF_DAY);
         }
         if (isset($filters['status']) && $filters['status'] !== '') {
             $query->where('status', $filters['status']);
@@ -408,29 +421,29 @@ public function getDashboardStats(): array
         // Sync with Accident Monitoring: only surface accident / impact-detected records.
         $query->whereIn('type', ['accident', 'impact_detected']);
 
-        if (isset($filters['type']) && $filters['type'] !== '') {
+        if ($this->hasFilter($filters, 'type')) {
             $query->where('type', $filters['type']);
         }
 
-        if (isset($filters['start_date']) && $filters['start_date'] !== '') {
+        if ($this->hasFilter($filters, 'start_date')) {
             $query->where('created_at', '>=', $filters['start_date']);
         }
-        if (isset($filters['end_date']) && $filters['end_date'] !== '') {
-            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
+        if ($this->hasFilter($filters, 'end_date')) {
+            $query->where('created_at', '<=', $filters['end_date'] . self::END_OF_DAY);
         }
-        if (isset($filters['severity']) && $filters['severity'] !== '') {
+        if ($this->hasFilter($filters, 'severity')) {
             $query->where('severity', $filters['severity']);
         }
-        if (isset($filters['status']) && $filters['status'] !== '') {
+        if ($this->hasFilter($filters, 'status')) {
             $query->where('status', $filters['status']);
         }
-        if (isset($filters['bicycleId']) && $filters['bicycleId'] !== '') {
+        if ($this->hasFilter($filters, 'bicycleId')) {
             $query->where('bicycleId', $filters['bicycleId']);
         }
-        if (isset($filters['riderId']) && $filters['riderId'] !== '') {
+        if ($this->hasFilter($filters, 'riderId')) {
             $query->where('reportedBy', $filters['riderId']);
         }
-        if (isset($filters['search']) && $filters['search'] !== '') {
+        if ($this->hasFilter($filters, 'search')) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
@@ -502,7 +515,7 @@ public function getDashboardStats(): array
             $query->where('created_at', '>=', $filters['start_date']);
         }
         if (isset($filters['end_date']) && $filters['end_date'] !== '') {
-            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
+            $query->where('created_at', '<=', $filters['end_date'] . self::END_OF_DAY);
         }
         if (isset($filters['status']) && $filters['status'] !== '') {
             $query->where('status', $filters['status']);
@@ -546,7 +559,7 @@ public function getDashboardStats(): array
             $query->where('created_at', '>=', $filters['start_date']);
         }
         if (isset($filters['end_date']) && $filters['end_date'] !== '') {
-            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
+            $query->where('created_at', '<=', $filters['end_date'] . self::END_OF_DAY);
         }
         if (isset($filters['status']) && $filters['status'] !== '') {
             $query->where('status', $filters['status']);
