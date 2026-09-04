@@ -71,16 +71,14 @@ class RentalServiceTest extends TestCase
         $this->assertSame(Bicycle::STATUS_RENTED, Bicycle::findOrFail($bicycle->id)->status);
     }
 
-    public function test_return_rental_releases_bicycle_and_clears_current_rental_id(): void
+    public function test_return_rental_two_phase_marks_awaiting_then_returned(): void
     {
         $notificationService = Mockery::mock(NotificationService::class);
         $notificationService->shouldReceive('create')
-            ->once()
             ->andReturn(new Notification());
 
         $iotService = Mockery::mock(IoTService::class);
         $iotService->shouldReceive('sendCommand')
-            ->once()
             ->andReturn(new DeviceCommand());
 
         $service = new RentalService($notificationService, $iotService);
@@ -135,23 +133,30 @@ class RentalServiceTest extends TestCase
             'currentRentalId' => $rental->id,
         ]);
 
-        $result = $service->returnRental(
-            $rental,
-            $user,
-            14.6000,
-            120.9850,
-            'cash',
-            'CASH-001',
-            'Returned at dock'
-        );
+        // Phase 1: rider/admin ends the ride -> awaiting_return, bicycle held.
+        $ended = $service->markRideEnded($rental, $user, 14.6000, 120.9850);
+
+        $awaitingRental = $ended['rental'];
+        $this->assertSame(Rental::STATUS_AWAITING_RETURN, $awaitingRental->status);
+        $this->assertSame(Bicycle::STATUS_RENTED, Bicycle::findOrFail($bicycle->id)->status);
+
+        // Phase 2: administrator confirms the return -> returned, bicycle released.
+        $returned = $service->processReturn($rental, $user, [
+            'returnTime' => now()->toDateTimeString(),
+            'condition' => Rental::CONDITION_GOOD,
+            'note' => 'Returned at dock',
+        ]);
 
         $freshBicycle = Bicycle::findOrFail($bicycle->id);
         $freshRental = Rental::findOrFail($rental->id);
 
-        $this->assertSame(Rental::STATUS_COMPLETED, $freshRental->status);
+        $this->assertSame(Rental::STATUS_RETURNED, $freshRental->status);
         $this->assertSame(Bicycle::STATUS_AVAILABLE, $freshBicycle->status);
         $this->assertNull($freshBicycle->currentRentalId);
-        $this->assertSame($rental->id, $result['rental']->id);
-        $this->assertSame(20.0, (float) $result['fees']['ratePerHour']);
+        $this->assertNull($freshBicycle->currentRider);
+        $this->assertSame($rental->id, $returned['rental']->id);
+        $this->assertSame(Rental::CONDITION_GOOD, $freshRental->returnCondition);
+        $this->assertSame('paid', $freshRental->paymentStatus);
+        $this->assertNotNull(\App\Models\Payment::where('rentalId', $rental->id)->first());
     }
 }

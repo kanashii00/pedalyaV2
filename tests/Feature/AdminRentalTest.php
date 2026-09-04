@@ -196,9 +196,8 @@ class AdminRentalTest extends TestCase
         $rental = $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_ACTIVE]);
 
         $service = Mockery::mock(RentalService::class);
-        $service->shouldReceive('returnRental')->once()->andReturn([
+        $service->shouldReceive('markRideEnded')->once()->andReturn([
             'rental' => $rental->fresh(),
-            'fees' => ['totalFee' => 30.00, 'durationMinutes' => 60],
         ]);
         $this->app->instance(RentalService::class, $service);
 

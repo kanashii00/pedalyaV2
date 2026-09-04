@@ -128,11 +128,10 @@ class ApiRentalTest extends TestCase
         $rental = $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_ACTIVE]);
 
         $service = Mockery::mock(RentalService::class);
-        $service->shouldReceive('returnRental')
+        $service->shouldReceive('markRideEnded')
             ->once()
             ->andReturn([
-                'rental' => $rental->load(['bicycle', 'rider']),
-                'fees' => ['totalFee' => 30.00, 'durationMinutes' => 60],
+                'rental' => $rental->fresh()->load(['bicycle', 'rider']),
             ]);
         $this->app->instance(RentalService::class, $service);
 
@@ -140,7 +139,7 @@ class ApiRentalTest extends TestCase
             'return_lat' => 14.6,
             'return_lng' => 120.99,
             'payment_method' => 'cash',
-        ])->assertOk()->assertJsonPath('message', 'Bicycle returned successfully');
+        ])->assertOk()->assertJsonPath('message', 'Bicycle returned and awaiting confirmation');
     }
 
     public function test_return_unauthorized_for_other_rider(): void

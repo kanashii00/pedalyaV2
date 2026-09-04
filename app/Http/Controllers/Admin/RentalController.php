@@ -340,7 +340,7 @@ class RentalController extends Controller
             return back()->withErrors(['rental' => $e->getMessage()]);
         }
 
-        AuditLog::record('ride_ended_by_admin', auth()->id(), [
+        AuditLog::record('rental_ended_by_admin', auth()->id(), [
             'rentalId' => $rental->rentalId,
             'endTime' => $rental->fresh()->endTime?->toDateTimeString(),
         ]);

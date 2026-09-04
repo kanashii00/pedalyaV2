@@ -25,6 +25,12 @@ return new class extends Migration
 
         if (Schema::getConnection()->getDriverName() === 'mysql') {
             DB::statement('ALTER TABLE rentals MODIFY status ENUM("active","pending","awaiting_return","completed","cancelled","overdue","returned","expired") NOT NULL DEFAULT "pending"');
+        } else {
+            Schema::table('rentals', function (Blueprint $table) {
+                $table->enum('status', ['active', 'pending', 'awaiting_return', 'completed', 'cancelled', 'overdue', 'returned', 'expired'])
+                    ->default('pending')
+                    ->change();
+            });
         }
     }
 
