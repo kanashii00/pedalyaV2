@@ -57,10 +57,37 @@
     <?php
         $headers = [];
         $rows = [];
-        if ($reportType === 'revenue') {
+        if ($reportType === 'customer') {
+            $headers = ['Name', 'Student ID', 'Email', 'Phone', 'Status', 'Verified', 'Rentals', 'Total Spent', 'Joined'];
+            foreach ($report['data'] as $c) {
+                $joined = $c->created_at ? $c->created_at->format('M d, Y') : '—';
+                $rows[] = [
+                    $c->name, $c->studentId ?? '—', $c->email, $c->phoneNumber ?? '—',
+                    $c->status, $c->verified ? 'Yes' : 'No',
+                    $c->rentals_count ?? $c->totalRentals ?? 0,
+                    '₱' . number_format((float) ($c->totalSpent ?? 0), 2),
+                    $joined,
+                ];
+            }
+        } elseif ($reportType === 'revenue') {
             $headers = ['Period', 'Rentals', 'Total Revenue', 'Avg Revenue', 'Duration (min)'];
             foreach ($report['data'] as $r) {
                 $rows[] = [$r->period, (int) $r->total_rentals, '₱'.number_format((float) $r->total_revenue, 2), '₱'.number_format((float) $r->avg_revenue, 2), (int) $r->total_duration_minutes];
+            }
+        } elseif ($reportType === 'accident') {
+            $headers = ['Accident ID', 'Rider', 'Bicycle', 'Location', 'Date/Time', 'Severity', 'Status', 'Acked', 'Action Taken'];
+            foreach ($report['data'] as $a) {
+                $loc = is_array($a->gpsLocation) ? $a->gpsLocation : (is_array($a->location) ? $a->location : []);
+                $rows[] = [
+                    $a->id,
+                    $a->rider?->name ?? $a->reportedBy ?? '—',
+                    $a->bicycle?->name ?? $a->bicycleId ?? '—',
+                    isset($loc['lat'], $loc['lng']) ? $loc['lat'].', '.$loc['lng'] : '—',
+                    $a->created_at?->format('M d, Y H:i'),
+                    $a->severity, $a->status,
+                    $a->acknowledged ? 'Yes' : 'No',
+                    $a->actionTaken ?? '—',
+                ];
             }
         } elseif ($reportType === 'incident') {
             $headers = ['ID', 'Type', 'Severity', 'Bicycle', 'Description', 'Location', 'Ack', 'Timestamp'];
@@ -76,14 +103,17 @@
                 ];
             }
         } else {
-            $headers = ['Rental ID', 'Rider', 'Bicycle', 'Start', 'End', 'Duration (min)', 'Fee', 'Status', 'Payment'];
+            $headers = ['Rental ID', 'Rider', 'Bicycle', 'Start', 'End', 'Duration (min)', 'Rate/Hr', 'Fee', 'Payment Method', 'Payment', 'Status'];
             foreach ($report['data'] as $r) {
                 $rows[] = [
                     $r->rentalId, $r->rider?->name ?? $r->riderName,
                     $r->bicycle?->name ?? $r->bicycleName,
                     $r->startTime?->format('M d, Y H:i'), $r->endTime?->format('M d, Y H:i'),
-                    $r->durationMinutes ?? 0, '₱'.number_format((float) $r->totalFee, 2),
-                    $r->status, $r->paymentStatus,
+                    $r->durationMinutes ?? 0,
+                    '₱'.number_format((float) ($r->ratePerHour ?? 0), 2),
+                    '₱'.number_format((float) $r->totalFee, 2),
+                    $r->paymentMethod ?? '—',
+                    $r->paymentStatus, $r->status,
                 ];
             }
         }

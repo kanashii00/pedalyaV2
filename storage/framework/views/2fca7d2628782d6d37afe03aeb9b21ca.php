@@ -78,11 +78,17 @@
             <div class="detail-row">
                 <span class="detail-label">Payment Method</span>
                 <span class="detail-value">
-                    <span class="payment-method-badge" style="background: <?php echo e(match($payment->paymentMethod) {
-                        'gcash' => '#007AFF22', 'maya' => '#00B8E622', 'grabpay' => '#00AA1322',
-                        'card' => '#6366F122', 'online_banking' => '#0EA5E922', default => 'var(--surface-3)'); ?>; color: <?php echo e(match($payment->paymentMethod) {
-                        'gcash' => '#007AFF', 'maya' => '#00B8E6', 'grabpay' => '#00AA13',
-                        'card' => '#6366F1', 'online_banking' => '#0EA5E9', default => 'var(--text-3)'); ?>; }}">
+                    <?php
+                        $pmBackground = match($payment->paymentMethod) {
+                            'gcash' => '#007AFF22', 'maya' => '#00B8E622', 'grabpay' => '#00AA1322',
+                            'card' => '#6366F122', 'online_banking' => '#0EA5E922', default => 'var(--surface-3)'
+                        };
+                        $pmColor = match($payment->paymentMethod) {
+                            'gcash' => '#007AFF', 'maya' => '#00B8E6', 'grabpay' => '#00AA13',
+                            'card' => '#6366F1', 'online_banking' => '#0EA5E9', default => 'var(--text-3)'
+                        };
+                    ?>
+                    <span class="payment-method-badge" style="background: <?php echo e($pmBackground); ?>; color: <?php echo e($pmColor); ?>;">
                         <?php echo e($payment->getPaymentMethodLabel()); ?>
 
                     </span>
@@ -202,9 +208,8 @@
                         <span class="detail-label">Phone</span>
                         <span class="detail-value"><?php echo e($payment->user->phone ?? '—'); ?></span>
                     </div>
-                    <a href="<?php echo e(route('admin.riders.show', $payment->user)); ?>" class="btn-admin btn-admin--ghost btn-admin--sm mt-2">
-                        <i class="bi bi-person me-1"></i>View Profile
-                    </a>
+                    <span class="detail-label mt-2">Email</span>
+                    <span class="detail-value"><?php echo e($payment->user->email); ?></span>
                  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalad5130b5347ab6ecc017d2f5a278b926)): ?>
@@ -239,10 +244,14 @@
                         <div class="detail-row">
                             <span class="detail-label">Status</span>
                             <span class="detail-value">
-                                <span class="badge-admin badge-admin--<?php echo e(match($payment->bicycle->status) {
-                                    'available' => 'success', 'rented' => 'primary',
-                                    'maintenance' => 'warning', 'locked' => 'danger',
-                                    default => 'secondary'); ?> }}"><?php echo e(ucfirst($payment->bicycle->status)); ?></span>
+                                <?php
+                                    $bikeStatusBadge = match($payment->bicycle->status) {
+                                        'available' => 'success', 'rented' => 'primary',
+                                        'maintenance' => 'warning', 'locked' => 'danger',
+                                        default => 'secondary'
+                                    };
+                                ?>
+                                <span class="badge-admin badge-admin--<?php echo e($bikeStatusBadge); ?>"><?php echo e(ucfirst($payment->bicycle->status)); ?></span>
                             </span>
                         </div>
                         <div class="detail-row">
@@ -289,9 +298,13 @@
                         <div class="detail-row">
                             <span class="detail-label">Status</span>
                             <span class="detail-value">
-                                <span class="badge-admin badge-admin--<?php echo e(match($payment->rental->status) {
-                                    'active' => 'success', 'pending' => 'warning',
-                                    'completed' => 'info', 'cancelled' => 'danger', default => 'secondary'); ?> }}"><?php echo e(ucfirst($payment->rental->status)); ?></span>
+                                <?php
+                                    $rentalStatusBadge = match($payment->rental->status) {
+                                        'active' => 'success', 'pending' => 'warning',
+                                        'completed' => 'info', 'cancelled' => 'danger', default => 'secondary'
+                                    };
+                                ?>
+                                <span class="badge-admin badge-admin--<?php echo e($rentalStatusBadge); ?>"><?php echo e(ucfirst($payment->rental->status)); ?></span>
                             </span>
                         </div>
                         <div class="detail-row">

@@ -59,17 +59,36 @@ class ReportController extends Controller
     public function incidentReport(Request $request): JsonResponse
     {
         try {
-            $report = $this->reportService->getIncidentReport([
-                'start_date' => $request->input('date_from'),
-                'end_date' => $request->input('date_to'),
-                'severity' => $request->input('severity'),
-                'type' => $request->input('incident_type'),
-            ]);
+            $report = $this->reportService->getIncidentReport($this->filters($request));
 
             return response()->json($report);
         } catch (\Throwable $e) {
             Log::error('Failed to generate incident report', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Failed to generate incident report.'], 500);
+        }
+    }
+
+    public function accidentReport(Request $request): JsonResponse
+    {
+        try {
+            $report = $this->reportService->getAccidentReport($this->filters($request));
+
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            Log::error('Failed to generate accident report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate accident report.'], 500);
+        }
+    }
+
+    public function customerReport(Request $request): JsonResponse
+    {
+        try {
+            $report = $this->reportService->getCustomerReport($this->filters($request));
+
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            Log::error('Failed to generate customer report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate customer report.'], 500);
         }
     }
 
@@ -137,6 +156,7 @@ class ReportController extends Controller
     private function buildReport(string $type, Request $request): array
     {
         return match ($type) {
+            'customer' => $this->reportService->getCustomerReport($this->filters($request)),
             'revenue' => $this->reportService->getRevenueReport([
                 'start_date' => $request->input('date_from'),
                 'end_date' => $request->input('date_to'),
@@ -147,13 +167,8 @@ class ReportController extends Controller
                 'severity' => $request->input('severity'),
                 'type' => $request->input('incident_type'),
             ]),
-            default => $this->reportService->getRentalReport([
-                'start_date' => $request->input('date_from'),
-                'end_date' => $request->input('date_to'),
-                'status' => $request->input('status'),
-                'riderId' => $request->input('user_id'),
-                'bicycleId' => $request->input('bicycle_id'),
-            ]),
+            'accident' => $this->reportService->getAccidentReport($this->filters($request)),
+            default => $this->reportService->getRentalReport($this->filters($request)),
         };
     }
 
@@ -163,20 +178,65 @@ class ReportController extends Controller
             'start_date' => $request->input('date_from'),
             'end_date' => $request->input('date_to'),
             'status' => $request->input('status'),
+            'payment_status' => $request->input('payment_status'),
             'riderId' => $request->input('user_id'),
             'bicycleId' => $request->input('bicycle_id'),
             'severity' => $request->input('severity'),
             'type' => $request->input('incident_type'),
+            'verified' => $request->input('verified'),
+            'search' => $request->input('search'),
         ];
     }
 
     private function tableData(string $type, array $report): array
     {
         return match ($type) {
+            'customer' => $this->customerTable($report),
             'revenue' => $this->revenueTable($report),
+            'accident' => $this->accidentTable($report),
             'incident' => $this->incidentTable($report),
             default => $this->rentalTable($report),
         };
+    }
+
+    private function accidentTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $accident) {
+            $rows[] = [
+                '#' . $accident->id,
+                $accident->rider?->name ?? $accident->reportedBy ?? '—',
+                $accident->bicycle?->name ?? $accident->bicycleId,
+                $this->locationLabel($accident->gpsLocation),
+                $this->formatTimestamp($accident->created_at),
+                ucfirst($accident->severity ?? '—'),
+                $accident->status,
+                $accident->acknowledged ? 'Yes' : 'No',
+                $accident->actionTaken ?? '—',
+            ];
+        }
+
+        return [['Accident ID', 'Rider', 'Bicycle', 'Location', 'Date/Time', 'Severity', 'Status', 'Acknowledged', 'Action Taken'], $rows];
+    }
+
+    private function customerTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $customer) {
+            $rows[] = [
+                $customer->name,
+                $customer->studentId ?? '—',
+                $customer->email,
+                $customer->phoneNumber ?? '—',
+                $customer->status,
+                $customer->verified ? 'Yes' : 'No',
+                $customer->totalRentals ?? 0,
+                '₱' . number_format((float) ($customer->totalSpent ?? 0), 2),
+                $customer->created_at?->format(self::DATE_TIME_FORMAT),
+            ];
+        }
+
+        return [['Name', 'Student ID', 'Email', 'Phone', 'Status', 'Verified', 'Rentals', 'Total Spent', 'Joined'], $rows];
     }
 
     private function revenueTable(array $report): array
@@ -226,13 +286,15 @@ class ReportController extends Controller
                 $this->formatTimestamp($rental->startTime),
                 $this->formatTimestamp($rental->endTime),
                 $rental->durationMinutes ?? 0,
+                (float) ($rental->ratePerHour ?? 0),
                 (float) $rental->totalFee,
-                $rental->status,
+                $rental->paymentMethod ?? '—',
                 $rental->paymentStatus,
+                $rental->status,
             ];
         }
 
-        return [['Rental ID', 'Rider', 'Bicycle', 'Start', 'End', 'Duration (min)', 'Fee', 'Status', 'Payment'], $rows];
+        return [['Rental ID', 'Rider', 'Bicycle', 'Start', 'End', 'Duration (min)', 'Rate/Hour', 'Fee', 'Payment Method', 'Payment', 'Status'], $rows];
     }
 
     private function locationLabel(mixed $gpsLocation): string

@@ -294,26 +294,23 @@
                             <?php endif; ?>
                         </td>
                         <td>
-                            <span class="payment-method-icon" style="background: <?php echo e(match($payment->paymentMethod) {
-                                'gcash' => '#007AFF22',
-                                'maya' => '#00B8E622',
-                                'grabpay' => '#00AA1322',
-                                'card' => '#6366F122',
-                                'online_banking' => '#0EA5E922',
-                                default => 'var(--surface-3)'); ?>; color: <?php echo e(match($payment->paymentMethod) {
-                                'gcash' => '#007AFF',
-                                'maya' => '#00B8E6',
-                                'grabpay' => '#00AA13',
-                                'card' => '#6366F1',
-                                'online_banking' => '#0EA5E9',
-                                default => 'var(--text-3)'); ?>; }}">
-                                <i class="bi <?php echo e(match($payment->paymentMethod) {
-                                    'gcash' => 'bi-phone',
-                                    'maya' => 'bi-phone',
-                                    'grabpay' => 'bi-bag',
-                                    'card' => 'bi-credit-card',
-                                    'online_banking' => 'bi-bank',
-                                    default => 'bi-currency-exchange'); ?> }}"></i>
+                            <?php
+                                $pmBg = match($payment->paymentMethod) {
+                                    'gcash' => '#007AFF22', 'maya' => '#00B8E622', 'grabpay' => '#00AA1322',
+                                    'card' => '#6366F122', 'online_banking' => '#0EA5E922', default => 'var(--surface-3)'
+                                };
+                                $pmColor = match($payment->paymentMethod) {
+                                    'gcash' => '#007AFF', 'maya' => '#00B8E6', 'grabpay' => '#00AA13',
+                                    'card' => '#6366F1', 'online_banking' => '#0EA5E9', default => 'var(--text-3)'
+                                };
+                                $pmIcon = match($payment->paymentMethod) {
+                                    'gcash' => 'bi-phone', 'maya' => 'bi-phone', 'grabpay' => 'bi-bag',
+                                    'card' => 'bi-credit-card', 'online_banking' => 'bi-bank',
+                                    default => 'bi-currency-exchange'
+                                };
+                            ?>
+                            <span class="payment-method-icon" style="background: <?php echo e($pmBg); ?>; color: <?php echo e($pmColor); ?>;">
+                                <i class="bi <?php echo e($pmIcon); ?>"></i>
                             </span>
                             <span class="ms-2 fw-medium"><?php echo e($payment->getPaymentMethodLabel()); ?></span>
                         </td>

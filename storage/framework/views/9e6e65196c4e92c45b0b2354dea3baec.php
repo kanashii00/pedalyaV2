@@ -12,7 +12,7 @@
     $unreadNotifs = auth()->user()->notifications()->where('read', false)->count();
     $recentNotifs = auth()->user()->notifications()->with('bicycle')->latest()->take(6)->get();
     $unackTheft = Accident::where('type', 'theft')->where('acknowledged', false)->count();
-    $unackAccidents = Accident::where('acknowledged', false)->count();
+    $unackAccidents = Accident::whereIn('type', ['accident', 'impact_detected'])->where('acknowledged', false)->count();
     $pendingMaint = MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
     $blacklistedCount = User::where('role', User::ROLE_RIDER)
         ->whereIn('status', [User::STATUS_BLACKLISTED, User::STATUS_SUSPENDED])
@@ -95,7 +95,7 @@
                 ['title' => 'Rental Reports', 'icon' => 'bi-bicycle', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=rental'],
                 ['title' => 'Bicycle Reports', 'icon' => 'bi-speedometer', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=bicycle'],
                 ['title' => 'Theft Reports', 'icon' => 'bi-shield-exclamation', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=theft'],
-                ['title' => 'Accident Reports', 'icon' => 'bi-activity', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=accident'],
+                ['title' => 'Accident Reports', 'icon' => 'bi-activity', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=accident', 'badge' => $unackAccidents, 'badgeType' => 'warning'],
                 ['title' => 'Export Reports', 'icon' => 'bi-download', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=export'],
             ],
         ],

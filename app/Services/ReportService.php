@@ -243,14 +243,17 @@ public function getDashboardStats(): array
     {
         $query = Rental::with(['rider', 'bicycle']);
 
-        if (isset($filters['start_date'])) {
+        if (isset($filters['start_date']) && $filters['start_date'] !== '') {
             $query->where('created_at', '>=', $filters['start_date']);
         }
-        if (isset($filters['end_date'])) {
-            $query->where('created_at', '<=', $filters['end_date']);
+        if (isset($filters['end_date']) && $filters['end_date'] !== '') {
+            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
         }
         if (isset($filters['status']) && $filters['status'] !== '') {
             $query->where('status', $filters['status']);
+        }
+        if (isset($filters['payment_status']) && $filters['payment_status'] !== '') {
+            $query->where('paymentStatus', $filters['payment_status']);
         }
         if (isset($filters['riderId']) && $filters['riderId'] !== '') {
             $query->where('riderId', $filters['riderId']);
@@ -258,16 +261,29 @@ public function getDashboardStats(): array
         if (isset($filters['bicycleId']) && $filters['bicycleId'] !== '') {
             $query->where('bicycleId', $filters['bicycleId']);
         }
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('rentalId', 'like', "%{$search}%")
+                  ->orWhere('riderName', 'like', "%{$search}%")
+                  ->orWhere('riderEmail', 'like', "%{$search}%")
+                  ->orWhere('bicycleName', 'like', "%{$search}%");
+            });
+        }
 
         $rentals = $query->orderBy('created_at', 'desc')->get();
 
+        $completed = $rentals->where('status', 'completed');
+
         $summary = [
             'total' => $rentals->count(),
-            'completed' => $rentals->where('status', 'completed')->count(),
-            'cancelled' => $rentals->where('status', 'cancelled')->count(),
             'active' => $rentals->where('status', 'active')->count(),
-            'totalRevenue' => $rentals->where('status', 'completed')->sum('totalFee'),
-            'averageFee' => $rentals->where('status', 'completed')->avg('totalFee') ?? 0,
+            'completed' => $completed->count(),
+            'cancelled' => $rentals->where('status', 'cancelled')->count(),
+            'overdue' => $rentals->where('status', 'overdue')->count(),
+            'pending' => $rentals->where('status', 'pending')->count(),
+            'totalRevenue' => $completed->sum('totalFee'),
+            'averageFee' => $completed->avg('totalFee') ?? 0,
         ];
 
         return [
@@ -370,6 +386,113 @@ public function getDashboardStats(): array
             'reportId' => $this->generateReportId(),
             'summary' => $summary,
             'data' => $accidents,
+        ];
+    }
+
+    public function getAccidentReport(array $filters): array
+    {
+        $query = Accident::with(['bicycle', 'rider']);
+
+        // Sync with Accident Monitoring: only surface accident / impact-detected records.
+        $query->whereIn('type', ['accident', 'impact_detected']);
+
+        if (isset($filters['type']) && $filters['type'] !== '') {
+            $query->where('type', $filters['type']);
+        }
+
+        if (isset($filters['start_date']) && $filters['start_date'] !== '') {
+            $query->where('created_at', '>=', $filters['start_date']);
+        }
+        if (isset($filters['end_date']) && $filters['end_date'] !== '') {
+            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
+        }
+        if (isset($filters['severity']) && $filters['severity'] !== '') {
+            $query->where('severity', $filters['severity']);
+        }
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $query->where('status', $filters['status']);
+        }
+        if (isset($filters['bicycleId']) && $filters['bicycleId'] !== '') {
+            $query->where('bicycleId', $filters['bicycleId']);
+        }
+        if (isset($filters['riderId']) && $filters['riderId'] !== '') {
+            $query->where('reportedBy', $filters['riderId']);
+        }
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                  ->orWhere('actionTaken', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%");
+            });
+        }
+
+        $accidents = $query->orderBy('created_at', 'desc')->get();
+
+        $summary = [
+            'total' => $accidents->count(),
+            'active' => $accidents->where('status', 'open')->count(),
+            'resolved' => $accidents->where('status', 'resolved')->count(),
+            'critical' => $accidents->where('severity', 'critical')->count(),
+            'major' => $accidents->where('severity', 'major')->count(),
+            'acknowledged' => $accidents->where('acknowledged', true)->count(),
+        ];
+
+        return [
+            'reportId' => $this->generateReportId(),
+            'summary' => $summary,
+            'data' => $accidents,
+        ];
+    }
+
+    public function getCustomerReport(array $filters): array
+    {
+        $query = User::where('role', 'rider')->withCount('rentals');
+
+        if (isset($filters['start_date']) && $filters['start_date'] !== '') {
+            $query->where('created_at', '>=', $filters['start_date']);
+        }
+        if (isset($filters['end_date']) && $filters['end_date'] !== '') {
+            $query->where('created_at', '<=', $filters['end_date'] . ' 23:59:59');
+        }
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $query->where('status', $filters['status']);
+        }
+        if (isset($filters['verified']) && $filters['verified'] !== '') {
+            $query->where('verified', $filters['verified'] === '1');
+        }
+        if (isset($filters['search']) && $filters['search'] !== '') {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phoneNumber', 'like', "%{$search}%")
+                  ->orWhere('studentId', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('created_at', 'desc')->get();
+
+        $allRiders = User::where('role', 'rider');
+
+        $totalCustomers = (clone $allRiders)->count();
+        $verifiedCount = (clone $allRiders)->where('verified', true)->count();
+        $pendingCount = (clone $allRiders)->where('verified', false)->count();
+        $blacklistedCount = (clone $allRiders)->where('status', 'blacklisted')->count();
+        $activeCount = (clone $allRiders)->where('status', 'active')->count();
+
+        $summary = [
+            'total' => $totalCustomers,
+            'verified' => $verifiedCount,
+            'pending' => $pendingCount,
+            'blacklisted' => $blacklistedCount,
+            'active' => $activeCount,
+        ];
+
+        return [
+            'reportId' => $this->generateReportId(),
+            'summary' => $summary,
+            'data' => $customers,
         ];
     }
 
