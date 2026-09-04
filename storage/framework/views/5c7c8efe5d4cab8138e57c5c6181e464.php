@@ -1,8 +1,21 @@
-<?php $__env->startSection('title', 'Reports'); ?>
+<?php
+    $reportMeta = [
+        'customer' => ['title' => 'Customer Reports', 'desc' => 'Generate and export customer reports'],
+        'rental'   => ['title' => 'Rental Reports', 'desc' => 'Generate and export rental reports'],
+        'bicycle'  => ['title' => 'Bicycle Reports', 'desc' => 'Generate and export bicycle usage reports'],
+        'theft'    => ['title' => 'Theft Reports', 'desc' => 'Generate and export theft / theft-detection reports'],
+        'accident' => ['title' => 'Accident Reports', 'desc' => 'Generate and export accident reports'],
+        'revenue'  => ['title' => 'Revenue Reports', 'desc' => 'Generate and export revenue reports'],
+        'export'   => ['title' => 'Export Reports', 'desc' => 'Export report data to PDF, Excel, or CSV'],
+    ];
+    $meta = $reportMeta[$reportType] ?? $reportMeta['customer'];
+?>
+
+<?php $__env->startSection('title', $meta['title']); ?>
 
 <?php $__env->startSection('page-header'); ?>
-    <h1>Reports</h1>
-    <p>Generate and export system reports</p>
+    <h1><?php echo e($meta['title']); ?></h1>
+    <p><?php echo e($meta['desc']); ?></p>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('actions'); ?>
@@ -12,388 +25,401 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
-<ul class="nav nav-tabs" id="reportTabs" role="tablist">
-    <li class="nav-item">
-        <a class="nav-link active" id="customer-tab" data-bs-toggle="tab" href="#customer" role="tab">
-            <i class="bi bi-people me-1"></i>Customer Report
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="rental-tab" data-bs-toggle="tab" href="#rental" role="tab">
-            <i class="bi bi-bicycle me-1"></i>Rental Report
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="accident-tab" data-bs-toggle="tab" href="#accident" role="tab">
-            <i class="bi bi-activity me-1"></i>Accident Report
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="revenue-tab" data-bs-toggle="tab" href="#revenue" role="tab">
-            <i class="bi bi-currency-dollar me-1"></i>Revenue Report
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="incident-tab" data-bs-toggle="tab" href="#incident" role="tab">
-            <i class="bi bi-exclamation-triangle me-1"></i>Incidents Report
-        </a>
-    </li>
-</ul>
-
-<div class="tab-content mb-4" id="reportTabContent">
-    <!-- Customer Report Tab -->
-    <div class="tab-pane fade show active" id="customer" role="tabpanel">
-        <div class="admin-card mt-3">
-            <div class="admin-card__body">
-                <form action="<?php echo e(route('admin.reports.customer')); ?>" method="POST" id="customerReportForm" onsubmit="return generateReport(event, this)">
-                    <?php echo csrf_field(); ?>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="customerSearch" name="search"
-                                placeholder="Name, email, phone, student ID...">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date From</label>
-                            <input type="date" class="form-control" id="customerDateFrom" name="date_from">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date To</label>
-                            <input type="date" class="form-control" id="customerDateTo" name="date_to">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="customerStatus" name="status">
-                                <option value="">All</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="suspended">Suspended</option>
-                                <option value="blacklisted">Blacklisted</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Verification</label>
-                            <select class="form-select" id="customerVerified" name="verified">
-                                <option value="">All</option>
-                                <option value="1">Verified</option>
-                                <option value="0">Pending</option>
-                            </select>
-                        </div>
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearCustomerFilters()" title="Clear Filters">
-                                <i class="bi bi-arrow-counterclockwise"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <button type="submit" class="btn-admin btn-admin--primary">
-                            <i class="bi bi-bar-chart me-1"></i>Generate Report
-                        </button>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('customer')">
-                                <i class="bi bi-printer me-1"></i>Print
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('customer', 'pdf')">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('customer', 'excel')">
-                                <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </form>
+<?php if($reportType === 'export'): ?>
+    <?php echo $__env->make('admin.reports.export', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php else: ?>
+<div class="admin-card mb-4">
+    <div class="admin-card__body">
+        <?php if($reportType === 'customer'): ?>
+        <form action="<?php echo e(route('admin.reports.customer')); ?>" method="POST" id="customerReportForm" onsubmit="return generateReport(event, this)">
+            <?php echo csrf_field(); ?>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" id="customerSearch" name="search"
+                        placeholder="Name, email, phone, student ID...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="customerDateFrom" name="date_from">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="customerDateTo" name="date_to">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="customerStatus" name="status">
+                        <option value="">All</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                        <option value="blacklisted">Blacklisted</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Verification</label>
+                    <select class="form-select" id="customerVerified" name="verified">
+                        <option value="">All</option>
+                        <option value="1">Verified</option>
+                        <option value="0">Pending</option>
+                    </select>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Rental Report Tab -->
-    <div class="tab-pane fade" id="rental" role="tabpanel">
-        <div class="admin-card mt-3">
-            <div class="admin-card__body">
-                <form action="<?php echo e(route('admin.reports.rental')); ?>" method="POST" id="rentalReportForm" onsubmit="return generateReport(event, this)">
-                    <?php echo csrf_field(); ?>
-                    <div class="row g-3">
-                        <div class="col-md-2">
-                            <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="rentalSearch" name="search"
-                                placeholder="Rental ID, rider, bicycle...">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date From</label>
-                            <input type="date" class="form-control" id="rentalDateFrom" name="date_from"
-                                value="<?php echo e(now()->subDays(30)->format('Y-m-d')); ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date To</label>
-                            <input type="date" class="form-control" id="rentalDateTo" name="date_to"
-                                value="<?php echo e(now()->format('Y-m-d')); ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Rental Status</label>
-                            <select class="form-select" id="rentalStatus" name="status">
-                                <option value="">All</option>
-                                <option value="active">Active</option>
-                                <option value="completed">Completed</option>
-                                <option value="returned">Returned</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="expired">Expired</option>
-                                <option value="overdue">Overdue</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Payment Status</label>
-                            <select class="form-select" id="rentalPaymentStatus" name="payment_status">
-                                <option value="">All</option>
-                                <option value="paid">Paid</option>
-                                <option value="pending">Pending</option>
-                                <option value="unpaid">Unpaid</option>
-                                <option value="refunded">Refunded</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Bicycle</label>
-                            <select class="form-select" id="rentalBicycle" name="bicycle_id">
-                                <option value="">All</option>
-                                <?php $__currentLoopData = $bicycles ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bicycle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($bicycle->id); ?>"><?php echo e($bicycle->name); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-2">
-                            <label class="form-label">Rider</label>
-                            <select class="form-select" id="rentalRider" name="user_id">
-                                <option value="">All</option>
-                                <?php $__currentLoopData = $users ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($user->id); ?>"><?php echo e($user->name); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearRentalFilters()" title="Clear Filters">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
-                            </button>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <button type="submit" class="btn-admin btn-admin--primary">
-                            <i class="bi bi-bar-chart me-1"></i>Generate Report
-                        </button>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('rental')">
-                                <i class="bi bi-printer me-1"></i>Print
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('rental', 'pdf')">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('rental', 'excel')">
-                                <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </form>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button type="submit" class="btn-admin btn-admin--primary">
+                    <i class="bi bi-bar-chart me-1"></i>Generate Report
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('customer')">
+                        <i class="bi bi-printer me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('customer', 'pdf')">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('customer', 'excel')">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportReport('customer', 'csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>Export CSV
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Accident Report Tab -->
-    <div class="tab-pane fade" id="accident" role="tabpanel">
-        <div class="admin-card mt-3">
-            <div class="admin-card__body">
-                <form action="<?php echo e(route('admin.reports.accident')); ?>" method="POST" id="accidentReportForm" onsubmit="return generateReport(event, this)">
-                    <?php echo csrf_field(); ?>
-                    <div class="row g-3">
-                        <div class="col-md-2">
-                            <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="accidentSearch" name="search"
-                                placeholder="Description, action taken...">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date From</label>
-                            <input type="date" class="form-control" id="accidentDateFrom" name="date_from"
-                                value="<?php echo e(now()->subDays(30)->format('Y-m-d')); ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Date To</label>
-                            <input type="date" class="form-control" id="accidentDateTo" name="date_to"
-                                value="<?php echo e(now()->format('Y-m-d')); ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Severity</label>
-                            <select class="form-select" id="accidentSeverity" name="severity">
-                                <option value="">All</option>
-                                <option value="minor">Minor</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="major">Major</option>
-                                <option value="critical">Critical</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="accidentStatus" name="status">
-                                <option value="">All</option>
-                                <option value="open">Open</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="closed">Closed</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Bicycle</label>
-                            <select class="form-select" id="accidentBicycle" name="bicycle_id">
-                                <option value="">All</option>
-                                <?php $__currentLoopData = $bicycles ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bicycle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($bicycle->id); ?>"><?php echo e($bicycle->name); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-2">
-                            <label class="form-label">Rider</label>
-                            <select class="form-select" id="accidentRider" name="user_id">
-                                <option value="">All</option>
-                                <?php $__currentLoopData = $users ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($user->id); ?>"><?php echo e($user->name); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Type</label>
-                            <select class="form-select" id="accidentType" name="incident_type">
-                                <option value="">All</option>
-                                <option value="accident">Accident</option>
-                                <option value="impact_detected">Impact Detected</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearAccidentFilters()" title="Clear Filters">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
-                            </button>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <button type="submit" class="btn-admin btn-admin--primary">
-                            <i class="bi bi-bar-chart me-1"></i>Generate Report
-                        </button>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('accident')">
-                                <i class="bi bi-printer me-1"></i>Print
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('accident', 'pdf')">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('accident', 'excel')">
-                                <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </form>
+        </form>
+        <?php elseif($reportType === 'rental'): ?>
+        <form action="<?php echo e(route('admin.reports.rental')); ?>" method="POST" id="rentalReportForm" onsubmit="return generateReport(event, this)">
+            <?php echo csrf_field(); ?>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" id="rentalSearch" name="search"
+                        placeholder="Rental ID, rider, bicycle...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="rentalDateFrom" name="date_from"
+                        value="<?php echo e(now()->subDays(30)->format('Y-m-d')); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="rentalDateTo" name="date_to"
+                        value="<?php echo e(now()->format('Y-m-d')); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Rental Status</label>
+                    <select class="form-select" id="rentalStatus" name="status">
+                        <option value="">All</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="returned">Returned</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="expired">Expired</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Payment Status</label>
+                    <select class="form-select" id="rentalPaymentStatus" name="payment_status">
+                        <option value="">All</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="refunded">Refunded</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bicycle</label>
+                    <select class="form-select" id="rentalBicycle" name="bicycle_id">
+                        <option value="">All</option>
+                        <?php $__currentLoopData = $bicycles ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bicycle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($bicycle->id); ?>"><?php echo e($bicycle->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Revenue Report Tab -->
-    <div class="tab-pane fade" id="revenue" role="tabpanel">
-        <div class="admin-card mt-3">
-            <div class="admin-card__body">
-                <form action="<?php echo e(route('admin.reports.revenue')); ?>" method="POST" id="revenueReportForm" onsubmit="return generateReport(event, this)">
-                    <?php echo csrf_field(); ?>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Date From</label>
-                            <input type="date" class="form-control" id="revenueDateFrom" name="date_from"
-                                value="<?php echo e(old('date_from', now()->subDays(30)->format('Y-m-d'))); ?>" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Date To</label>
-                            <input type="date" class="form-control" id="revenueDateTo" name="date_to"
-                                value="<?php echo e(old('date_to', now()->format('Y-m-d'))); ?>" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Group By</label>
-                            <select class="form-select" id="revenueGroupBy" name="group_by" required>
-                                <option value="day">Day</option>
-                                <option value="week">Week</option>
-                                <option value="month" selected>Month</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <button type="submit" class="btn-admin btn-admin--primary">
-                            <i class="bi bi-graph-up me-1"></i>Generate Report
-                        </button>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('revenue', 'pdf')">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('revenue', 'excel')">
-                                <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </form>
+            <div class="row g-3 mt-1">
+                <div class="col-md-2">
+                    <label class="form-label">Rider</label>
+                    <select class="form-select" id="rentalRider" name="user_id">
+                        <option value="">All</option>
+                        <?php $__currentLoopData = $users ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($user->id); ?>"><?php echo e($user->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearRentalFilters()" title="Clear Filters">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Incident Report Tab -->
-    <div class="tab-pane fade" id="incident" role="tabpanel">
-        <div class="admin-card mt-3">
-            <div class="admin-card__body">
-                <form action="<?php echo e(route('admin.reports.incident')); ?>" method="POST" id="incidentReportForm" onsubmit="return generateReport(event, this)">
-                    <?php echo csrf_field(); ?>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Date From</label>
-                            <input type="date" class="form-control" id="incidentDateFrom" name="date_from"
-                                value="<?php echo e(old('date_from', now()->subDays(30)->format('Y-m-d'))); ?>" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Date To</label>
-                            <input type="date" class="form-control" id="incidentDateTo" name="date_to"
-                                value="<?php echo e(old('date_to', now()->format('Y-m-d'))); ?>" required>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Type</label>
-                            <select class="form-select" id="incidentType" name="incident_type">
-                                <option value="">All</option>
-                                <option value="accident">Accident</option>
-                                <option value="theft">Theft</option>
-                                <option value="vandalism">Vandalism</option>
-                                <option value="malfunction">Malfunction</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Severity</label>
-                            <select class="form-select" id="incidentSeverity" name="severity">
-                                <option value="">All</option>
-                                <option value="minor">Minor</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="major">Major</option>
-                                <option value="critical">Critical</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <button type="submit" class="btn-admin btn-admin--primary">
-                            <i class="bi bi-exclamation-circle me-1"></i>Generate Report
-                        </button>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('incident', 'pdf')">
-                                <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('incident', 'excel')">
-                                <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
-                            </button>
-                        </div>
-                    </div>
-                </form>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button type="submit" class="btn-admin btn-admin--primary">
+                    <i class="bi bi-bar-chart me-1"></i>Generate Report
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('rental')">
+                        <i class="bi bi-printer me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('rental', 'pdf')">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('rental', 'excel')">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportReport('rental', 'csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>Export CSV
+                    </button>
+                </div>
             </div>
-        </div>
+        </form>
+        <?php elseif($reportType === 'bicycle'): ?>
+        <form action="<?php echo e(route('admin.reports.bicycle')); ?>" method="POST" id="bicycleReportForm" onsubmit="return generateReport(event, this)">
+            <?php echo csrf_field(); ?>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" id="bicycleSearch" name="search"
+                        placeholder="Bicycle name, model, serial...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="bicycleStatus" name="status">
+                        <option value="">All</option>
+                        <option value="available">Available</option>
+                        <option value="rented">Rented</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="removed">Removed</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearBicycleFilters()" title="Clear Filters">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button type="submit" class="btn-admin btn-admin--primary">
+                    <i class="bi bi-bar-chart me-1"></i>Generate Report
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('bicycle')">
+                        <i class="bi bi-printer me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('bicycle', 'pdf')">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('bicycle', 'excel')">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportReport('bicycle', 'csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>Export CSV
+                    </button>
+                </div>
+            </div>
+        </form>
+        <?php elseif($reportType === 'theft'): ?>
+        <form action="<?php echo e(route('admin.reports.theft')); ?>" method="POST" id="theftReportForm" onsubmit="return generateReport(event, this)">
+            <?php echo csrf_field(); ?>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" id="theftSearch" name="search"
+                        placeholder="Description, action taken...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="theftDateFrom" name="date_from"
+                        value="<?php echo e(now()->subDays(30)->format('Y-m-d')); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="theftDateTo" name="date_to"
+                        value="<?php echo e(now()->format('Y-m-d')); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="theftStatus" name="status">
+                        <option value="">All</option>
+                        <option value="open">Open</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bicycle</label>
+                    <select class="form-select" id="theftBicycle" name="bicycle_id">
+                        <option value="">All</option>
+                        <?php $__currentLoopData = $bicycles ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bicycle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($bicycle->id); ?>"><?php echo e($bicycle->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearTheftFilters()" title="Clear Filters">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button type="submit" class="btn-admin btn-admin--primary">
+                    <i class="bi bi-bar-chart me-1"></i>Generate Report
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('theft')">
+                        <i class="bi bi-printer me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('theft', 'pdf')">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('theft', 'excel')">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportReport('theft', 'csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>Export CSV
+                    </button>
+                </div>
+            </div>
+        </form>
+        <?php elseif($reportType === 'accident'): ?>
+        <form action="<?php echo e(route('admin.reports.accident')); ?>" method="POST" id="accidentReportForm" onsubmit="return generateReport(event, this)">
+            <?php echo csrf_field(); ?>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" id="accidentSearch" name="search"
+                        placeholder="Description, action taken...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="accidentDateFrom" name="date_from"
+                        value="<?php echo e(now()->subDays(30)->format('Y-m-d')); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="accidentDateTo" name="date_to"
+                        value="<?php echo e(now()->format('Y-m-d')); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Severity</label>
+                    <select class="form-select" id="accidentSeverity" name="severity">
+                        <option value="">All</option>
+                        <option value="minor">Minor</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="major">Major</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="accidentStatus" name="status">
+                        <option value="">All</option>
+                        <option value="open">Open</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bicycle</label>
+                    <select class="form-select" id="accidentBicycle" name="bicycle_id">
+                        <option value="">All</option>
+                        <?php $__currentLoopData = $bicycles ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bicycle): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($bicycle->id); ?>"><?php echo e($bicycle->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-2">
+                    <label class="form-label">Rider</label>
+                    <select class="form-select" id="accidentRider" name="user_id">
+                        <option value="">All</option>
+                        <?php $__currentLoopData = $users ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($user->id); ?>"><?php echo e($user->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="accidentType" name="incident_type">
+                        <option value="">All</option>
+                        <option value="accident">Accident</option>
+                        <option value="impact_detected">Impact Detected</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn-admin btn-admin--ghost btn-admin--sm w-100" onclick="clearAccidentFilters()" title="Clear Filters">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button type="submit" class="btn-admin btn-admin--primary">
+                    <i class="bi bi-bar-chart me-1"></i>Generate Report
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('accident')">
+                        <i class="bi bi-printer me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('accident', 'pdf')">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('accident', 'excel')">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportReport('accident', 'csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>Export CSV
+                    </button>
+                </div>
+            </div>
+        </form>
+        <?php elseif($reportType === 'revenue'): ?>
+        <form action="<?php echo e(route('admin.reports.revenue')); ?>" method="POST" id="revenueReportForm" onsubmit="return generateReport(event, this)">
+            <?php echo csrf_field(); ?>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="revenueDateFrom" name="date_from"
+                        value="<?php echo e(old('date_from', now()->subDays(30)->format('Y-m-d'))); ?>" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="revenueDateTo" name="date_to"
+                        value="<?php echo e(old('date_to', now()->format('Y-m-d'))); ?>" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Group By</label>
+                    <select class="form-select" id="revenueGroupBy" name="group_by" required>
+                        <option value="day">Day</option>
+                        <option value="week">Week</option>
+                        <option value="month" selected>Month</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button type="submit" class="btn-admin btn-admin--primary">
+                    <i class="bi bi-graph-up me-1"></i>Generate Report
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printReport('revenue')">
+                        <i class="bi bi-printer me-1"></i>Print
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportReport('revenue', 'pdf')">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportReport('revenue', 'excel')">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportReport('revenue', 'csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>Export CSV
+                    </button>
+                </div>
+            </div>
+        </form>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -460,14 +486,16 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
 <script>
 var _token = document.querySelector('meta[name="csrf-token"]')?.content || '<?php echo e(csrf_token()); ?>';
 var _baseUrl = '<?php echo e(url("/admin/reports/export/pdf")); ?>'.replace('/export/pdf', '');
-var _reportData = { customer: [], rental: [], accident: [] };
-var _reportPage = { customer: 1, rental: 1, accident: 1 };
+var _reportType = '<?php echo e($reportType); ?>';
+var _reportData = { customer: [], rental: [], bicycle: [], theft: [], accident: [], revenue: [], incident: [] };
+var _reportPage = { customer: 1, rental: 1, bicycle: 1, theft: 1, accident: 1, revenue: 1, incident: 1 };
 var _pageSize = 10;
 
 /* ─── Generate Report ─── */
@@ -500,10 +528,8 @@ function generateReport(event, form) {
     .then(function (data) {
         var records = data.data || [];
         var summary = data.summary || null;
-
-        if (type === 'customer') { _reportData.customer = records; _reportPage.customer = 1; }
-        else if (type === 'rental') { _reportData.rental = records; _reportPage.rental = 1; }
-        else if (type === 'accident') { _reportData.accident = records; _reportPage.accident = 1; }
+        if (!_reportData.hasOwnProperty(type)) _reportData[type] = [];
+        _reportData[type] = records; _reportPage[type] = 1;
 
         if (records.length === 0 && !summary) {
             resultCount.textContent = '0 records';
@@ -516,10 +542,7 @@ function generateReport(event, form) {
 
         if (records.length > 0) {
             resultCount.textContent = records.length + ' record' + (records.length !== 1 ? 's' : '');
-            if (type === 'customer') html += renderCustomerTable(_reportData.customer, 1);
-            else if (type === 'rental') html += renderRentalTable(_reportData.rental, 1);
-            else if (type === 'accident') html += renderAccidentTable(_reportData.accident, 1);
-            else html += renderTypedTable(type, records);
+            html += renderTable(type, records);
         } else {
             resultCount.textContent = summary ? 'Summary' : '0 records';
         }
@@ -538,16 +561,31 @@ function detectReportType(form) {
     var id = form.id || '';
     if (id.indexOf('customer') !== -1) return 'customer';
     if (id.indexOf('rental') !== -1) return 'rental';
+    if (id.indexOf('bicycle') !== -1) return 'bicycle';
+    if (id.indexOf('theft') !== -1) return 'theft';
     if (id.indexOf('accident') !== -1) return 'accident';
     if (id.indexOf('revenue') !== -1) return 'revenue';
     if (id.indexOf('incident') !== -1) return 'incident';
     return 'rental';
 }
 
+function renderTable(type, records) {
+    switch (type) {
+        case 'customer': return renderCustomerTable(records, 1);
+        case 'rental': return renderRentalTable(records, 1);
+        case 'bicycle': return renderBicycleTable(records, 1);
+        case 'theft': return renderTheftTable(records, 1);
+        case 'accident': return renderAccidentTable(records, 1);
+        case 'revenue': return renderRevenueTable(records);
+        case 'incident': return renderIncidentTable(records);
+        default: return renderRentalTable(records, 1);
+    }
+}
+
 /* ─── Summary Cards ─── */
 function renderSummaryCards(type, summary) {
     var labels = {
-        total: 'Total Customers', verified: 'Verified', pending: 'Pending Verification',
+        total: 'Total', verified: 'Verified', pending: 'Pending Verification',
         blacklisted: 'Blacklisted', active: 'Active',
         completed: 'Completed', cancelled: 'Cancelled', overdue: 'Overdue',
         totalRevenue: 'Total Revenue', averageFee: 'Average Fee',
@@ -555,21 +593,27 @@ function renderSummaryCards(type, summary) {
         critical: 'Critical', high: 'High', moderate: 'Moderate', major: 'Major',
         minor: 'Minor', theftIncidents: 'Theft', acknowledged: 'Acknowledged',
         unacknowledged: 'Unacknowledged', pending_rental: 'Pending',
-        resolved: 'Resolved', in_progress: 'In Progress', open: 'Open'
+        resolved: 'Resolved', in_progress: 'In Progress', open: 'Open',
+        available: 'Available', rented: 'Rented', maintenance: 'Maintenance',
+        lowBattery: 'Low Battery'
     };
     var icons = {
-        total: 'bi-people-fill', verified: 'bi-patch-check-fill', pending: 'bi-hourglass-split',
+        total: 'bi-bar-chart', verified: 'bi-patch-check-fill', pending: 'bi-hourglass-split',
         blacklisted: 'bi-shield-slash-fill', active: 'bi-play-circle-fill',
         completed: 'bi-check-circle-fill', cancelled: 'bi-x-circle-fill', overdue: 'bi-exclamation-triangle-fill',
         critical: 'bi-thermometer-high', major: 'bi-exclamation-diamond', acknowledged: 'bi-check2-circle',
-        resolved: 'bi-check-circle-fill', in_progress: 'bi-gear', open: 'bi-hourglass-split'
+        resolved: 'bi-check-circle-fill', in_progress: 'bi-gear', open: 'bi-hourglass-split',
+        available: 'bi-cloud-check', rented: 'bi-person-check', maintenance: 'bi-tools',
+        lowBattery: 'bi-battery-half', moderate: 'bi-exclamation-triangle', minor: 'bi-info-circle'
     };
     var colors = {
         total: '#2563EB', verified: '#16A34A', pending: '#D97706',
         blacklisted: '#DC2626', active: '#2E7D32',
         completed: '#16A34A', cancelled: '#DC2626', overdue: '#D97706',
         critical: '#DC2626', major: '#D97706', acknowledged: '#0EA5E9',
-        resolved: '#16A34A', in_progress: '#D97706', open: '#DC2626'
+        resolved: '#16A34A', in_progress: '#D97706', open: '#DC2626',
+        available: '#16A34A', rented: '#2563EB', maintenance: '#D97706',
+        lowBattery: '#DC2626', moderate: '#D97706', minor: '#0EA5E9'
     };
     var money = { totalRevenue: true, averageFee: true, averageRevenue: true };
 
@@ -589,12 +633,6 @@ function renderSummaryCards(type, summary) {
     });
     html += '</div>';
     return html;
-}
-
-function renderTypedTable(type, records) {
-    if (type === 'revenue') return renderRevenueTable(records);
-    if (type === 'incident') return renderIncidentTable(records);
-    return renderRentalTable(records, 1);
 }
 
 /* ─── Customer Table ─── */
@@ -680,6 +718,81 @@ function renderRentalTable(records, page) {
     return html;
 }
 
+/* ─── Bicycle Table ─── */
+function renderBicycleTable(records, page) {
+    _reportPage.bicycle = page || 1;
+    var total = records.length, totalPages = Math.ceil(total / _pageSize);
+    var start = (_reportPage.bicycle - 1) * _pageSize;
+    var pageRecords = records.slice(start, start + _pageSize);
+    var html = '<div class="table-responsive"><table class="admin-table"><thead><tr>'
+        + '<th>Bicycle</th><th>Model</th><th>Status</th><th>Battery</th><th>Total Rentals</th><th>Total Distance</th><th>Total Revenue</th><th>Condition</th>'
+        + '</tr></thead><tbody>';
+    if (pageRecords.length === 0) html += '<tr><td colspan="8" class="text-center text-muted py-4">No bicycles found</td></tr>';
+    pageRecords.forEach(function (b) {
+        var statusClass = 'secondary';
+        if (b.status === 'available') statusClass = 'success';
+        else if (b.status === 'rented') statusClass = 'primary';
+        else if (b.status === 'maintenance') statusClass = 'warning';
+        else if (b.status === 'removed') statusClass = 'danger';
+        var battery = (b.batteryLevel !== null && b.batteryLevel !== undefined) ? b.batteryLevel + '%' : '-';
+        var batteryClass = 'success';
+        if (b.batteryLevel < 20) batteryClass = 'danger';
+        else if (b.batteryLevel < 50) batteryClass = 'warning';
+        var dist = b.totalDistance ? Number(b.totalDistance).toFixed(2) + ' km' : '0.00 km';
+        html += '<tr>'
+            + '<td class="fw-semibold">' + esc(b.name || '-') + '</td>'
+            + '<td>' + esc(b.model || '-') + '</td>'
+            + '<td><span class="badge bg-' + statusClass + '">' + esc(b.status || '-') + '</span></td>'
+            + '<td><span class="badge bg-' + batteryClass + '">' + battery + '</span></td>'
+            + '<td class="text-center">' + (b.totalRentals || 0) + '</td>'
+            + '<td>' + dist + '</td>'
+            + '<td class="fw-bold" style="color:var(--success);">\u20B1' + (b.totalRevenue ? Number(b.totalRevenue).toFixed(2) : '0.00') + '</td>'
+            + '<td>' + esc(b.condition || '-') + '</td>'
+            + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    html += buildPagination('bicycle', total, totalPages);
+    return html;
+}
+
+/* ─── Theft Table ─── */
+function renderTheftTable(records, page) {
+    _reportPage.theft = page || 1;
+    var total = records.length, totalPages = Math.ceil(total / _pageSize);
+    var start = (_reportPage.theft - 1) * _pageSize;
+    var pageRecords = records.slice(start, start + _pageSize);
+    var html = '<div class="table-responsive"><table class="admin-table"><thead><tr>'
+        + '<th>Theft ID</th><th>Bicycle</th><th>Severity</th><th>Description</th><th>Location</th><th>Status</th><th>Acknowledged</th><th>Timestamp</th>'
+        + '</tr></thead><tbody>';
+    if (pageRecords.length === 0) html += '<tr><td colspan="8" class="text-center text-muted py-4">No theft records found</td></tr>';
+    pageRecords.forEach(function (r) {
+        var sevClass = 'secondary';
+        if (r.severity === 'critical') sevClass = 'danger';
+        else if (r.severity === 'major') sevClass = 'warning';
+        else if (r.severity === 'moderate') sevClass = 'info';
+        else if (r.severity === 'minor') sevClass = 'light text-dark';
+        var statusClass = 'secondary';
+        if (r.status === 'open') statusClass = 'danger';
+        else if (r.status === 'resolved' || r.status === 'closed') statusClass = 'success';
+        else if (r.status === 'in_progress') statusClass = 'warning';
+        var ts = r.createdAt || r.created_at;
+        var tsStr = ts ? new Date(ts).toLocaleString() : '-';
+        html += '<tr>'
+            + '<td><code>#' + esc(r.id) + '</code></td>'
+            + '<td>' + esc((r.bicycle && r.bicycle.name) || r.bicycleId || '-') + '</td>'
+            + '<td><span class="badge bg-' + sevClass + '">' + esc(r.severity || '-') + '</span></td>'
+            + '<td class="text-truncate" style="max-width:200px;" title="' + esc(r.description || '') + '">' + esc(r.description || '-') + '</td>'
+            + '<td>' + formatLocation(r) + '</td>'
+            + '<td><span class="badge bg-' + statusClass + '">' + esc(r.status || '-') + '</span></td>'
+            + '<td>' + (r.acknowledged ? '<i class="bi bi-check-circle-fill text-success"></i> Yes' : '<i class="bi bi-x-circle text-muted"></i> No') + '</td>'
+            + '<td>' + tsStr + '</td>'
+            + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    html += buildPagination('theft', total, totalPages);
+    return html;
+}
+
 /* ─── Accident Table ─── */
 function renderAccidentTable(records, page) {
     _reportPage.accident = page || 1;
@@ -761,10 +874,7 @@ function paginateTable(type, page) {
     var container = document.getElementById('reportResults');
     var summaryEl = container.querySelector('.row.g-3.mb-4');
     var summarySection = summaryEl ? summaryEl.parentElement.outerHTML : '';
-    var newHtml = '';
-    if (type === 'customer') newHtml = renderCustomerTable(_reportData.customer, page);
-    else if (type === 'rental') newHtml = renderRentalTable(_reportData.rental, page);
-    else if (type === 'accident') newHtml = renderAccidentTable(_reportData.accident, page);
+    var newHtml = renderTable(type, _reportData[type], page);
     container.innerHTML = summarySection + newHtml;
     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -968,6 +1078,7 @@ function esc(s) { var d = document.createElement('div'); d.appendChild(document.
 /* ─── Export ─── */
 function exportReport(type, format) {
     var form = document.getElementById(type + 'ReportForm');
+    if (!form) { alert('Report form not found.'); return; }
     var params = new URLSearchParams();
     params.append('type', type);
     var fields = form.querySelectorAll('input, select');
@@ -983,7 +1094,7 @@ function printReport(type) {
     if (records.length === 0) { alert('Please generate a report first before printing.'); return; }
 
     var win = window.open('', '_blank', 'width=1200,height=700');
-    var titles = { customer: 'Customer Report', rental: 'Rental Report', accident: 'Accident Report', revenue: 'Revenue Report', incident: 'Incidents Report' };
+    var titles = { customer: 'Customer Report', rental: 'Rental Report', bicycle: 'Bicycle Report', theft: 'Theft Report', accident: 'Accident Report', revenue: 'Revenue Report', incident: 'Incidents Report' };
     var title = titles[type] || 'Report';
     var rows = '';
     var headers;
@@ -1012,6 +1123,29 @@ function printReport(type) {
                 + '<td>' + esc(r.paymentStatus || '-') + '</td>'
                 + '<td>' + esc(r.status) + '</td></tr>';
         });
+    } else if (type === 'bicycle') {
+        headers = '<th>Bicycle</th><th>Model</th><th>Status</th><th>Battery</th><th>Total Rentals</th><th>Total Distance</th><th>Total Revenue</th><th>Condition</th>';
+        records.forEach(function (b) {
+            rows += '<tr><td>' + esc(b.name || '-') + '</td><td>' + esc(b.model || '-') + '</td>'
+                + '<td>' + esc(b.status || '-') + '</td>'
+                + '<td>' + ((b.batteryLevel !== null && b.batteryLevel !== undefined) ? b.batteryLevel + '%' : '-') + '</td>'
+                + '<td>' + (b.totalRentals || 0) + '</td>'
+                + '<td>' + (b.totalDistance ? Number(b.totalDistance).toFixed(2) + ' km' : '0.00 km') + '</td>'
+                + '<td>\u20B1' + (b.totalRevenue ? Number(b.totalRevenue).toFixed(2) : '0.00') + '</td>'
+                + '<td>' + esc(b.condition || '-') + '</td></tr>';
+        });
+    } else if (type === 'theft') {
+        headers = '<th>Theft ID</th><th>Bicycle</th><th>Severity</th><th>Description</th><th>Location</th><th>Status</th><th>Acknowledged</th><th>Timestamp</th>';
+        records.forEach(function (r) {
+            var ts = r.createdAt || r.created_at;
+            rows += '<tr><td>#' + esc(r.id) + '</td><td>' + esc((r.bicycle && r.bicycle.name) || r.bicycleId || '-') + '</td>'
+                + '<td>' + esc(r.severity || '-') + '</td>'
+                + '<td>' + esc(r.description || '-') + '</td>'
+                + '<td>' + esc(formatLocation(r)) + '</td>'
+                + '<td>' + esc(r.status || '-') + '</td>'
+                + '<td>' + (r.acknowledged ? 'Yes' : 'No') + '</td>'
+                + '<td>' + (ts ? new Date(ts).toLocaleString() : '-') + '</td></tr>';
+        });
     } else if (type === 'accident') {
         headers = '<th>Accident ID</th><th>Rider</th><th>Bicycle</th><th>Location</th><th>Date/Time</th><th>Severity</th><th>Status</th><th>Acknowledged</th><th>Action Taken</th>';
         records.forEach(function (a) {
@@ -1024,6 +1158,14 @@ function printReport(type) {
                 + '<td>' + esc(a.status || '-') + '</td>'
                 + '<td>' + (a.acknowledged ? 'Yes' : 'No') + '</td>'
                 + '<td>' + esc(a.actionTaken || '-') + '</td></tr>';
+        });
+    } else if (type === 'revenue') {
+        headers = '<th>Period</th><th>Rentals</th><th>Total Revenue</th><th>Avg Revenue</th><th>Duration (min)</th>';
+        records.forEach(function (r) {
+            rows += '<tr><td>' + esc(r.period) + '</td><td>' + Number(r.total_rentals || 0) + '</td>'
+                + '<td>\u20B1' + Number(r.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>'
+                + '<td>\u20B1' + Number(r.avg_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) + '</td>'
+                + '<td>' + Number(r.total_duration_minutes || 0) + '</td></tr>';
         });
     }
 
@@ -1051,8 +1193,8 @@ function clearResults() {
     document.getElementById('resultsCard').style.display = 'none';
     document.getElementById('reportResults').innerHTML = '';
     document.getElementById('resultCount').textContent = '0';
-    _reportData = { customer: [], rental: [], accident: [] };
-    _reportPage = { customer: 1, rental: 1, accident: 1 };
+    _reportData = { customer: [], rental: [], bicycle: [], theft: [], accident: [], revenue: [], incident: [] };
+    _reportPage = { customer: 1, rental: 1, bicycle: 1, theft: 1, accident: 1, revenue: 1, incident: 1 };
 }
 
 function clearCustomerFilters() {
@@ -1073,6 +1215,19 @@ function clearRentalFilters() {
     document.getElementById('rentalRider').value = '';
 }
 
+function clearBicycleFilters() {
+    var s = document.getElementById('bicycleSearch'); if (s) s.value = '';
+    var st = document.getElementById('bicycleStatus'); if (st) st.value = '';
+}
+
+function clearTheftFilters() {
+    var s = document.getElementById('theftSearch'); if (s) s.value = '';
+    document.getElementById('theftDateFrom').value = '<?php echo e(now()->subDays(30)->format("Y-m-d")); ?>';
+    document.getElementById('theftDateTo').value = '<?php echo e(now()->format("Y-m-d")); ?>';
+    document.getElementById('theftStatus').value = '';
+    document.getElementById('theftBicycle').value = '';
+}
+
 function clearAccidentFilters() {
     document.getElementById('accidentSearch').value = '';
     document.getElementById('accidentDateFrom').value = '<?php echo e(now()->subDays(30)->format("Y-m-d")); ?>';
@@ -1084,20 +1239,6 @@ function clearAccidentFilters() {
     var typeEl = document.getElementById('accidentType');
     if (typeEl) typeEl.value = '';
 }
-
-/* ─── Tab sync with URL ─── */
-(function () {
-    var params = new URLSearchParams(window.location.search);
-    var tab = params.get('tab');
-    if (tab) {
-        var tabMap = { customer: 'customer-tab', rental: 'rental-tab', accident: 'accident-tab', revenue: 'revenue-tab', incident: 'incident-tab' };
-        var tabId = tabMap[tab];
-        if (tabId) {
-            var trigger = document.getElementById(tabId);
-            if (trigger) new bootstrap.Tab(trigger).show();
-        }
-    }
-})();
 </script>
 <?php $__env->stopSection(); ?>
 

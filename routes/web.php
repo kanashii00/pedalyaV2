@@ -121,6 +121,8 @@ Route::post('/theft/{id}/acknowledge', [AdminTheft::class, 'acknowledge'])->name
     Route::post('/reports/revenue', [AdminReports::class, 'revenueReport'])->name('reports.revenue');
     Route::post('/reports/incident', [AdminReports::class, 'incidentReport'])->name('reports.incident');
     Route::post('/reports/accident', [AdminReports::class, 'accidentReport'])->name('reports.accident');
+    Route::post('/reports/bicycle', [AdminReports::class, 'bicycleReport'])->name('reports.bicycle');
+    Route::post('/reports/theft', [AdminReports::class, 'theftReport'])->name('reports.theft');
     Route::get('/reports/export/pdf', [AdminReports::class, 'exportPdf'])->name('reports.export.pdf');
     Route::get('/reports/export/excel', [AdminReports::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('/reports/export/csv', [AdminReports::class, 'exportCsv'])->name('reports.export.csv');

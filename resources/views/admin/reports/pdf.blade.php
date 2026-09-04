@@ -85,6 +85,36 @@
                     $a->actionTaken ?? '—',
                 ];
             }
+        } elseif ($reportType === 'bicycle') {
+            $headers = ['Bicycle', 'Model', 'Status', 'Battery', 'Total Rentals', 'Total Distance', 'Total Revenue', 'Condition'];
+            foreach ($report['data'] as $b) {
+                $completed = optional($b->rentals)->where('status', 'completed');
+                $rows[] = [
+                    $b->name ?? '—',
+                    $b->model ?? '—',
+                    ucfirst($b->status ?? '—'),
+                    $b->batteryLevel !== null ? $b->batteryLevel.'%' : '—',
+                    (int) ($b->totalRentals ?? 0),
+                    $b->totalDistance ? number_format((float) $b->totalDistance, 2).' km' : '0.00 km',
+                    '₱'.number_format((float) ($completed ? $completed->sum('totalFee') : 0), 2),
+                    $b->condition ?? '—',
+                ];
+            }
+        } elseif ($reportType === 'theft') {
+            $headers = ['Theft ID', 'Bicycle', 'Severity', 'Description', 'Location', 'Status', 'Acked', 'Timestamp'];
+            foreach ($report['data'] as $a) {
+                $loc = is_array($a->gpsLocation) ? $a->gpsLocation : [];
+                $rows[] = [
+                    '#'.$a->id,
+                    $a->bicycle?->name ?? $a->bicycleId,
+                    ucfirst($a->severity ?? '—'),
+                    $a->description ?? '—',
+                    isset($loc['lat'], $loc['lng']) ? $loc['lat'].', '.$loc['lng'] : '—',
+                    $a->status,
+                    $a->acknowledged ? 'Yes' : 'No',
+                    $a->created_at?->format('M d, Y H:i'),
+                ];
+            }
         } elseif ($reportType === 'incident') {
             $headers = ['ID', 'Type', 'Severity', 'Bicycle', 'Description', 'Location', 'Ack', 'Timestamp'];
             foreach ($report['data'] as $a) {

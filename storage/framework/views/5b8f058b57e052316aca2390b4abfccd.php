@@ -70,7 +70,6 @@
             'items' => [
                 ['title' => 'Accident Monitoring', 'icon' => 'bi-activity', 'route' => 'admin.accidents.index', 'active' => ['admin.accidents.*'], 'badge' => $unackAccidents, 'badgeType' => 'warning'],
                 ['title' => 'Notifications', 'icon' => 'bi-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*'], 'badge' => $unreadNotifs],
-                ['title' => 'Incident Reports', 'icon' => 'bi-journal-alert', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=incident'],
                 [
                     'label' => 'Monitoring',
                     'title' => 'Monitoring',
@@ -96,6 +95,7 @@
                 ['title' => 'Bicycle Reports', 'icon' => 'bi-speedometer', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=bicycle'],
                 ['title' => 'Theft Reports', 'icon' => 'bi-shield-exclamation', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=theft'],
                 ['title' => 'Accident Reports', 'icon' => 'bi-activity', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=accident', 'badge' => $unackAccidents, 'badgeType' => 'warning'],
+                ['title' => 'Revenue Reports', 'icon' => 'bi-currency-dollar', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=revenue'],
                 ['title' => 'Export Reports', 'icon' => 'bi-download', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'query' => '?tab=export'],
             ],
         ],

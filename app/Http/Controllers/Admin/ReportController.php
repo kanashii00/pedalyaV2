@@ -21,12 +21,16 @@ class ReportController extends Controller
         protected ReportService $reportService
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $reportType = $request->query('tab', 'customer');
+        $allowed = ['customer', 'rental', 'bicycle', 'theft', 'accident', 'revenue', 'export'];
+        $reportType = in_array($reportType, $allowed, true) ? $reportType : 'customer';
+
         $bicycles = Bicycle::orderBy('name')->get();
         $users = User::where('role', 'rider')->orderBy('name')->get();
 
-        return response()->view('admin.reports', compact('bicycles', 'users'));
+        return response()->view('admin.reports', compact('bicycles', 'users', 'reportType'));
     }
 
     public function rentalReport(Request $request): JsonResponse
@@ -89,6 +93,30 @@ class ReportController extends Controller
         } catch (\Throwable $e) {
             Log::error('Failed to generate customer report', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Failed to generate customer report.'], 500);
+        }
+    }
+
+    public function bicycleReport(Request $request): JsonResponse
+    {
+        try {
+            $report = $this->reportService->getBicycleReport($this->filters($request));
+
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            Log::error('Failed to generate bicycle report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate bicycle report.'], 500);
+        }
+    }
+
+    public function theftReport(Request $request): JsonResponse
+    {
+        try {
+            $report = $this->reportService->getTheftReport($this->filters($request));
+
+            return response()->json($report);
+        } catch (\Throwable $e) {
+            Log::error('Failed to generate theft report', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to generate theft report.'], 500);
         }
     }
 
@@ -157,6 +185,9 @@ class ReportController extends Controller
     {
         return match ($type) {
             'customer' => $this->reportService->getCustomerReport($this->filters($request)),
+            'accident' => $this->reportService->getAccidentReport($this->filters($request)),
+            'bicycle' => $this->reportService->getBicycleReport($this->filters($request)),
+            'theft' => $this->reportService->getTheftReport($this->filters($request)),
             'revenue' => $this->reportService->getRevenueReport([
                 'start_date' => $request->input('date_from'),
                 'end_date' => $request->input('date_to'),
@@ -167,7 +198,6 @@ class ReportController extends Controller
                 'severity' => $request->input('severity'),
                 'type' => $request->input('incident_type'),
             ]),
-            'accident' => $this->reportService->getAccidentReport($this->filters($request)),
             default => $this->reportService->getRentalReport($this->filters($request)),
         };
     }
@@ -195,6 +225,8 @@ class ReportController extends Controller
             'revenue' => $this->revenueTable($report),
             'accident' => $this->accidentTable($report),
             'incident' => $this->incidentTable($report),
+            'bicycle' => $this->bicycleTable($report),
+            'theft' => $this->theftTable($report),
             default => $this->rentalTable($report),
         };
     }
@@ -273,6 +305,45 @@ class ReportController extends Controller
         }
 
         return [['ID', 'Type', 'Severity', 'Bicycle', 'Description', 'Location', 'Status', 'Acknowledged', 'Timestamp'], $rows];
+    }
+
+    private function bicycleTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $bicycle) {
+            $completed = $bicycle->rentals->where('status', 'completed');
+            $rows[] = [
+                $bicycle->name,
+                $bicycle->model ?? '—',
+                ucfirst($bicycle->status ?? '—'),
+                $bicycle->batteryLevel !== null ? $bicycle->batteryLevel . '%' : '—',
+                $bicycle->totalRentals ?? 0,
+                $bicycle->totalDistance ? number_format((float) $bicycle->totalDistance, 2) . ' km' : '0.00 km',
+                '₱' . number_format((float) $completed->sum('totalFee'), 2),
+                $bicycle->condition ?? '—',
+            ];
+        }
+
+        return [['Bicycle', 'Model', 'Status', 'Battery', 'Total Rentals', 'Total Distance', 'Total Revenue', 'Condition'], $rows];
+    }
+
+    private function theftTable(array $report): array
+    {
+        $rows = [];
+        foreach ($report['data'] as $theft) {
+            $rows[] = [
+                '#' . $theft->id,
+                $theft->bicycle?->name ?? $theft->bicycleId,
+                ucfirst($theft->severity ?? '—'),
+                $theft->description ?? '—',
+                $this->locationLabel($theft->gpsLocation),
+                $theft->status,
+                $theft->acknowledged ? 'Yes' : 'No',
+                $this->formatTimestamp($theft->created_at),
+            ];
+        }
+
+        return [['Theft ID', 'Bicycle', 'Severity', 'Description', 'Location', 'Status', 'Acknowledged', 'Timestamp'], $rows];
     }
 
     private function rentalTable(array $report): array
