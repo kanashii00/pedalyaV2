@@ -6,10 +6,12 @@ use App\Models\Accident;
 use App\Models\Bicycle;
 use App\Models\DeviceCommand;
 use App\Models\DeviceStatus;
+use App\Models\SystemSetting;
 use App\Services\DeviceCommandService;
 use App\Services\GeofenceService;
 use App\Services\IoTService;
 use App\Services\NotificationService;
+use App\Services\TheftDetectionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\Concerns\CreatesTestData;
@@ -294,5 +296,277 @@ class IoTServiceTest extends TestCase
         $this->assertCount(1, $commands);
         $this->assertSame($pending->id, $commands[0]['id']);
         $this->assertSame('lock', $commands[0]['command']);
+    }
+
+    public function test_handle_geofence_check_outside_delegates_to_theft_service(): void
+    {
+        $this->makeAdmin();
+        $bike = $this->makeBicycle();
+
+        $this->geofenceService->shouldReceive('checkPointInGeofence')
+            ->once()
+            ->andReturn([
+                'inside' => false,
+                'level' => 'breach',
+                'distanceOutside' => 200.0,
+                'distanceToBoundary' => 50.0,
+            ]);
+
+        $theftMock = Mockery::mock(TheftDetectionService::class);
+        $theftMock->shouldReceive('openOrUpdateTheftAlert')
+            ->once()
+            ->andReturn(Accident::create([
+                'bicycleId' => $bike->id,
+                'type' => 'theft',
+                'status' => 'open',
+                'severity' => 'moderate',
+                'acknowledged' => false,
+            ]));
+        $this->app->instance(TheftDetectionService::class, $theftMock);
+
+        $method = new \ReflectionMethod(IoTService::class, 'handleGeofenceCheck');
+        $method->invoke($this->service, $bike, 14.6, 121.0);
+
+        $this->assertTrue(true);
+    }
+
+    public function test_handle_geofence_check_warning_level_records_warning(): void
+    {
+        $this->makeAdmin();
+        $bike = $this->makeBicycle();
+
+        $this->geofenceService->shouldReceive('checkPointInGeofence')
+            ->once()
+            ->andReturn([
+                'inside' => true,
+                'level' => 'approaching',
+                'distanceToBoundary' => 25.0,
+            ]);
+
+        $this->notificationService->shouldReceive('createForUsers')
+            ->once()
+            ->andReturn(collect());
+
+        $method = new \ReflectionMethod(IoTService::class, 'handleGeofenceCheck');
+        $method->invoke($this->service, $bike, 14.6, 121.0);
+
+        $alert = Accident::where('bicycleId', $bike->id)
+            ->where('type', 'geofence_alert')
+            ->first();
+        $this->assertNotNull($alert);
+        $this->assertSame('minor', $alert->severity);
+    }
+
+    public function test_handle_geofence_check_approaching_records_warning(): void
+    {
+        $this->makeAdmin();
+        $bike = $this->makeBicycle();
+
+        $this->notificationService->shouldReceive('createForUsers')
+            ->once()
+            ->andReturn(collect());
+
+        $geofenceService = Mockery::mock(GeofenceService::class);
+        $geofenceService->shouldReceive('checkPointInGeofence')
+            ->once()
+            ->andReturn([
+                'inside' => true,
+                'level' => 'approaching',
+                'distanceToBoundary' => 25.0,
+            ]);
+        $this->app->instance(GeofenceService::class, $geofenceService);
+
+        $method = new \ReflectionMethod(IoTService::class, 'handleGeofenceCheck');
+        $method->invoke($this->service, $bike, 14.6, 121.0);
+
+        $alert = Accident::where('bicycleId', $bike->id)
+            ->where('type', 'geofence_alert')
+            ->first();
+        $this->assertNotNull($alert);
+    }
+
+    public function test_handle_geofence_check_safe_resolves_alert(): void
+    {
+        $bike = $this->makeBicycle();
+
+        Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'status' => TheftDetectionService::STATUS_OPEN,
+            'severity' => 'moderate',
+            'acknowledged' => false,
+        ]);
+
+        $theftMock = Mockery::mock(TheftDetectionService::class);
+        $theftMock->shouldReceive('resolveAlertOnReturn')
+            ->once()
+            ->andReturn(Accident::where('bicycleId', $bike->id)->first());
+        $this->app->instance(TheftDetectionService::class, $theftMock);
+
+        $geofenceService = Mockery::mock(GeofenceService::class);
+        $geofenceService->shouldReceive('checkPointInGeofence')
+            ->once()
+            ->andReturn([
+                'inside' => true,
+                'level' => 'safe',
+                'distanceToBoundary' => 200.0,
+            ]);
+        $this->app->instance(GeofenceService::class, $geofenceService);
+
+        $method = new \ReflectionMethod(IoTService::class, 'handleGeofenceCheck');
+        $method->invoke($this->service, $bike, 14.6, 121.0);
+
+        $this->assertTrue(true);
+    }
+
+    public function test_record_warning_event_throttle_prevents_duplicate(): void
+    {
+        $this->makeAdmin();
+        $bike = $this->makeBicycle();
+
+        $accident = Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'geofence_alert',
+            'severity' => 'minor',
+            'warningLevel' => 'approaching',
+            'status' => 'open',
+            'acknowledged' => false,
+        ]);
+        $accident->forceFill(['created_at' => now()->subMinutes(5)])->save();
+
+        $method = new \ReflectionMethod(IoTService::class, 'recordWarningEvent');
+        $method->invoke($this->service, $bike, 14.6, 121.0, [
+            'level' => 'approaching',
+            'distanceToBoundary' => 30.0,
+        ]);
+
+        $count = Accident::where('bicycleId', $bike->id)
+            ->where('type', 'geofence_alert')
+            ->count();
+        $this->assertSame(1, $count);
+    }
+
+    public function test_record_warning_event_creates_after_throttle(): void
+    {
+        $this->makeAdmin();
+        $bike = $this->makeBicycle();
+
+        $old = Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'geofence_alert',
+            'severity' => 'minor',
+            'warningLevel' => 'approaching',
+            'status' => 'open',
+            'acknowledged' => false,
+        ]);
+        $old->forceFill(['created_at' => now()->subMinutes(20)])->save();
+
+        $this->notificationService->shouldReceive('createForUsers')
+            ->once()
+            ->andReturn(collect());
+
+        $method = new \ReflectionMethod(IoTService::class, 'recordWarningEvent');
+        $method->invoke($this->service, $bike, 14.6, 121.0, [
+            'level' => 'approaching',
+            'distanceToBoundary' => 25.0,
+        ]);
+
+        $count = Accident::where('bicycleId', $bike->id)
+            ->where('type', 'geofence_alert')
+            ->count();
+        $this->assertSame(2, $count);
+    }
+
+    public function test_process_heartbeat_low_impact_below_threshold(): void
+    {
+        $bike = $this->makeBicycle();
+
+        $this->geofenceService->shouldReceive('checkPointInGeofence')
+            ->once()
+            ->andReturn(['inside' => true, 'distanceOutside' => 0]);
+
+        $this->service->processHeartbeat([
+            'bicycleId' => $bike->id,
+            'impact' => 1.5,
+            'lat' => 14.6,
+            'lng' => 120.99,
+        ]);
+
+        $this->assertDatabaseMissing('accidents', ['bicycleId' => $bike->id, 'type' => 'impact_detected']);
+    }
+
+    public function test_process_heartbeat_medium_impact(): void
+    {
+        $bike = $this->makeBicycle();
+
+        $this->geofenceService->shouldReceive('checkPointInGeofence')
+            ->once()
+            ->andReturn(['inside' => true, 'distanceOutside' => 0]);
+
+        $this->service->processHeartbeat([
+            'bicycleId' => $bike->id,
+            'impact' => 5.0,
+            'lat' => 14.6,
+            'lng' => 120.99,
+        ]);
+
+        $accident = Accident::where('bicycleId', $bike->id)->where('type', 'impact_detected')->first();
+        $this->assertNotNull($accident);
+        $this->assertSame('major', $accident->severity);
+    }
+
+    public function test_process_geofence_alert_existing_alert_updates(): void
+    {
+        $this->makeAdmin();
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+
+        Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'status' => 'open',
+            'severity' => 'moderate',
+            'acknowledged' => false,
+            'breachDistance' => 100,
+            'gpsLocation' => ['lat' => 14.5, 'lng' => 120.9],
+        ]);
+
+        $this->notificationService->shouldReceive('create')
+            ->once()
+            ->with($rider->id, 'Geofence Alert', Mockery::type('string'), 'geofence_alert');
+        $this->notificationService->shouldReceive('createForUsers')
+            ->once()
+            ->andReturn(collect());
+
+        $result = $this->service->processGeofenceAlert([
+            'bicycleId' => $bike->id,
+            'riderId' => $rider->id,
+            'distance' => 200.0,
+            'lat' => 14.7,
+            'lng' => 121.0,
+        ]);
+
+        $this->assertSame('logged', $result['status']);
+        $updated = Accident::find($result['alertId']);
+        $this->assertSame(200.0, (float) $updated->breachDistance);
+    }
+
+    public function test_process_geofence_alert_without_rider(): void
+    {
+        $this->makeAdmin();
+        $bike = $this->makeBicycle();
+
+        $this->notificationService->shouldReceive('createForUsers')
+            ->once()
+            ->andReturn(collect());
+
+        $result = $this->service->processGeofenceAlert([
+            'bicycleId' => $bike->id,
+            'distance' => 150.0,
+            'lat' => 14.6,
+            'lng' => 121.0,
+        ]);
+
+        $this->assertSame('logged', $result['status']);
     }
 }

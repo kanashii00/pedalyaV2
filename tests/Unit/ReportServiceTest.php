@@ -218,4 +218,208 @@ class ReportServiceTest extends TestCase
         $this->assertNotSame($a, $b);
         $this->assertStringStartsWith('RPT-', $a);
     }
+
+    public function test_get_rental_report_search_filter(): void
+    {
+        $rider = $this->makeRider(['name' => 'Search Rider']);
+        $bike = $this->makeBicycle();
+
+        $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_COMPLETED,
+            'riderName' => 'Search Rider',
+            'riderEmail' => 'search@test.com',
+            'rentalId' => 'REN-SEARCH-001',
+            'totalFee' => 25,
+        ]);
+
+        $report = $this->service->getRentalReport(['search' => 'Search Rider']);
+        $this->assertSame(1, $report['summary']['total']);
+    }
+
+    public function test_get_rental_report_payment_status_filter(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+
+        $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_COMPLETED,
+            'paymentStatus' => 'paid',
+            'totalFee' => 30,
+        ]);
+
+        $report = $this->service->getRentalReport(['payment_status' => 'paid']);
+        $this->assertSame(1, $report['summary']['total']);
+    }
+
+    public function test_get_accident_report_with_filters(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+
+        Accident::create([
+            'bicycleId' => $bike->id,
+            'riderId' => $rider->id,
+            'type' => 'accident',
+            'severity' => 'major',
+            'status' => 'open',
+            'acknowledged' => false,
+            'description' => 'Crash on Main St',
+            'actionTaken' => 'Ambulance called',
+            'created_at' => now(),
+        ]);
+
+        $report = $this->service->getAccidentReport([
+            'start_date' => now()->subDay()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+            'severity' => 'major',
+            'status' => 'open',
+            'bicycleId' => $bike->id,
+            'riderId' => $rider->id,
+            'type' => 'accident',
+            'search' => 'Crash',
+        ]);
+
+        $this->assertArrayHasKey('summary', $report);
+        $this->assertArrayHasKey('data', $report);
+    }
+
+    public function test_get_accident_report_empty(): void
+    {
+        $report = $this->service->getAccidentReport([]);
+        $this->assertSame(0, $report['summary']['total']);
+    }
+
+    public function test_get_bicycle_report_with_filters(): void
+    {
+        $bike = $this->makeBicycle([
+            'name' => 'Filter Bike',
+            'model' => 'City V2',
+            'serialNumber' => 'SN-FILTER-001',
+            'status' => Bicycle::STATUS_AVAILABLE,
+        ]);
+
+        $report = $this->service->getBicycleReport([
+            'status' => Bicycle::STATUS_AVAILABLE,
+            'search' => 'Filter Bike',
+        ]);
+
+        $this->assertSame(1, $report['summary']['total']);
+        $this->assertSame(1, $report['summary']['available']);
+    }
+
+    public function test_get_bicycle_report_search_by_model(): void
+    {
+        $this->makeBicycle(['name' => 'Alpha', 'model' => 'SpeedX', 'serialNumber' => 'SN-AX-001']);
+        $this->makeBicycle(['name' => 'Beta', 'model' => 'SpeedX', 'serialNumber' => 'SN-BX-001']);
+
+        $report = $this->service->getBicycleReport(['search' => 'SpeedX']);
+        $this->assertSame(2, $report['summary']['total']);
+    }
+
+    public function test_get_bicycle_report_search_by_serial(): void
+    {
+        $this->makeBicycle(['serialNumber' => 'SN-UNIQUE-123']);
+
+        $report = $this->service->getBicycleReport(['search' => 'UNIQUE']);
+        $this->assertSame(1, $report['summary']['total']);
+    }
+
+    public function test_get_theft_report_with_filters(): void
+    {
+        $bike = $this->makeBicycle();
+
+        Accident::create([
+            'bicycleId' => $bike->id,
+            'type' => 'theft',
+            'severity' => 'critical',
+            'status' => 'open',
+            'acknowledged' => false,
+            'description' => 'Bike stolen near gate',
+            'actionTaken' => 'Reported to police',
+            'created_at' => now(),
+        ]);
+
+        $report = $this->service->getTheftReport([
+            'start_date' => now()->subDay()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+            'status' => 'open',
+            'bicycleId' => $bike->id,
+            'search' => 'stolen',
+        ]);
+
+        $this->assertArrayHasKey('summary', $report);
+        $this->assertArrayHasKey('data', $report);
+    }
+
+    public function test_get_theft_report_empty(): void
+    {
+        $report = $this->service->getTheftReport([]);
+        $this->assertSame(0, $report['summary']['total']);
+        $this->assertSame(0, $report['summary']['open']);
+    }
+
+    public function test_get_customer_report_with_filters(): void
+    {
+        $rider = $this->makeRider([
+            'name' => 'Filter Customer',
+            'email' => 'filter@test.com',
+            'phoneNumber' => '09171234567',
+            'studentId' => 'S-FILTER',
+            'status' => 'active',
+            'verified' => true,
+        ]);
+
+        $this->makeRental([
+            'riderId' => $rider->id,
+            'status' => Rental::STATUS_COMPLETED,
+            'totalFee' => 45,
+        ]);
+
+        $report = $this->service->getCustomerReport([
+            'start_date' => now()->subDay()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+            'status' => 'active',
+            'verified' => '1',
+            'search' => 'Filter Customer',
+        ]);
+
+        $this->assertArrayHasKey('summary', $report);
+        $this->assertArrayHasKey('data', $report);
+    }
+
+    public function test_get_customer_report_empty(): void
+    {
+        $report = $this->service->getCustomerReport([]);
+        $this->assertArrayHasKey('summary', $report);
+        $this->assertArrayHasKey('data', $report);
+    }
+
+    public function test_get_rental_report_awaiting_return_and_returned_statuses(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+
+        $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_AWAITING_RETURN,
+            'totalFee' => 0,
+        ]);
+        $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_RETURNED,
+            'totalFee' => 20,
+        ]);
+
+        $report = $this->service->getRentalReport([]);
+
+        $this->assertSame(2, $report['summary']['total']);
+        $this->assertSame(1, $report['summary']['awaiting_return']);
+        $this->assertSame(1, $report['summary']['returned']);
+    }
 }

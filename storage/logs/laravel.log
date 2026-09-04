@@ -18370,3 +18370,2093 @@ Did you mean one of these?
 [2026-09-04 16:37:31] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
 [2026-09-04 16:37:31] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
 [2026-09-04 16:37:31] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 17:06:19] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:06:19] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:06:29] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:29] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:29] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:30] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:06:32] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:06:32] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:06:32] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:06:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:51] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 17:06:51] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 17:06:51] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 17:06:51] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 17:06:52] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 17:06:52] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 17:06:52] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 17:06:52] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 17:06:53] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:06:53] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:06:53] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T17:06:53+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:53] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T17:06:53+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:54] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:06:54] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:06:54] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T17:06:54+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:06:54] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T17:06:54+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:07:07] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 17:07:07] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 17:07:07] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a8a3ba8096"} 
+[2026-09-04 17:07:07] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 17:07:08] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a8a3c179bb"} 
+[2026-09-04 17:07:08] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 17:07:08] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 17:07:08] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a8a3cb2a7a"} 
+[2026-09-04 17:07:09] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a8a3d1fad2"} 
+[2026-09-04 17:07:09] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:07:09] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:07:09] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 17:07:10] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 17:07:10] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a8a3e8b9b8"} 
+[2026-09-04 17:07:11] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a8a3f05ca6"} 
+[2026-09-04 17:07:11] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 17:07:13] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 17:07:13] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 17:07:13] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 17:07:13] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 17:07:14] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 17:07:14] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 17:07:14] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 17:07:14] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 17:07:15] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 17:07:29] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 17:07:29] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 17:07:29] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 17:07:36] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 17:07:36] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 17:07:36] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 17:07:36] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 17:07:37] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":3,"lat":"7.0996387","lng":"125.6454313","level":"breach","distanceOutside":61.926664083976405} 
+[2026-09-04 17:07:37] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":6,"lat":"7.1010500","lng":"125.6449000","level":"breach","distanceOutside":50.313012914744434} 
+[2026-09-04 17:07:37] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":7,"lat":"7.0996500","lng":"125.6462000","level":"breach","distanceOutside":29.044687713887015} 
+[2026-09-04 17:07:37] local.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":9,"lat":"1.0000000","lng":"1.0000000","level":"breach","distanceOutside":13890019.98651352} 
+[2026-09-04 17:29:02] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:29:02] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:29:23] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:29:23] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:29:24] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:29:24] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:29:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:29:31] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:29:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:29:32] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:29:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:29:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:29:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:29:32] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:29:32] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:29:32] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:29:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:30:12] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:30:12] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:30:12] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T17:30:12+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:30:12] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T17:30:12+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:30:12] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:30:12] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:30:12] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T17:30:12+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:30:12] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T17:30:12+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:30:37] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 17:30:37] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 17:30:38] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a8fbe588db"} 
+[2026-09-04 17:30:38] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 17:30:39] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a8fbf1ae49"} 
+[2026-09-04 17:30:39] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 17:30:39] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 17:30:40] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a8fc022aa3"} 
+[2026-09-04 17:30:40] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a8fc0beba9"} 
+[2026-09-04 17:30:41] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:30:41] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:30:41] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 17:30:42] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 17:30:43] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a8fc33ca9e"} 
+[2026-09-04 17:30:43] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a8fc3da28a"} 
+[2026-09-04 17:30:44] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 17:30:52] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 17:31:21] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 17:31:21] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 17:31:22] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 17:43:41] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:43:41] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:44:00] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:44:01] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:44:02] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:44:02] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:44:07] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:44:07] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:44:08] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:44:08] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:44:08] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:44:08] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:44:08] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:44:08] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:44:08] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:44:09] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:44:09+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:44:43] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 17:44:43] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 17:44:44] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 17:44:44] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 17:44:44] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 17:44:45] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 17:44:45] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 17:45:01] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:45:01] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:45:01] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T17:45:01+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:45:01] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T17:45:01+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:45:01] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:45:01] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:45:01] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T17:45:01+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:45:01] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T17:45:01+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:45:24] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 17:45:24] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 17:45:25] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a93359b411"} 
+[2026-09-04 17:45:25] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 17:45:26] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a933654991"} 
+[2026-09-04 17:45:26] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 17:45:26] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 17:45:27] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a93377c4b8"} 
+[2026-09-04 17:45:28] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a93382fcd2"} 
+[2026-09-04 17:45:29] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:45:29] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:45:29] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 17:45:30] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 17:45:30] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a933aeb536"} 
+[2026-09-04 17:45:31] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a933bab9f4"} 
+[2026-09-04 17:45:32] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 17:45:42] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 17:46:14] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 17:46:14] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 17:46:15] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 17:46:51] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:46:51] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:47:03] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:47:03] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:47:09] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:10] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:10] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:11] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:15] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:16] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:17] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:17] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:47:17] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:17] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:17] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:17] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:47:17] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:47:17] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:47:17+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:22] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:23] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:23] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:24] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:28] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:29] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:30] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:47:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:47:30] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:47:30] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:47:30] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:47:30+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:47:51] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 17:47:52] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 17:47:52] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 17:47:53] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 17:47:53] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 17:47:54] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 17:47:54] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 17:48:09] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:48:09] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:48:09] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T17:48:09+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:09] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T17:48:09+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:09] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:48:09] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:48:09] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T17:48:09+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:09] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T17:48:09+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:10] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:48:10] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:48:29] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:30] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:30] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:31] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:32] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 17:48:33] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 17:48:34] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a93f1edd5a"} 
+[2026-09-04 17:48:34] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 17:48:34] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a93f2b59fd"} 
+[2026-09-04 17:48:35] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 17:48:35] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 17:48:36] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a93f3f21d0"} 
+[2026-09-04 17:48:36] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:48:36] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:48:36] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a93f4c7ecb"} 
+[2026-09-04 17:48:37] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:48:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:48:38] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:48:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:48:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:48:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:48:38] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:48:38] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 17:48:38] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:48:38] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:48:38] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:48:38+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:48:39] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 17:48:39] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a93f7d988b"} 
+[2026-09-04 17:48:40] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a93f8a1bb7"} 
+[2026-09-04 17:48:41] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 17:48:52] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 17:49:14] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 17:49:14] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 17:49:15] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 17:49:15] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 17:49:15] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 17:49:16] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 17:49:16] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 17:49:24] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 17:49:24] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 17:49:25] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 17:49:32] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:49:32] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:49:32] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T17:49:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:49:32] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T17:49:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:49:32] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:49:32] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:49:32] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T17:49:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:49:32] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T17:49:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:49:55] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 17:49:56] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 17:49:57] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a94450a60f"} 
+[2026-09-04 17:49:57] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 17:49:57] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a9445acbfb"} 
+[2026-09-04 17:49:58] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 17:49:58] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 17:49:58] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a9446d6dcf"} 
+[2026-09-04 17:49:59] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a94479a4ed"} 
+[2026-09-04 17:50:00] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:50:00] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:50:00] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 17:50:01] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 17:50:02] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a944a3c02f"} 
+[2026-09-04 17:50:02] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a944ae1ebd"} 
+[2026-09-04 17:50:03] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 17:50:04] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 17:50:04] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:50:13] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 17:50:23] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:50:24] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:50:25] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:50:25] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 17:50:29] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:50:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:50:31] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:50:31] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 17:50:31] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:50:31] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:50:31] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 17:50:31] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 17:50:31] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 17:50:31] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T17:50:31+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:50:45] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 17:50:46] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 17:50:47] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 17:51:06] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 17:51:06] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 17:51:06] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 17:51:07] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 17:51:07] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 17:51:08] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 17:51:08] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 17:51:23] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:51:23] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:51:23] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T17:51:23+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:51:23] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T17:51:23+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:51:24] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 17:51:24] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 17:51:24] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T17:51:24+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:51:24] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T17:51:24+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 17:51:47] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 17:51:47] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 17:51:48] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a94b431cdd"} 
+[2026-09-04 17:51:48] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 17:51:48] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a94b4e6adc"} 
+[2026-09-04 17:51:49] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 17:51:49] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 17:51:50] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a94b603abe"} 
+[2026-09-04 17:51:50] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a94b69f0dc"} 
+[2026-09-04 17:51:51] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:51:51] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 17:51:51] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 17:51:52] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 17:51:53] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a94b915ad3"} 
+[2026-09-04 17:51:53] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a94b9ba510"} 
+[2026-09-04 17:51:54] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 17:52:03] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 17:52:33] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 17:52:34] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 17:52:35] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 18:00:10] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:00:10] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:00:11] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:00:11] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:00:13] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:00:30] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:01:11] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:01:11] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:01:12] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:01:12] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:01:14] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:03:47] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:03:48] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:03:48] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:03:49] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:03:51] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:04:37] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:04:38] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:04:38] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:04:38] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:04:40] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:10:33] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:10:33] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:10:33] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:10:34] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:10:36] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:11:07] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 18:11:07] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:11:29] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:11:30] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:11:31] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:11:32] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:11:37] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:11:37] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:11:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:11:38] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:11:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:11:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:11:38] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:11:39] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 18:11:39] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:11:39] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T18:11:39+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:12:18] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 18:12:18] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 18:12:19] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 18:12:19] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 18:12:20] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 18:12:20] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 18:12:21] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 18:12:38] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 18:12:38] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:12:38] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T18:12:38+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:12:38] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T18:12:38+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:12:39] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 18:12:39] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:12:39] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T18:12:39+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:12:39] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T18:12:39+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:13:05] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 18:13:06] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 18:13:06] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a99b2cc166"} 
+[2026-09-04 18:13:06] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 18:13:07] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a99b3a631a"} 
+[2026-09-04 18:13:08] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 18:13:08] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 18:13:08] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a99b4e07a3"} 
+[2026-09-04 18:13:09] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a99b5a56e3"} 
+[2026-09-04 18:13:10] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 18:13:11] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 18:13:11] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 18:13:11] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 18:13:12] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a99b86d8d3"} 
+[2026-09-04 18:13:13] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a99b933648"} 
+[2026-09-04 18:13:13] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 18:13:25] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 18:14:02] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 18:14:02] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 18:14:04] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 18:14:29] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:14:29] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:14:29] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:14:29] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:14:32] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:14:49] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 18:14:49] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:15:13] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:15:14] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:15:15] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:15:15] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:15:21] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:15:22] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:15:23] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:15:23] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:15:23] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:15:23] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:15:23] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:15:23] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 18:15:23] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:15:23] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T18:15:23+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:16:06] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 18:16:06] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 18:16:07] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 18:16:07] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 18:16:08] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 18:16:08] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 18:16:09] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 18:16:29] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 18:16:29] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:16:29] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T18:16:29+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:16:29] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T18:16:29+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:16:29] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 18:16:29] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:16:29] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T18:16:29+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:16:29] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T18:16:29+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:16:58] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 18:16:59] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 18:16:59] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a9a9bb5f9d"} 
+[2026-09-04 18:16:59] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 18:17:00] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a9a9ca72d7"} 
+[2026-09-04 18:17:01] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 18:17:01] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 18:17:02] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a9a9df08e7"} 
+[2026-09-04 18:17:02] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a9a9ec3691"} 
+[2026-09-04 18:17:03] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 18:17:04] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 18:17:04] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 18:17:05] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 18:17:05] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a9aa1bf571"} 
+[2026-09-04 18:17:06] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a9aa28c95f"} 
+[2026-09-04 18:17:07] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 18:17:19] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 18:18:01] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 18:18:01] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 18:18:03] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 18:18:33] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:18:34] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:18:34] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:18:34] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:18:37] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:18:58] testing.DEBUG: [AdminBicycle] reconcile position {"bicycleId":1,"lat":"14.6000000","lng":"120.9900000","inside":false,"level":"breach"} 
+[2026-09-04 18:18:58] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:19:22] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 1000,
+        "shapeType": "circle",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 200,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:19:23] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "rectangle",
+        "width": 2000,
+        "height": 1000,
+        "rotation": 45,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 120,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:19:24] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.65,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "polygon",
+        "width": null,
+        "height": null,
+        "rotation": 0,
+        "points": [
+            {
+                "lat": 14.6,
+                "lng": 120.98
+            },
+            {
+                "lat": 14.6,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 121
+            },
+            {
+                "lat": 14.7,
+                "lng": 120.98
+            }
+        ],
+        "alertEnabled": true,
+        "warningThreshold": 80,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:19:25] testing.INFO: Broadcasting [App\Events\GeofenceUpdated] on channels [private-geofence-alerts] with payload:
+{
+    "geofence": {
+        "centerLat": 14.6,
+        "centerLng": 120.99,
+        "radius": 25,
+        "shapeType": "oval_h",
+        "width": 1600,
+        "height": 900,
+        "rotation": 0,
+        "points": [],
+        "alertEnabled": true,
+        "warningThreshold": 100,
+        "id": 1
+    },
+    "socket": null
+}  
+[2026-09-04 18:19:30] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:19:31] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:19:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:19:32] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.5995,"lng":120.9842,"distanceOutside":973905.313143496,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:19:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:19:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:19:32] testing.DEBUG: [TheftController] reconcile outside pin -> ensure alert {"bicycleId":1,"lat":"14.5995000","lng":"120.9842000","level":"breach","distanceOutside":973905.313143496} 
+[2026-09-04 18:19:32] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":7.099,"lng":125.647,"inside":true,"level":"safe","alertEnabled":true} 
+[2026-09-04 18:19:32] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:19:32] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 7.099,
+        "lng": 125.647,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "rented",
+        "zone": "safe",
+        "zone_distance": 0,
+        "updated_at": "2026-09-04T18:19:32+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:20:14] testing.ERROR: Failed to generate rental report {"error":"DB down"} 
+[2026-09-04 18:20:14] testing.ERROR: Failed to generate revenue report {"error":"DB down"} 
+[2026-09-04 18:20:15] testing.ERROR: Failed to generate incident report {"error":"DB down"} 
+[2026-09-04 18:20:15] testing.ERROR: Failed to generate accident report {"error":"DB down"} 
+[2026-09-04 18:20:16] testing.ERROR: Failed to generate customer report {"error":"DB down"} 
+[2026-09-04 18:20:16] testing.ERROR: Failed to generate bicycle report {"error":"DB down"} 
+[2026-09-04 18:20:17] testing.ERROR: Failed to generate theft report {"error":"DB down"} 
+[2026-09-04 18:20:36] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.6,"lng":120.99,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 18:20:36] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.99,"distanceOutside":973630.4876566922,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:20:36] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 973630.4876566922,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "status": "available",
+        "battery": 75,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 973630.4876566922,
+        "updated_at": "2026-09-04T18:20:36+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:20:36] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14.6,
+        "lng": 120.99,
+        "speed": 12,
+        "battery": 75,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 976685.5566080335,
+        "updated_at": "2026-09-04T18:20:36+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:20:37] testing.DEBUG: [GpsController] checkGeofence {"bicycleId":1,"lat":14.0,"lng":120.0,"inside":false,"level":"breach","alertEnabled":true} 
+[2026-09-04 18:20:37] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.0,"lng":120.0,"distanceOutside":155009.49091674088,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:20:37] testing.INFO: Broadcasting [GeofenceAlert] on channels [private-geofence-alerts] with payload:
+{
+    "level": "breach",
+    "distance": 155009.49091674088,
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "status": "available",
+        "battery": 90,
+        "locked": true,
+        "zone": "breach",
+        "zone_distance": 155009.49091674088,
+        "updated_at": "2026-09-04T18:20:37+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:20:37] testing.INFO: Broadcasting [GpsUpdate] on channels [private-gps.1] with payload:
+{
+    "bicycle": {
+        "id": 1,
+        "name": "Test Bike",
+        "lat": 14,
+        "lng": 120,
+        "speed": null,
+        "battery": 90,
+        "locked": true,
+        "status": "available",
+        "zone": "breach",
+        "zone_distance": 154767.99166764566,
+        "updated_at": "2026-09-04T18:20:37+08:00"
+    },
+    "socket": null
+}  
+[2026-09-04 18:21:05] testing.WARNING: PayMongo webhook signature verification failed {"ip":"127.0.0.1","signature":"wrong-signature"} 
+[2026-09-04 18:21:06] testing.WARNING: PayMongo webhook signature missing {"ip":"127.0.0.1"} 
+[2026-09-04 18:21:06] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a9b92d5b61"} 
+[2026-09-04 18:21:07] testing.INFO: Payment succeeded and rental created {"payment_id":1} 
+[2026-09-04 18:21:07] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_6a9a9b93b293c"} 
+[2026-09-04 18:21:08] testing.INFO: PayMongo webhook received {"event":"payment_intent.succeeded","payment_intent_id":"pi_nonexistent"} 
+[2026-09-04 18:21:08] testing.WARNING: Payment not found for succeeded intent {"intent_id":"pi_nonexistent"} 
+[2026-09-04 18:21:09] testing.INFO: PayMongo webhook received {"event":"payment_intent.failed","payment_intent_id":"pi_6a9a9b95042c7"} 
+[2026-09-04 18:21:09] testing.INFO: PayMongo webhook received {"event":"payment_intent.processing","payment_intent_id":"pi_6a9a9b95ce28d"} 
+[2026-09-04 18:21:10] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 18:21:11] testing.INFO: PayMongo webhook received {"event":"checkout_session.completed","payment_intent_id":null} 
+[2026-09-04 18:21:11] testing.WARNING: Checkout completed but no payment_id in metadata  
+[2026-09-04 18:21:12] testing.INFO: PayMongo webhook received {"event":"checkout_session.expired","payment_intent_id":null} 
+[2026-09-04 18:21:12] testing.INFO: PayMongo webhook received {"event":"refund.succeeded","payment_intent_id":"rf_6a9a9b98cfd55"} 
+[2026-09-04 18:21:13] testing.INFO: PayMongo webhook received {"event":"refund.failed","payment_intent_id":"rf_6a9a9b99a0c01"} 
+[2026-09-04 18:21:14] testing.INFO: PayMongo webhook received {"event":"some.other.event","payment_intent_id":"x"} 
+[2026-09-04 18:21:26] testing.ERROR: Rider failed to start rental {"error":"boom"} 
+[2026-09-04 18:22:07] testing.ERROR: PayMongo createPaymentIntent failed {"status":400,"body":{"errors":[{"detail":"Invalid amount"}]}} 
+[2026-09-04 18:22:07] testing.ERROR: PayMongo createCheckoutSession failed {"status":500,"body":{"errors":[]}} 
+[2026-09-04 18:22:09] testing.WARNING: PayMongo webhook secret not configured  
+[2026-09-04 18:22:36] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":15.0,"lng":121.0,"distanceOutside":200.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:22:37] testing.DEBUG: [TheftDetection] RESOLVING alert on return {"bicycleId":1,"alertId":1,"status":"returned"} 
+[2026-09-04 18:22:37] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 
+[2026-09-04 18:22:38] testing.DEBUG: [TheftDetection] RECONCILE creating missing open alert {"bicycleId":1,"lat":14.7,"lng":121.0,"distanceOutside":300.0,"level":"breach","source":"read_path_reconcile"} 
+[2026-09-04 18:22:40] testing.DEBUG: [TheftDetection] CREATING theft alert {"bicycleId":1,"lat":14.6,"lng":120.98,"distanceOutside":150.0,"level":"breach","source":"geofence_branch"} 

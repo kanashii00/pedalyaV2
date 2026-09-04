@@ -3,7 +3,7 @@
         'name' => 'pedalya/laravel-system',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'b57be98c6dffaa383bb7716b9741beaa759252e9',
+        'reference' => 'ea7923f6cc75ad919e614c74a8d29faee0457255',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -721,7 +721,7 @@
         'pedalya/laravel-system' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'b57be98c6dffaa383bb7716b9741beaa759252e9',
+            'reference' => 'ea7923f6cc75ad919e614c74a8d29faee0457255',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

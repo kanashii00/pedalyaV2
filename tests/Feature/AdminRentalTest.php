@@ -247,4 +247,184 @@ class AdminRentalTest extends TestCase
         );
         $this->app->instance(IoTService::class, $iot);
     }
+
+    public function test_history_filters_by_date_and_bicycle(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_COMPLETED]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.rentals.history') . '?date_from=2020-01-01&date_to=2030-12-31&bicycle_id=' . $bike->id . '&rider_id=' . $rider->id)
+            ->assertOk();
+    }
+
+    public function test_returns_pending_view(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_AWAITING_RETURN]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.rentals.returns'))
+            ->assertOk();
+    }
+
+    public function test_returns_processed_view(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_RETURNED]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.rentals.returns') . '?view=processed')
+            ->assertOk();
+    }
+
+    public function test_returns_filters(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_AWAITING_RETURN]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.rentals.returns') . '?status=awaiting_return&date_from=2020-01-01&date_to=2030-12-31&bicycle_id=' . $bike->id . '&rider_id=' . $rider->id)
+            ->assertOk();
+    }
+
+    public function test_returns_invalid_view_falls_back_to_pending(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('admin.rentals.returns') . '?view=invalid')
+            ->assertOk();
+    }
+
+    public function test_end_ride_invalid_status_returns_error(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $rental = $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_COMPLETED]);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.rentals.index'))
+            ->put(route('admin.rentals.end-ride', $rental->id))
+            ->assertSessionHasErrors('rental');
+    }
+
+    public function test_end_ride_service_exception_returns_error(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $rental = $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_ACTIVE]);
+
+        $service = Mockery::mock(RentalService::class);
+        $service->shouldReceive('markRideEnded')->once()->andThrow(new \RuntimeException('Service failure'));
+        $this->app->instance(RentalService::class, $service);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.rentals.index'))
+            ->put(route('admin.rentals.end-ride', $rental->id))
+            ->assertSessionHasErrors('rental');
+    }
+
+    public function test_process_return_success(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle(['status' => Bicycle::STATUS_RENTED]);
+        $rental = $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_AWAITING_RETURN,
+            'endTime' => now()->subHour(),
+            'expectedEndTime' => now()->subHour(),
+        ]);
+
+        $service = Mockery::mock(RentalService::class);
+        $service->shouldReceive('processReturn')->once()->andReturn([
+            'rental' => $rental->fresh(),
+            'fees' => ['baseFee' => 15, 'overdueFee' => 0, 'finalFee' => 15],
+        ]);
+        $this->app->instance(RentalService::class, $service);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.rentals.returns'))
+            ->put(route('admin.rentals.process-return', $rental->id), [
+                'condition' => 'good',
+                'note' => 'Looks fine',
+            ])
+            ->assertRedirect(route('admin.rentals.returns'))
+            ->assertSessionHas('success');
+    }
+
+    public function test_process_return_service_exception_returns_error(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $rental = $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_AWAITING_RETURN,
+        ]);
+
+        $service = Mockery::mock(RentalService::class);
+        $service->shouldReceive('processReturn')->once()->andThrow(new \RuntimeException('Process failure'));
+        $this->app->instance(RentalService::class, $service);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.rentals.returns'))
+            ->put(route('admin.rentals.process-return', $rental->id), ['condition' => 'good'])
+            ->assertSessionHasErrors('rental');
+    }
+
+    public function test_cancel_with_matching_bicycle(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle(['status' => Bicycle::STATUS_RENTED]);
+        $rental = $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_ACTIVE,
+        ]);
+        $bike->update(['currentRentalId' => $rental->id]);
+
+        $this->mockIot();
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.rentals.index'))
+            ->put(route('admin.rentals.cancel', $rental->id), ['reason' => 'Maintenance needed'])
+            ->assertRedirect(route('admin.rentals.index'));
+
+        $this->assertSame(Rental::STATUS_CANCELLED, $rental->fresh()->status);
+        $this->assertSame(Bicycle::STATUS_AVAILABLE, $bike->fresh()->status);
+    }
+
+    public function test_cancel_without_matching_bicycle(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle(['status' => Bicycle::STATUS_AVAILABLE]);
+        $rental = $this->makeRental([
+            'riderId' => $rider->id,
+            'bicycleId' => $bike->id,
+            'status' => Rental::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.rentals.index'))
+            ->put(route('admin.rentals.cancel', $rental->id), ['reason' => 'Changed mind'])
+            ->assertRedirect(route('admin.rentals.index'));
+
+        $this->assertSame(Rental::STATUS_CANCELLED, $rental->fresh()->status);
+    }
+
+    public function test_history_view_filters_completed(): void
+    {
+        $rider = $this->makeRider();
+        $bike = $this->makeBicycle();
+        $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_RETURNED]);
+        $this->makeRental(['riderId' => $rider->id, 'bicycleId' => $bike->id, 'status' => Rental::STATUS_EXPIRED]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.rentals.history') . '?status=returned')
+            ->assertOk();
+    }
 }
