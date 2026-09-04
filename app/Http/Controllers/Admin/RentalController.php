@@ -96,11 +96,17 @@ class RentalController extends Controller
 
     public function returns(Request $request): Response
     {
-        $query = Rental::with(['bicycle', 'rider'])
-            ->whereIn('status', [
-                Rental::STATUS_COMPLETED,
-                Rental::STATUS_RETURNED,
-            ]);
+        // "pending" = awaiting admin Process Return; "processed" = confirmed returns.
+        $view = $request->query('view', 'pending');
+        $view = in_array($view, ['pending', 'processed'], true) ? $view : 'pending';
+
+        $query = Rental::with(['bicycle', 'rider']);
+
+        if ($view === 'pending') {
+            $query->where('status', Rental::STATUS_AWAITING_RETURN);
+        } else {
+            $query->whereIn('status', [Rental::STATUS_RETURNED, Rental::STATUS_COMPLETED]);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -127,19 +133,18 @@ class RentalController extends Controller
         $bicyclesList = Bicycle::orderBy('name')->get();
         $ridersList = User::where('role', User::ROLE_RIDER)->orderBy('name')->get();
 
-        $returnedIds = [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED];
         $summary = [
-            'total' => Rental::whereIn('status', $returnedIds)->count(),
-            'totalFee' => (float) Rental::whereIn('status', $returnedIds)->sum('totalFee'),
-            'totalDuration' => (int) Rental::whereIn('status', $returnedIds)->sum('durationMinutes'),
-            'today' => Rental::whereIn('status', $returnedIds)
-                ->whereDate('updated_at', today())
+            'pending' => Rental::where('status', Rental::STATUS_AWAITING_RETURN)->count(),
+            'processed' => Rental::whereIn('status', [Rental::STATUS_RETURNED, Rental::STATUS_COMPLETED])->count(),
+            'totalFee' => (float) Rental::where('status', Rental::STATUS_RETURNED)->sum('finalFee'),
+            'today' => Rental::whereIn('status', [Rental::STATUS_RETURNED, Rental::STATUS_COMPLETED])
+                ->whereDate('returnProcessedAt', today())
                 ->count(),
         ];
 
         return response()->view(
             'admin.rentals-returns',
-            compact('rentals', 'bicyclesList', 'ridersList', 'summary')
+            compact('rentals', 'bicyclesList', 'ridersList', 'summary', 'view')
         );
     }
 
@@ -327,32 +332,57 @@ class RentalController extends Controller
         $rider = User::find($rental->riderId);
 
         try {
-            // Records the end time, computes the final fee from the elapsed
-            // duration, completes the rental, and returns the bicycle to
-            // Available with its smart lock re-secured.
-            $result = $this->rentalService->returnRental(
-                $rental,
-                $rider,
-                null,
-                null,
-                $rental->paymentMethod,
-                $rental->paymentReference,
-                'Ride ended by administrator'
-            );
+            // Records the end time, secures the bicycle's smart lock, and moves
+            // the rental into the "Awaiting Return" state so an administrator
+            // can inspect the bicycle and confirm the return (Process Return).
+            $this->rentalService->markRideEnded($rental, $rider);
         } catch (\Throwable $e) {
             return back()->withErrors(['rental' => $e->getMessage()]);
         }
 
-        AuditLog::record('rental_ended_by_admin', auth()->id(), [
+        AuditLog::record('ride_ended_by_admin', auth()->id(), [
             'rentalId' => $rental->rentalId,
-            'totalFee' => $result['fees']['totalFee'],
-            'durationMinutes' => $result['fees']['durationMinutes'],
+            'endTime' => $rental->fresh()->endTime?->toDateTimeString(),
         ]);
 
         return back()->with(
             'success',
-            'Ride ended successfully. Final fee: ₱'.number_format($result['fees']['totalFee'], 2)
-            .' · Bicycle "'.($rental->bicycle->name ?? $rental->bicycleId).'" is now available.'
+            'Ride ended and bicycle returned. Confirm the return in the Returns module to settle the final fee.'
+        );
+    }
+
+    public function processReturn(Request $request, int $id): RedirectResponse
+    {
+        $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
+
+        $validated = $request->validate([
+            'return_time' => 'nullable|date',
+            'condition'   => 'nullable|string|in:good,fair,damaged,needs_maintenance',
+            'note'        => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $this->rentalService->processReturn($rental, $request->user(), [
+                'returnTime' => $validated['return_time'] ?? null,
+                'condition'  => $validated['condition'] ?? null,
+                'note'       => $validated['note'] ?? null,
+            ]);
+        } catch (\Throwable $e) {
+            return back()->withErrors(['rental' => $e->getMessage()]);
+        }
+
+        AuditLog::record('rental_return_processed', auth()->id(), [
+            'rentalId' => $rental->rentalId,
+            'condition' => $validated['condition'] ?? null,
+            'finalFee' => $rental->fresh()->finalFee,
+        ]);
+
+        return back()->with(
+            'success',
+            'Return confirmed for rental '.($rental->rentalId ?? $rental->id)
+            .' · Final fee ₱'.number_format((float) $rental->fresh()->finalFee, 2)
+            .'. Bicycle "'.($rental->bicycle->name ?? $rental->bicycleId)
+            .'" is now '.($rental->bicycle->status ?? 'settled').'.'
         );
     }
 

@@ -22,7 +22,7 @@ class RentalObserver
      */
     public function updated(Rental $rental): void
     {
-        $settled = $rental->status === Rental::STATUS_COMPLETED
+        $settled = in_array($rental->status, [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED], true)
             && strtolower((string) $rental->paymentStatus) === 'paid';
 
         if (!$settled) {
@@ -31,7 +31,7 @@ class RentalObserver
 
         // Only act when the settled state was just reached, so repeated
         // saves of an already-settled rental do not re-trigger work.
-        $wasSettled = $rental->getOriginal('status') === Rental::STATUS_COMPLETED
+        $wasSettled = in_array($rental->getOriginal('status'), [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED], true)
             && strtolower((string) $rental->getOriginal('paymentStatus')) === 'paid';
 
         if ($wasSettled) {

@@ -762,8 +762,8 @@
                                             @csrf
                                             @method('PUT')
                                             <button type="submit" class="rv-btn rv-btn--complete"
-                                                    data-confirm="End this ride now? The end time will be recorded, the final fee calculated, and the bicycle returned to Available."
-                                                    title="End ride">
+                                                    data-confirm="End this ride now? The bicycle will be held for inspection and the rental will appear under Returns (Awaiting Return) for you to confirm the return and settle the final fee."
+                                                    title="End ride & start return">
                                                 <i class="bi bi-stop-circle"></i>
                                             </button>
                                         </form>

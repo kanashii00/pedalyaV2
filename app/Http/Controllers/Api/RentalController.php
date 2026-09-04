@@ -159,20 +159,18 @@ public function store(Request $request): JsonResponse
     private function completeReturn(Rental $rental, User $user, array $validated): JsonResponse
     {
         try {
-            $result = $this->rentalService->returnRental(
+            $result = $this->rentalService->markRideEnded(
                 $rental,
                 $user,
                 $validated['return_lat'] ?? null,
                 $validated['return_lng'] ?? null,
-                $validated['payment_method'] ?? null,
-                $validated['payment_reference'] ?? null,
+                null,
                 $validated['notes'] ?? null,
             );
 
             return response()->json([
-                'message' => 'Bicycle returned successfully',
+                'message' => 'Bicycle returned and awaiting confirmation',
                 'rental'  => new RentalResource($result['rental']->load(['bicycle', 'rider'])),
-                'fees'    => $result['fees'],
             ]);
         } catch (RentalException $e) {
             return response()->json([

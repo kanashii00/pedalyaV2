@@ -311,7 +311,7 @@ class ReportController extends Controller
     {
         $rows = [];
         foreach ($report['data'] as $bicycle) {
-            $completed = $bicycle->rentals->where('status', 'completed');
+            $completed = $bicycle->rentals->whereIn('status', ['completed', 'returned']);
             $rows[] = [
                 $bicycle->name,
                 $bicycle->model ?? '—',

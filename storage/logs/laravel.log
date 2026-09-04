@@ -17725,3 +17725,27 @@ Did you mean one of these?
 #22 C:/Users/Administrator/AppData/Local/Temp/opencode/render_views2.php(13): App/Http/Controllers/Admin/ReportController->index(Object(Illuminate/Http/Request))
 #23 {main}
 "} 
+[2026-09-04 15:33:28] local.ERROR: Unexpected end of input {"exception":"[object] (InvalidArgumentException(code: 0): Unexpected end of input at C:/Users/Administrator/pedalya/vendor/psy/psysh/src/Shell.php:1516)
+[stacktrace]
+#0 C:/Users/Administrator/pedalya/vendor/psy/psysh/src/Shell.php(2215): Psy/Shell->setCode('DB::select(//SHO...', true)
+#1 C:/Users/Administrator/pedalya/vendor/laravel/tinker/src/Console/TinkerCommand.php(77): Psy/Shell->execute('DB::select(//SHO...')
+#2 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Tinker/Console/TinkerCommand->handle()
+#3 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#4 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#5 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#6 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#7 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate/Container/Container->call(Array)
+#8 C:/Users/Administrator/pedalya/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#9 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#10 C:/Users/Administrator/pedalya/vendor/symfony/console/Application.php(1117): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#11 C:/Users/Administrator/pedalya/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Laravel/Tinker/Console/TinkerCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#12 C:/Users/Administrator/pedalya/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#13 C:/Users/Administrator/pedalya/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#14 C:/Users/Administrator/pedalya/artisan(12): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#15 {main}
+"} 
+[2026-09-04 15:37:30] local.ERROR: This rental has already been returned. {"exception":"[object] (App\\Exceptions\\RentalException(code: 0): This rental has already been returned. at C:/Users/Administrator/pedalya/app/Services/RentalService.php:302)
+[stacktrace]
+#0 C:/Users/Administrator/pedalya/_e2e_return.php(74): App/Services/RentalService->processReturn(Object(App/Models/Rental), Object(App/Models/User), Array)
+#1 {main}
+"} 

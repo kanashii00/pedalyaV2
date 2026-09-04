@@ -14,6 +14,8 @@ class Rental extends Model
 
     public const STATUS_PENDING = 'pending';
 
+    public const STATUS_AWAITING_RETURN = 'awaiting_return';
+
     public const STATUS_COMPLETED = 'completed';
 
     public const STATUS_CANCELLED = 'cancelled';
@@ -23,6 +25,14 @@ class Rental extends Model
     public const STATUS_RETURNED = 'returned';
 
     public const STATUS_EXPIRED = 'expired';
+
+    public const CONDITION_GOOD = 'good';
+
+    public const CONDITION_FAIR = 'fair';
+
+    public const CONDITION_DAMAGED = 'damaged';
+
+    public const CONDITION_NEEDS_MAINTENANCE = 'needs_maintenance';
 
     protected $table = 'rentals';
 
@@ -58,6 +68,13 @@ class Rental extends Model
         'approvedBy',
         'approvedAt',
         'warningSentAt',
+        'returnRequestedAt',
+        'returnCondition',
+        'returnInspectedBy',
+        'returnProcessedAt',
+        'returnNote',
+        'overdueFee',
+        'finalFee',
     ];
 
     protected function casts(): array
@@ -71,6 +88,8 @@ class Rental extends Model
             'approvedAt' => 'datetime',
             'overdueAt' => 'datetime',
             'warningSentAt' => 'datetime',
+            'returnRequestedAt' => 'datetime',
+            'returnProcessedAt' => 'datetime',
             'paidAt' => 'datetime',
             'isOverdue' => 'boolean',
             'created_at' => 'datetime',

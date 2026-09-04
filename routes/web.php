@@ -78,6 +78,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/rentals/{id}/verify-gcash', [AdminRental::class, 'verifyGcashPayment'])->name('rentals.verify-gcash');
     Route::put('/rentals/{id}/mark-paid', [AdminRental::class, 'markPaid'])->name('rentals.mark-paid');
     Route::put('/rentals/{id}/end-ride', [AdminRental::class, 'endRide'])->name('rentals.end-ride');
+    Route::put('/rentals/{id}/process-return', [AdminRental::class, 'processReturn'])->name('rentals.process-return');
     Route::put('/rentals/{id}/cancel', [AdminRental::class, 'cancel'])->name('rentals.cancel');
 
     // Monitoring

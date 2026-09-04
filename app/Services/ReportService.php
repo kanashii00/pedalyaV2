@@ -11,6 +11,16 @@ use Carbon\Carbon;
 
 class ReportService
 {
+    /**
+     * Rental statuses that represent completed/settled rides. Revenue and
+     * return-count queries use this so both "completed" (legacy) and
+     * "returned" (confirmed Returns) rentals stay in sync.
+     */
+    private function settledStatuses(): array
+    {
+        return [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED];
+    }
+
 public function getDashboardStats(): array
     {
         $today = Carbon::today();
@@ -23,7 +33,7 @@ public function getDashboardStats(): array
 
         $todayTotal = Rental::whereDate('created_at', $today)->count();
 
-        $returnedToday = Rental::where('status', 'completed')
+        $returnedToday = Rental::whereIn('status', $this->settledStatuses())
             ->whereDate('updated_at', $today)
             ->count();
 
@@ -38,14 +48,14 @@ public function getDashboardStats(): array
 
         $maintenanceRequests = MaintenanceRecord::whereIn('status', ['scheduled', 'in_progress'])->count();
 
-        $todayRevenue = Rental::where('status', 'completed')
+        $todayRevenue = Rental::whereIn('status', $this->settledStatuses())
             ->whereDate('updated_at', $today)
             ->sum('totalFee');
 
-        $totalRevenue = Rental::where('status', 'completed')
+        $totalRevenue = Rental::whereIn('status', $this->settledStatuses())
             ->sum('totalFee');
 
-        $monthlyRevenue = Rental::where('status', 'completed')
+        $monthlyRevenue = Rental::whereIn('status', $this->settledStatuses())
             ->where('updated_at', '>=', $monthStart)
             ->sum('totalFee');
 
@@ -172,7 +182,7 @@ public function getDashboardStats(): array
             $monthlyRevenueLabels[] = $month->format('M');
             $monthlyRentalsLabels[] = $month->format('M');
 
-            $monthRevenue = Rental::where('status', 'completed')
+            $monthRevenue = Rental::whereIn('status', $this->settledStatuses())
                 ->whereYear('updated_at', $month->year)
                 ->whereMonth('updated_at', $month->month)
                 ->sum('totalFee');
@@ -273,12 +283,14 @@ public function getDashboardStats(): array
 
         $rentals = $query->orderBy('created_at', 'desc')->get();
 
-        $completed = $rentals->where('status', 'completed');
+        $completed = $rentals->whereIn('status', $this->settledStatuses());
 
         $summary = [
             'total' => $rentals->count(),
             'active' => $rentals->where('status', 'active')->count(),
+            'awaiting_return' => $rentals->where('status', Rental::STATUS_AWAITING_RETURN)->count(),
             'completed' => $completed->count(),
+            'returned' => $rentals->where('status', Rental::STATUS_RETURNED)->count(),
             'cancelled' => $rentals->where('status', 'cancelled')->count(),
             'overdue' => $rentals->where('status', 'overdue')->count(),
             'pending' => $rentals->where('status', 'pending')->count(),
@@ -295,7 +307,7 @@ public function getDashboardStats(): array
 
     public function getRevenueReport(array $filters, string $groupBy = 'month'): array
     {
-        $query = Rental::where('status', 'completed');
+        $query = Rental::whereIn('status', $this->settledStatuses());
 
         if (isset($filters['start_date'])) {
             $query->where('updated_at', '>=', $filters['start_date']);
@@ -471,7 +483,7 @@ public function getDashboardStats(): array
             'lowBattery' => $bicycles->where('batteryLevel', '<', 20)->count(),
             'totalRentals' => $bicycles->sum('totalRentals'),
             'totalRevenue' => $bicycles->flatMap->rentals
-                ->where('status', 'completed')
+                ->whereIn('status', $this->settledStatuses())
                 ->sum('totalFee'),
         ];
 

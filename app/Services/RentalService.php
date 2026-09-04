@@ -41,6 +41,7 @@ public function startRental(
                 'active',
                 'pending',
                 'overdue',
+                Rental::STATUS_AWAITING_RETURN,
             ])
             ->first();
 
@@ -223,65 +224,252 @@ public function startRental(
         return $rental;
     }
 
-    public function returnRental(
+    /**
+     * Phase 1 of the return lifecycle: mark a ride as ended.
+     *
+     * The rider has finished and brought the bicycle back, so we record the
+     * actual end time and move the rental into the "awaiting_return" state.
+     * The bicycle is held (kept Rented + the smart lock is secured) until an
+     * administrator confirms the return via processReturn(). This lets the
+     * Returns module surface pending returns for inspection.
+     */
+    public function markRideEnded(
         Rental $rental,
         User $user,
-        ?float $returnLat,
-        ?float $returnLng,
-        ?string $paymentMethod,
-        ?string $paymentReference,
-        ?string $notes
+        ?float $returnLat = null,
+        ?float $returnLng = null,
+        ?Carbon $returnTime = null,
+        ?string $notes = null
     ): array {
-      if (!in_array($rental->status, ['active', 'overdue'], true)) {
-    throw new RentalException(
-        'Only active or overdue rentals can be returned.'
-    );
-}
-        $endTime = Carbon::now();
-        $fees = $this->calculateFees(
-            $rental->startTime,
-            $endTime->toDateTimeString(),
-            $rental->ratePerHour
-        );
+        if (!in_array($rental->status, ['active', 'overdue'], true)) {
+            throw new RentalException('Only active or overdue rentals can be returned.');
+        }
 
-        return DB::transaction(function () use ($rental, $user, $endTime, $returnLat, $returnLng, $paymentMethod, $paymentReference, $notes, $fees) {
+        $endTime = $returnTime ?? Carbon::now();
+
+        return DB::transaction(function () use ($rental, $user, $endTime, $returnLat, $returnLng, $notes) {
             $rental->update([
                 'endTime' => $endTime,
                 'endLocation' => ['lat' => $returnLat, 'lng' => $returnLng],
-                'totalFee' => $fees['totalFee'],
-                'durationMinutes' => $fees['durationMinutes'],
-                'durationFormatted' => $fees['durationFormatted'],
-                'chargedHours' => $fees['chargedHours'],
-                'paymentMethod' => $paymentMethod ?? $rental->paymentMethod,
-                'paymentReference' => $paymentReference ?? $rental->paymentReference,
-                'paymentStatus' => 'paid',
                 'notes' => $notes,
-                'status' => 'completed',
+                'status' => Rental::STATUS_AWAITING_RETURN,
+                'returnRequestedAt' => Carbon::now(),
             ]);
 
-            // Automated settlement rule: Completed + Paid releases the bicycle
-            // (status -> Available) and secures its smart-lock controls
-            // (lockStatus -> Locked + queued physical lock command).
+            // Bicycle is physically back: secure the smart lock but keep it
+            // held (Rented) until an administrator processes the return.
             $bicycle = Bicycle::find($rental->bicycleId);
             if ($bicycle) {
-                $this->settleBicycleForRental($rental, $user, [
-                    'currentLat' => $returnLat,
-                    'currentLng' => $returnLng,
-                    'totalRentals' => $bicycle->totalRentals + 1,
-                ]);
+                $bicycle->update(['lockStatus' => Bicycle::LOCK_LOCKED]);
+                Rental::resolveConnection()->afterCommit(function () use ($bicycle, $rental, $user) {
+                    $this->iotService->sendCommand($bicycle->id, 'lock', [
+                        'reason' => 'ride_ended_pending_return',
+                        'rentalId' => $rental->id,
+                    ], $user);
+                });
             }
-
-            $user->increment('totalSpent', $fees['totalFee']);
 
             $this->notificationService->create(
                 $user->id,
-                'Rental Completed',
-                "Your rental {$rental->rentalId} has been completed. Total fee: PHP {$fees['totalFee']}.",
+                'Bicycle Returned',
+                "Your rental {$rental->rentalId} has been returned and is awaiting confirmation.",
+                'rental_returned'
+            );
+
+            return ['rental' => $rental->fresh()];
+        });
+    }
+
+    /**
+     * Phase 2 of the return lifecycle: confirm the return (Process Return).
+     *
+     * The administrator records the actual return time and the bicycle's
+     * condition. A final fee (base + any overdue surcharge) is computed, the
+     * rental is marked "returned", and the bicycle is released to Available
+     * or routed to Maintenance depending on the inspected condition.
+     *
+     * Confirming is only allowed once: a rental that is already returned
+     * (or not awaiting return) is rejected, so the same rental can never be
+     * returned twice.
+     */
+    public function processReturn(
+        Rental $rental,
+        User $admin,
+        array $input = []
+    ): array {
+        if ($rental->status !== Rental::STATUS_AWAITING_RETURN) {
+            if ($rental->status === Rental::STATUS_RETURNED) {
+                throw new RentalException('This rental has already been returned.');
+            }
+            throw new RentalException('Only rentals awaiting return can be processed.');
+        }
+
+        $returnTime = isset($input['returnTime']) && $input['returnTime']
+            ? Carbon::parse($input['returnTime'])
+            : Carbon::now();
+
+        $condition = in_array($input['condition'] ?? null, [
+            Rental::CONDITION_GOOD,
+            Rental::CONDITION_FAIR,
+            Rental::CONDITION_DAMAGED,
+            Rental::CONDITION_NEEDS_MAINTENANCE,
+        ], true) ? $input['condition'] : Rental::CONDITION_GOOD;
+
+        $fees = $this->calculateFees(
+            $rental->startTime,
+            $returnTime->toDateTimeString(),
+            $rental->ratePerHour
+        );
+
+        $overdueFee = $this->calculateOverdueFee(
+            $rental->expectedEndTime,
+            $returnTime,
+            $rental->ratePerHour
+        );
+
+        $finalFee = round($fees['totalFee'] + $overdueFee, 2);
+
+        return DB::transaction(function () use (
+            $rental,
+            $admin,
+            $returnTime,
+            $condition,
+            $input,
+            $fees,
+            $overdueFee,
+            $finalFee
+        ) {
+            $rental->update([
+                'endTime' => $returnTime,
+                'status' => Rental::STATUS_RETURNED,
+                'totalFee' => $finalFee,
+                'finalFee' => $finalFee,
+                'overdueFee' => $overdueFee,
+                'durationMinutes' => $fees['durationMinutes'],
+                'durationFormatted' => $fees['durationFormatted'],
+                'chargedHours' => $fees['chargedHours'],
+                'paymentStatus' => 'paid',
+                'paidAt' => Carbon::now(),
+                'returnCondition' => $condition,
+                'returnInspectedBy' => (string) ($admin->name ?? $admin->id),
+                'returnProcessedAt' => Carbon::now(),
+                'returnNote' => $input['note'] ?? null,
+            ]);
+
+            $this->settleBicycleAfterReturn($rental, $condition, $admin);
+
+            $this->syncPayment($rental, $finalFee);
+
+            $user = User::find($rental->riderId);
+            if ($user) {
+                $user->increment('totalSpent', $finalFee);
+            }
+
+            $this->notificationService->create(
+                $rental->riderId,
+                'Return Confirmed',
+                "Your rental {$rental->rentalId} has been confirmed. Final fee: PHP {$finalFee}.",
                 'rental_completed'
             );
 
-            return ['rental' => $rental->fresh(), 'fees' => $fees];
+            return [
+                'rental' => $rental->fresh(),
+                'fees' => [
+                    'baseFee' => $fees['totalFee'],
+                    'overdueFee' => $overdueFee,
+                    'finalFee' => $finalFee,
+                    'durationMinutes' => $fees['durationMinutes'],
+                    'durationFormatted' => $fees['durationFormatted'],
+                    'chargedHours' => $fees['chargedHours'],
+                    'condition' => $condition,
+                    'returnTime' => $returnTime->toDateTimeString(),
+                ],
+            ];
         });
+    }
+
+    /**
+     * Calculate an overdue surcharge: any full extra hour (or partial, rounded
+     * up) beyond the expected end time charged at the hourly rate.
+     */
+    private function calculateOverdueFee(?Carbon $expectedEndTime, Carbon $returnTime, float $ratePerHour): float
+    {
+        if ($expectedEndTime === null || $returnTime->lte($expectedEndTime)) {
+            return 0.0;
+        }
+
+        $overdueMinutes = (int) $returnTime->diffInMinutes($expectedEndTime);
+        $overdueHours = max(ceil($overdueMinutes / 60), 1);
+
+        return round($overdueHours * max($ratePerHour, 0), 2);
+    }
+
+    /**
+     * Route the bicycle to Available or Maintenance based on the inspected
+     * condition, clear the rental references, and re-secure the smart lock.
+     */
+    private function settleBicycleAfterReturn(Rental $rental, string $condition, User $admin): void
+    {
+        $bicycle = Bicycle::find($rental->bicycleId);
+        if (!$bicycle) {
+            return;
+        }
+
+        $routeToMaintenance = in_array($condition, [
+            Rental::CONDITION_DAMAGED,
+            Rental::CONDITION_NEEDS_MAINTENANCE,
+        ], true);
+
+        $bicycle->update([
+            'status' => $routeToMaintenance ? Bicycle::STATUS_MAINTENANCE : Bicycle::STATUS_AVAILABLE,
+            'currentRider' => null,
+            'currentRentalId' => null,
+            'lockStatus' => Bicycle::LOCK_LOCKED,
+            'condition' => $condition,
+        ]);
+
+        if ($routeToMaintenance && $bicycle->wasChanged('status')) {
+            $this->notificationService->create(
+                $admin->id,
+                'Bicycle Needs Maintenance',
+                "Bicycle {$bicycle->name} was routed to maintenance from rental {$rental->rentalId}.",
+                'maintenance'
+            );
+        }
+    }
+
+    /**
+     * Keep the Payments module in sync by creating or updating a settled
+     * payment record for the rental with the final amount.
+     */
+    private function syncPayment(Rental $rental, float $finalFee): void
+    {
+        $payment = Payment::where('rentalId', $rental->id)->first();
+
+        if ($payment) {
+            $payment->update([
+                'status' => 'paid',
+                'totalAmount' => $finalFee,
+                'amount' => $finalFee,
+                'paidAt' => Carbon::now(),
+            ]);
+
+            return;
+        }
+
+        Payment::create([
+            'rentalId' => $rental->id,
+            'userId' => $rental->riderId,
+            'bicycleId' => $rental->bicycleId,
+            'paymentReference' => $rental->paymentReference ?? $rental->rentalId,
+            'paymentMethod' => $rental->paymentMethod ?: 'cash',
+            'amount' => $finalFee,
+            'convenienceFee' => 0,
+            'totalAmount' => $finalFee,
+            'currency' => 'PHP',
+            'status' => 'paid',
+            'paidAt' => Carbon::now(),
+        ]);
     }
 
     /**
@@ -337,7 +525,7 @@ public function startRental(
      */
     private function settleableBicycle(Rental $rental): ?Bicycle
     {
-        if ($rental->status !== Rental::STATUS_COMPLETED
+        if (!in_array($rental->status, [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED], true)
             || strtolower((string) $rental->paymentStatus) !== 'paid'
             || !$rental->bicycleId) {
             return null;
@@ -351,6 +539,12 @@ public function startRental(
         if ($bicycle === null
             || ($bicycle->currentRentalId !== null
                 && !in_array((string) $bicycle->currentRentalId, [(string) $rental->id, (string) $rental->rentalId], true))) {
+            return null;
+        }
+
+        // A bicycle already routed to maintenance (e.g. by a damaged return)
+        // must not be auto-released to Available by the settle flow.
+        if ($bicycle->status === Bicycle::STATUS_MAINTENANCE) {
             return null;
         }
 

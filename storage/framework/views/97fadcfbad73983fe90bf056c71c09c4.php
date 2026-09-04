@@ -661,6 +661,25 @@
                                                         <?php if($rental->notes): ?>
                                                             <div class="rv-notes"><strong><i class="bi bi-sticky me-1"></i>Notes</strong><?php echo e($rental->notes); ?></div>
                                                         <?php endif; ?>
+
+                                                        <?php if($rental->status === 'returned'): ?>
+                                                            <div class="rv-panel" style="margin-top:14px;">
+                                                                <div class="rv-panel__label"><i class="bi bi-arrow-return-left"></i>Return Details</div>
+                                                                <dl style="margin:0;">
+                                                                    <div class="rv-kv"><dt>Returned At</dt><dd><?php echo e($rental->returnProcessedAt?->format('M d, Y h:i A') ?? '&mdash;'); ?></dd></div>
+                                                                    <div class="rv-kv"><dt>Condition</dt><dd><?php echo e(ucwords(str_replace('_', ' ', $rental->returnCondition ?? 'Not recorded'))); ?></dd></div>
+                                                                    <div class="rv-kv"><dt>Base Fee</dt><dd>&#8369;<?php echo e(number_format(($rental->totalFee ?? 0) - (float) ($rental->overdueFee ?? 0), 2)); ?></dd></div>
+                                                                    <div class="rv-kv"><dt>Overdue Fee</dt><dd><?php echo e((float) ($rental->overdueFee ?? 0) > 0 ? '&#8369;'.number_format((float) $rental->overdueFee, 2) : '&mdash;'); ?></dd></div>
+                                                                    <div class="rv-kv"><dt>Final Fee</dt><dd>&#8369;<?php echo e(number_format($rental->finalFee ?? $rental->totalFee ?? 0, 2)); ?></dd></div>
+                                                                    <?php if($rental->returnInspectedBy): ?>
+                                                                        <div class="rv-kv"><dt>Inspected By</dt><dd>User #<?php echo e($rental->returnInspectedBy); ?></dd></div>
+                                                                    <?php endif; ?>
+                                                                    <?php if($rental->returnNote): ?>
+                                                                        <div class="rv-notes" style="margin-top:8px;"><strong><i class="bi bi-sticky me-1"></i>Return Note</strong><?php echo e($rental->returnNote); ?></div>
+                                                                    <?php endif; ?>
+                                                                </dl>
+                                                            </div>
+                                                        <?php endif; ?>
                                                     </div>
 
                                                     
