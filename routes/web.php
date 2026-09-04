@@ -72,6 +72,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Rental management
     Route::get('/rentals', [AdminRental::class, 'index'])->name('rentals.index');
     Route::get('/rentals/history', [AdminRental::class, 'history'])->name('rentals.history');
+    Route::get('/rentals/returns', [AdminRental::class, 'returns'])->name('rentals.returns');
     Route::get('/rentals/{id}', [AdminRental::class, 'show'])->name('rentals.show');
     Route::put('/rentals/{id}/approve', [AdminRental::class, 'approve'])->name('rentals.approve');
     Route::put('/rentals/{id}/verify-gcash', [AdminRental::class, 'verifyGcashPayment'])->name('rentals.verify-gcash');

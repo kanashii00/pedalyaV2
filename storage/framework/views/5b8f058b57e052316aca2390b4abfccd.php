@@ -60,7 +60,7 @@
             'items' => [
                 ['title' => 'Active Rentals', 'icon' => 'bi-play-circle', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index']],
                 ['title' => 'Rental History', 'icon' => 'bi-clock-history', 'route' => 'admin.rentals.history', 'active' => ['admin.rentals.history']],
-                ['title' => 'Returns', 'icon' => 'bi-arrow-return-left', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=returns'],
+                ['title' => 'Returns', 'icon' => 'bi-arrow-return-left', 'route' => 'admin.rentals.returns', 'active' => ['admin.rentals.returns']],
                 ['title' => 'Rental Requests', 'icon' => 'bi-inbox', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=pending'],
             ],
         ],

@@ -94,6 +94,55 @@ class RentalController extends Controller
         return response()->view('admin.rentals-history', compact('rentals', 'bicyclesList', 'ridersList'));
     }
 
+    public function returns(Request $request): Response
+    {
+        $query = Rental::with(['bicycle', 'rider'])
+            ->whereIn('status', [
+                Rental::STATUS_COMPLETED,
+                Rental::STATUS_RETURNED,
+            ]);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('created_at', '<=', $request->input('date_to'));
+        }
+
+        if ($request->filled('bicycle_id')) {
+            $query->where('bicycleId', $request->input('bicycle_id'));
+        }
+
+        if ($request->filled('rider_id')) {
+            $query->where('riderId', $request->input('rider_id'));
+        }
+
+        $rentals = $query->latest()->paginate(20);
+
+        $bicyclesList = Bicycle::orderBy('name')->get();
+        $ridersList = User::where('role', User::ROLE_RIDER)->orderBy('name')->get();
+
+        $returnedIds = [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED];
+        $summary = [
+            'total' => Rental::whereIn('status', $returnedIds)->count(),
+            'totalFee' => (float) Rental::whereIn('status', $returnedIds)->sum('totalFee'),
+            'totalDuration' => (int) Rental::whereIn('status', $returnedIds)->sum('durationMinutes'),
+            'today' => Rental::whereIn('status', $returnedIds)
+                ->whereDate('updated_at', today())
+                ->count(),
+        ];
+
+        return response()->view(
+            'admin.rentals-returns',
+            compact('rentals', 'bicyclesList', 'ridersList', 'summary')
+        );
+    }
+
     public function show(int $id): Response
     {
         $rental = Rental::with(['bicycle', 'rider'])->findOrFail($id);
