@@ -24,6 +24,13 @@
         font-size: 3rem;
         color: #2E7D32;
     }
+    .bicycle-rental-card .card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 14px;
+        display: block;
+    }
     .bicycle-rental-card .card-body {
         padding: 16px;
     }
@@ -78,7 +85,7 @@
     @forelse($bicycles as $index => $bicycle)
         <div class="col-lg-4 col-md-6">
             <div class="bicycle-rental-card fade-in-up" style="animation-delay:{{ $index * 0.1 }}s;">
-                <div class="card-image"><i class="bi bi-bicycle"></i></div>
+                <div class="card-image"><img src="{{ asset('assets/img/BIKE.png') }}" alt="{{ $bicycle->name }} bicycle" class="bicycle-card-img"></div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <h6>{{ $bicycle->serialNumber }} - {{ $bicycle->name }}</h6>

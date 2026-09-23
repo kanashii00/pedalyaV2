@@ -20,7 +20,7 @@ class NotificationController extends Controller
 
     public function index(): Response
     {
-        $notifications = Notification::with('user')->latest()->paginate(20);
+        $notifications = Notification::with('user')->latest()->paginate(20)->withQueryString();
         $users = User::where('role', User::ROLE_RIDER)->orderBy('name')->get();
         $unreadCount = $this->notificationService->getUnreadCount(auth()->id());
 
@@ -33,7 +33,7 @@ class NotificationController extends Controller
      */
     public function table(Request $request): Response
     {
-        $notifications = Notification::with('user')->latest()->paginate(20);
+        $notifications = Notification::with('user')->latest()->paginate(20)->withQueryString();
 
         return response()->view('admin.notifications-table', compact('notifications'));
     }

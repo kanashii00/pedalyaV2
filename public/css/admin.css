@@ -811,25 +811,33 @@ html[data-theme="dark"] .admin-shell .text-muted { color: var(--text-2) !importa
   font-size: 12.5px;
   color: var(--text-3);
 }
-.admin-pagination { display: flex; gap: 4px; }
-.admin-pagination button, .admin-pagination a {
-  min-width: 32px; height: 32px;
-  padding: 0 8px;
+.admin-table-foot__info { line-height: 1; white-space: nowrap; }
+.admin-pagination { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; max-width: 100%; }
+.admin-pagination__item {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
   border: 1px solid var(--border-subtle);
   background: var(--surface);
   color: var(--text-2);
   border-radius: 8px;
   font-size: 12.5px;
   font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.12s;
 }
-.admin-pagination button:hover, .admin-pagination a:hover { background: var(--surface-3); }
-.admin-pagination button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-.admin-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.admin-pagination__item i { font-size: 11px; line-height: 1; }
+a.admin-pagination__item:hover { background: var(--surface-3); color: var(--text-1); border-color: var(--brand); }
+.admin-pagination .is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.admin-pagination .is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 /* Bulk action bar */
 .admin-bulk {
@@ -1222,6 +1230,7 @@ html[data-theme="dark"] .admin-shell .text-muted { color: var(--text-2) !importa
   .admin-table tbody td::before { content: attr(data-label); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); }
   .admin-table .cell-title { text-align: right; }
   .admin-table-foot { justify-content: center; }
+  .admin-pagination { max-width: 100%; overflow-x: auto; padding-bottom: 2px; }
   .admin-table__rowcheck { display: none !important; }
 }
 

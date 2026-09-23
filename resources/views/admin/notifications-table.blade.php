@@ -68,8 +68,36 @@
 
     @if(method_exists($notifications, 'links'))
         <div class="admin-table-foot">
-            <span>Showing {{ $notifications->total() }} records</span>
-            {{ $notifications->withQueryString()->links() }}
+            <span class="admin-table-foot__info">
+                Showing
+                @if($notifications->total() > 0)
+                    {{ $notifications->firstItem() }}&ndash;{{ $notifications->lastItem() }} of {{ $notifications->total() }} results
+                @else
+                    0 results
+                @endif
+            </span>
+
+            <nav class="admin-pagination" aria-label="Notification pages">
+                @if($notifications->onFirstPage())
+                    <span class="admin-pagination__item is-disabled" aria-disabled="true"><i class="bi bi-chevron-left"></i> Previous</span>
+                @else
+                    <a class="admin-pagination__item" href="{{ $notifications->previousPageUrl() }}" rel="prev"><i class="bi bi-chevron-left"></i> Previous</a>
+                @endif
+
+                @for($page = 1; $page <= $notifications->lastPage(); $page++)
+                    @if($page === $notifications->currentPage())
+                        <span class="admin-pagination__item is-active" aria-current="page">{{ $page }}</span>
+                    @else
+                        <a class="admin-pagination__item" href="{{ $notifications->url($page) }}">{{ $page }}</a>
+                    @endif
+                @endfor
+
+                @if($notifications->hasMorePages())
+                    <a class="admin-pagination__item" href="{{ $notifications->nextPageUrl() }}" rel="next">Next <i class="bi bi-chevron-right"></i></a>
+                @else
+                    <span class="admin-pagination__item is-disabled" aria-disabled="true">Next <i class="bi bi-chevron-right"></i></span>
+                @endif
+            </nav>
         </div>
     @endif
 </div>
