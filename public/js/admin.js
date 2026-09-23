@@ -398,6 +398,63 @@
     });
   }
   initTables(document);
+  window.PedalyaTableInit = initTables;
+
+  /* ---------- Notification badge system ---------- */
+  function notifBadgeEls() {
+    const els = [];
+    const top = $('#topbarNotifBadge');
+    const side = $('#sidebarNotifBadge');
+    if (top) els.push(top);
+    if (side) els.push(side);
+    return els;
+  }
+  function setNotifBadges(n) {
+    const count = Math.max(parseInt(n, 10) || 0, 0);
+    const text = count > 99 ? '99+' : String(count);
+    notifBadgeEls().forEach(b => {
+      b.textContent = text;
+      b.style.display = count > 0 ? '' : 'none';
+    });
+    const label = $('#notifUnreadLabel');
+    if (label) label.textContent = count + ' unread';
+    return count;
+  }
+  async function refreshNotifBadges() {
+    const url = window.PedalyaSettings && window.PedalyaSettings.unreadCountUrl;
+    if (!url) return;
+    try {
+      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setNotifBadges(data.unread_count);
+    } catch (e) { /* server logged; keep last known badge */ }
+  }
+  window.PedalyaBadges = { set: setNotifBadges, refresh: refreshNotifBadges };
+
+  /* ---------- "Mark all read" (header dropdown & notifications page) ---------- */
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-mark-all-read]');
+    if (!btn) return;
+    const url = window.PedalyaSettings && window.PedalyaSettings.markAllReadUrl;
+    if (!url) return;
+    btn.disabled = true;
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': (window.Pedalya && window.Pedalya.csrfToken) || '',
+        Accept: 'application/json',
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        window.PedalyaToast.success(data.message || 'All notifications marked as read.');
+        if (window.PedalyaBadges) window.PedalyaBadges.set(0);
+        window.dispatchEvent(new Event('pedalya:notifications-changed'));
+      })
+      .catch(() => window.PedalyaToast.error('Unable to mark notifications as read.', 'Failed'))
+      .finally(() => { btn.disabled = false; });
+  });
 
   /* ---------- Live reload of sidebar badges via Echo ---------- */
   if (window.Echo && window.PedalyaChannels) {
@@ -405,8 +462,7 @@
     if (chan) {
       chan.listen('.notification.created', (e) => {
         window.PedalyaToast.info(e.title || 'New notification', e.message || '');
-        const badge = $('#sidebarNotifBadge');
-        if (badge) badge.textContent = parseInt(badge.textContent || '0', 10) + 1;
+        if (window.PedalyaBadges) window.PedalyaBadges.refresh();
       });
     }
   }

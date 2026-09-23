@@ -8,78 +8,17 @@
 @endsection
 
 @section('actions')
+<button type="button" class="btn-admin btn-admin--secondary" id="markAllReadBtn" data-mark-all-read>
+    <i class="bi bi-check-all me-1"></i>Mark All Read
+</button>
 <button type="button" class="btn-admin btn-admin--primary" onclick="PedalyaModal.open('sendNotificationModal')">
     <i class="bi bi-send me-1"></i>Send Notification
 </button>
 @endsection
 
 @section('content')
-<div class="admin-table-wrap">
-    <div class="admin-table-toolbar">
-        <div class="grow"><i class="bi bi-search"></i><input type="text" data-table-search placeholder="Search this list..."></div>
-    </div>
-
-    <div class="table-responsive">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th class="sortable">Title <span class="sort-ind"></span></th>
-                    <th class="sortable">Message <span class="sort-ind"></span></th>
-                    <th class="sortable">Type <span class="sort-ind"></span></th>
-                    <th class="sortable">Sent To <span class="sort-ind"></span></th>
-                    <th class="sortable">Date <span class="sort-ind"></span></th>
-                    <th>Read <span class="sort-ind"></span></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($notifications ?? [] as $notification)
-                    <tr>
-                        <td data-label="Title" class="cell-title">{{ $notification->title }}</td>
-                        <td data-label="Message" class="text-truncate" style="max-width: 250px;" title="{{ $notification->message }}">
-                            {{ $notification->message }}
-                        </td>
-                        <td data-label="Type">
-                            @switch($notification->type)
-                                @case('info')<x-admin.badge type="info" label="Info"/>@break
-                                @case('warning')<x-admin.badge type="warning" label="Warning"/>@break
-                                @case('error')<x-admin.badge type="danger" label="Error"/>@break
-                                @case('success')<x-admin.badge type="success" label="Success"/>@break
-                                @default<x-admin.badge type="neutral" label="{{ ucfirst($notification->type) }}"/>@break
-                            @endswitch
-                        </td>
-                        <td data-label="Sent To">
-                            @if($notification->userId)
-                                {{ $notification->user->name ?? $notification->userId }}
-                            @else
-                                <x-admin.badge type="neutral" label="All Users"/>
-                            @endif
-                        </td>
-                        <td data-label="Date"><small>{{ $notification->created_at->format('M d, Y H:i') }}</small></td>
-                        <td data-label="Read">
-                            @if($notification->readAt)
-                                <x-admin.badge type="success" label="Read"/>
-                            @else
-                                <x-admin.badge type="info" label="Unread"/>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6">
-                            <x-admin.empty-state icon="bi-bell-slash" title="No notifications found" message="Send your first notification to reach all registered users."/>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    @if(method_exists($notifications, 'links'))
-        <div class="admin-table-foot">
-            <span>Showing {{ $notifications->total() }} records</span>
-            {{ $notifications->withQueryString()->links() }}
-        </div>
-    @endif
+<div id="adminNotificationWrap">
+    @include('admin.notifications-table', ['notifications' => $notifications])
 </div>
 
 {{-- Send Notification Modal --}}
@@ -90,7 +29,7 @@
             <h3><i class="bi bi-send me-2"></i>Send Notification</h3>
             <button type="button" class="admin-icon-btn" data-modal-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
         </div>
-        <form action="{{ route('admin.notifications.store') }}" method="POST">
+        <form action="{{ route('admin.notifications.store') }}" method="POST" id="sendNotificationForm" novalidate>
             @csrf
             <div class="admin-modal__body">
                 <div class="admin-form">
@@ -129,7 +68,7 @@
 
                     <hr style="border-color: var(--border-strong);">
 
-                    <div class="mb-3">
+                    <div class="mb-3" id="recipientGroup">
                         <label class="form-label">Recipients</label>
                         <div class="d-flex gap-4">
                             <div class="form-check">
@@ -154,6 +93,9 @@
                                 <label class="form-check-label" for="recipientMulti">Multiple Users</label>
                             </div>
                         </div>
+                        @error('recipientType')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div id="singleUserSection" style="{{ old('recipientType') == 'single' ? '' : 'display:none;' }}">
@@ -199,7 +141,7 @@
             </div>
             <div class="admin-modal__foot">
                 <button type="button" class="btn-admin btn-admin--secondary" data-modal-close>Cancel</button>
-                <button type="submit" class="btn-admin btn-admin--primary">
+                <button type="submit" class="btn-admin btn-admin--primary" id="sendNotificationSubmit">
                     <i class="bi bi-send me-1"></i>Send Notification
                 </button>
             </div>
@@ -210,15 +152,176 @@
 
 @section('scripts')
 <script>
-function toggleRecipientFields() {
-    const type = document.querySelector('[name="recipientType"]:checked')?.value ?? 'broadcast';
-    const singleSection = document.getElementById('singleUserSection');
-    const multiSection = document.getElementById('multiUsersSection');
-    const broadcastLabel = document.getElementById('broadcastLabel');
+(function () {
+    'use strict';
 
-    singleSection.style.display = type === 'single' ? 'block' : 'none';
-    multiSection.style.display = type === 'multi' ? 'block' : 'none';
-    broadcastLabel.style.display = type === 'broadcast' ? '' : 'none';
-}
+    var form = document.getElementById('sendNotificationForm');
+    if (!form) return;
+
+    var submitBtn = document.getElementById('sendNotificationSubmit');
+    var storeUrl = @json(route('admin.notifications.store'));
+    var tableUrl = @json(route('admin.notifications.table'));
+
+    function toggleRecipientFields() {
+        var type = document.querySelector('[name="recipientType"]:checked')?.value ?? 'broadcast';
+        var singleSection = document.getElementById('singleUserSection');
+        var multiSection = document.getElementById('multiUsersSection');
+        var broadcastLabel = document.getElementById('broadcastLabel');
+
+        singleSection.style.display = type === 'single' ? 'block' : 'none';
+        multiSection.style.display = type === 'multi' ? 'block' : 'none';
+        broadcastLabel.style.display = type === 'broadcast' ? '' : 'none';
+    }
+
+    function clearFieldErrors() {
+        form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+        form.querySelectorAll('.invalid-feedback').forEach(function (el) { el.style.display = ''; });
+    }
+
+    function fieldFor(key) {
+        var name = key === 'user_ids' ? 'user_ids[]' : key;
+        return form.querySelector('[name="' + name + '"]');
+    }
+
+    function showFieldErrors(errors) {
+        if (!errors) return;
+        Object.keys(errors).forEach(function (key) {
+            var el = fieldFor(key);
+            var target = el;
+            if (!el && key === 'recipientType') {
+                target = form.querySelector('[name="recipientType"]');
+                el = target; // radios share one group
+            }
+            if (!target) return;
+            target.classList.add('is-invalid');
+            var group = target.closest('.mb-3');
+            if (!group) return;
+            var fb = group.querySelector('.invalid-feedback');
+            if (!fb) {
+                fb = document.createElement('div');
+                fb.className = 'invalid-feedback';
+                group.appendChild(fb);
+            }
+            fb.textContent = Array.isArray(errors[key]) ? errors[key][0] : String(errors[key]);
+            fb.style.display = 'block';
+        });
+    }
+
+    function firstError(errors) {
+        var keys = Object.keys(errors || {});
+        if (!keys.length) return null;
+        var list = errors[keys[0]];
+        return Array.isArray(list) && list.length ? list[0] : null;
+    }
+
+    function refreshNotificationTable() {
+        var wrap = document.getElementById('adminNotificationWrap');
+        if (!wrap) return;
+        fetch(tableUrl, { headers: { 'Accept': 'text/html' } })
+            .then(function (res) { if (!res.ok) throw new Error(); return res.text(); })
+            .then(function (html) {
+                wrap.innerHTML = html;
+                if (window.PedalyaBadges) window.PedalyaBadges.refresh();
+                if (window.PedalyaTableInit) window.PedalyaTableInit(wrap);
+            })
+            .catch(function () {});
+    }
+
+    // The header dropdown's "Mark all read" (admin.js) also needs to refresh
+    // this table, so listen for the shared event.
+    window.addEventListener('pedalya:notifications-changed', refreshNotificationTable);
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearFieldErrors();
+
+        var original = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending…';
+
+        fetch(storeUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Pedalya.csrfToken,
+                'Accept': 'application/json',
+            },
+            body: new FormData(form),
+        })
+        .then(function (res) {
+            return res.json().then(function (data) {
+                data._httpStatus = res.status;
+                return data;
+            });
+        })
+        .then(function (data) {
+            if (data._httpStatus >= 200 && data._httpStatus < 300) {
+                PedalyaModal.close('sendNotificationModal');
+                PedalyaToast.success(data.message || 'Notification sent successfully.');
+                form.reset();
+                toggleRecipientFields();
+                window.dispatchEvent(new Event('pedalya:notifications-changed'));
+                if (window.PedalyaBadges) window.PedalyaBadges.refresh();
+                return;
+            }
+
+            if (data._httpStatus === 422) {
+                showFieldErrors(data.errors || {});
+                var msg = firstError(data.errors) || data.message || 'Please fix the highlighted fields.';
+                PedalyaToast.error(msg, 'Cannot send notification');
+                return;
+            }
+
+            if (data._httpStatus === 409) {
+                PedalyaToast.warning(data.message || 'This notification was already sent.', 'Duplicate');
+                return;
+            }
+
+            PedalyaToast.error(data.message || 'Unable to send the notification. Please try again.', 'Send failed');
+        })
+        .catch(function () {
+            PedalyaToast.error('Unable to send the notification. Please check your connection and try again.', 'Send failed');
+        })
+        .finally(function () {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = original;
+        });
+    });
+
+    // "Mark all read" is handled globally in admin.js via [data-mark-all-read];
+    // it toasts, resets badges and dispatches pedalya:notifications-changed so
+    // the table refresh listener above runs.
+
+    // Per-row mark-as-read (admin's own notifications)
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-mark-read]');
+        if (!btn) return;
+
+        var id = btn.dataset.markRead;
+        if (!id) return;
+
+        fetch(@json(route('admin.notifications.mark-read', ['id' => 'ID_PLACEHOLDER'])).replace('ID_PLACEHOLDER', id), {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.Pedalya.csrfToken,
+                'Accept': 'application/json',
+            },
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error();
+            return res.json();
+        })
+        .then(function () {
+            PedalyaToast.success('Notification marked as read.');
+            if (window.PedalyaBadges) window.PedalyaBadges.refresh();
+            window.dispatchEvent(new Event('pedalya:notifications-changed'));
+        })
+        .catch(function () {
+            PedalyaToast.error('Unable to mark the notification as read.', 'Failed');
+        });
+    });
+
+    window.toggleRecipientFields = toggleRecipientFields;
+    toggleRecipientFields();
+})();
 </script>
 @endsection

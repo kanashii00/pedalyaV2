@@ -107,7 +107,11 @@ Route::post('/theft/{id}/acknowledge', [AdminTheft::class, 'acknowledge'])->name
 
     // Notifications
     Route::get('/notifications', [AdminNotifications::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/table', [AdminNotifications::class, 'table'])->name('notifications.table');
+    Route::get('/notifications/unread-count', [AdminNotifications::class, 'unreadCount'])->name('notifications.unread-count');
     Route::post('/notifications', [AdminNotifications::class, 'store'])->name('notifications.store');
+    Route::post('/notifications/mark-all-read', [AdminNotifications::class, 'markAllRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/{id}/read', [AdminNotifications::class, 'markRead'])->name('notifications.mark-read');
 
     // Audit log
     Route::get('/audit', [AdminAudit::class, 'index'])->name('audit-log.index');

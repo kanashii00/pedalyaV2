@@ -73,7 +73,7 @@
             'icon' => 'bi-shield-check',
             'items' => [
                 ['title' => 'Accident Monitoring', 'icon' => 'bi-activity', 'route' => 'admin.accidents.index', 'active' => ['admin.accidents.*'], 'badge' => $unackAccidents, 'badgeType' => 'warning'],
-                ['title' => 'Notifications', 'icon' => 'bi-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*'], 'badge' => $unreadNotifs],
+                ['title' => 'Notifications', 'icon' => 'bi-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*'], 'badge' => $unreadNotifs, 'badgeId' => 'sidebarNotifBadge'],
                 [
                     'label' => 'Monitoring',
                     'title' => 'Monitoring',
@@ -249,8 +249,8 @@
                                        aria-current="{{ $isActive($subItem) ? 'page' : 'false' }}">
                                         <i class="bi {{ $subItem['icon'] }}"></i>
                                         <span>{{ $subItem['title'] }}</span>
-                                        @if(isset($subItem['badge']) && $subItem['badge'] > 0)
-                                            <span class="admin-nav__badge {{ isset($subItem['badgeType']) ? 'admin-nav__badge--' . $subItem['badgeType'] : '' }}">{{ $subItem['badge'] > 99 ? '99+' : $subItem['badge'] }}</span>
+                                        @if(isset($subItem['badge']))
+                                            <span id="{{ $subItem['badgeId'] ?? '' }}" class="admin-nav__badge {{ isset($subItem['badgeType']) ? 'admin-nav__badge--' . $subItem['badgeType'] : '' }}" style="{{ $subItem['badge'] > 0 ? '' : 'display:none;' }}">{{ $subItem['badge'] > 99 ? '99+' : $subItem['badge'] }}</span>
                                         @endif
                                     </a>
                                 @endforeach
@@ -268,8 +268,8 @@
                            aria-current="{{ $isActive($item) ? 'page' : 'false' }}">
                             <i class="bi {{ $item['icon'] }}"></i>
                             <span>{{ $item['title'] }}</span>
-                            @if(isset($item['badge']) && $item['badge'] > 0)
-                                <span class="admin-nav__badge {{ isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : '' }}">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                            @if(isset($item['badge']))
+                                <span id="{{ $item['badgeId'] ?? '' }}" class="admin-nav__badge {{ isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : '' }}" style="{{ $item['badge'] > 0 ? '' : 'display:none;' }}">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
                             @endif
                         </a>
                     @endif
@@ -287,8 +287,8 @@
                    aria-current="{{ $isActive($singleItem) ? 'page' : 'false' }}">
                     <i class="bi {{ $singleItem['icon'] }}"></i>
                     <span>{{ $singleItem['title'] }}</span>
-                    @if(isset($singleItem['badge']) && $singleItem['badge'] > 0)
-                        <span class="admin-nav__badge {{ isset($singleItem['badgeType']) ? 'admin-nav__badge--' . $singleItem['badgeType'] : '' }}">{{ $singleItem['badge'] > 99 ? '99+' : $singleItem['badge'] }}</span>
+                    @if(isset($singleItem['badge']))
+                        <span id="{{ $singleItem['badgeId'] ?? '' }}" class="admin-nav__badge {{ isset($singleItem['badgeType']) ? 'admin-nav__badge--' . $singleItem['badgeType'] : '' }}" style="{{ $singleItem['badge'] > 0 ? '' : 'display:none;' }}">{{ $singleItem['badge'] > 99 ? '99+' : $singleItem['badge'] }}</span>
                     @endif
                 </a>
             @else
@@ -312,9 +312,9 @@
                                aria-current="{{ $isActive($item) ? 'page' : 'false' }}">
                                 <i class="bi {{ $item['icon'] }}"></i>
                                 <span>{{ $item['title'] }}</span>
-                                @if(isset($item['badge']) && $item['badge'] > 0)
-                                    <span class="admin-nav__badge {{ isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : '' }}">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
-                                @endif
+@if(isset($item['badge']))
+                                <span id="{{ $item['badgeId'] ?? '' }}" class="admin-nav__badge {{ isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : '' }}" style="{{ $item['badge'] > 0 ? '' : 'display:none;' }}">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                            @endif
                             </a>
                         @endforeach
                     </div>
@@ -378,14 +378,12 @@
             <div class="admin-dropdown">
                 <button class="admin-icon-btn" type="button" data-dropdown-toggle aria-label="Notifications">
                     <i class="bi bi-bell"></i>
-                    @if($unreadNotifs > 0)
-                        <span class="admin-nav__badge" style="position:absolute;top:-4px;right:-4px;">{{ $unreadNotifs > 99 ? '99+' : $unreadNotifs }}</span>
-                    @endif
+                    <span id="topbarNotifBadge" class="admin-nav__badge" style="position:absolute;top:-4px;right:-4px;{{ $unreadNotifs > 0 ? '' : 'display:none;' }}">{{ $unreadNotifs > 99 ? '99+' : $unreadNotifs }}</span>
                 </button>
                 <div class="admin-dropdown__menu">
                     <div class="admin-dropdown__head">
                         <span>Notifications</span>
-                        <span class="badge-admin badge-admin--neutral badge-admin--plain">{{ $unreadNotifs }} unread</span>
+                        <span class="badge-admin badge-admin--neutral badge-admin--plain" id="notifUnreadLabel">{{ $unreadNotifs }} unread</span>
                     </div>
                     <div class="admin-dropdown__body">
                         @forelse($recentNotifs as $n)
@@ -407,7 +405,8 @@
                             </div>
                         @endforelse
                     </div>
-                    <div class="admin-dropdown__foot">
+                    <div class="admin-dropdown__foot" style="display:flex;gap:8px;">
+                        <button type="button" class="btn-admin btn-admin--secondary btn-admin--sm" data-mark-all-read>Mark all read</button>
                         <a href="{{ route('admin.notifications.index') }}" class="btn-admin btn-admin--secondary btn-admin--sm">View all notifications</a>
                     </div>
                 </div>
@@ -518,6 +517,10 @@
 <script>
     window.PedalyaStatus = { iot: {{ $iotOnline > 0 ? 'true' : 'false' }}, gps: {{ $gpsOnline > 0 ? 'true' : 'false' }} };
     window.PedalyaChannels = { notifications: {!! json_encode('private-App.Models.User.' . auth()->id()) !!} };
+    window.PedalyaSettings = {
+        unreadCountUrl: @json(route('admin.notifications.unread-count')),
+        markAllReadUrl: @json(route('admin.notifications.mark-all-read')),
+    };
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

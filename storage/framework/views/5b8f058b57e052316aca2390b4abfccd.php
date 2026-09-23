@@ -73,7 +73,7 @@
             'icon' => 'bi-shield-check',
             'items' => [
                 ['title' => 'Accident Monitoring', 'icon' => 'bi-activity', 'route' => 'admin.accidents.index', 'active' => ['admin.accidents.*'], 'badge' => $unackAccidents, 'badgeType' => 'warning'],
-                ['title' => 'Notifications', 'icon' => 'bi-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*'], 'badge' => $unreadNotifs],
+                ['title' => 'Notifications', 'icon' => 'bi-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*'], 'badge' => $unreadNotifs, 'badgeId' => 'sidebarNotifBadge'],
                 [
                     'label' => 'Monitoring',
                     'title' => 'Monitoring',
@@ -249,8 +249,8 @@
                                        aria-current="<?php echo e($isActive($subItem) ? 'page' : 'false'); ?>">
                                         <i class="bi <?php echo e($subItem['icon']); ?>"></i>
                                         <span><?php echo e($subItem['title']); ?></span>
-                                        <?php if(isset($subItem['badge']) && $subItem['badge'] > 0): ?>
-                                            <span class="admin-nav__badge <?php echo e(isset($subItem['badgeType']) ? 'admin-nav__badge--' . $subItem['badgeType'] : ''); ?>"><?php echo e($subItem['badge'] > 99 ? '99+' : $subItem['badge']); ?></span>
+                                        <?php if(isset($subItem['badge'])): ?>
+                                            <span id="<?php echo e($subItem['badgeId'] ?? ''); ?>" class="admin-nav__badge <?php echo e(isset($subItem['badgeType']) ? 'admin-nav__badge--' . $subItem['badgeType'] : ''); ?>" style="<?php echo e($subItem['badge'] > 0 ? '' : 'display:none;'); ?>"><?php echo e($subItem['badge'] > 99 ? '99+' : $subItem['badge']); ?></span>
                                         <?php endif; ?>
                                     </a>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -268,8 +268,8 @@
                            aria-current="<?php echo e($isActive($item) ? 'page' : 'false'); ?>">
                             <i class="bi <?php echo e($item['icon']); ?>"></i>
                             <span><?php echo e($item['title']); ?></span>
-                            <?php if(isset($item['badge']) && $item['badge'] > 0): ?>
-                                <span class="admin-nav__badge <?php echo e(isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : ''); ?>"><?php echo e($item['badge'] > 99 ? '99+' : $item['badge']); ?></span>
+                            <?php if(isset($item['badge'])): ?>
+                                <span id="<?php echo e($item['badgeId'] ?? ''); ?>" class="admin-nav__badge <?php echo e(isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : ''); ?>" style="<?php echo e($item['badge'] > 0 ? '' : 'display:none;'); ?>"><?php echo e($item['badge'] > 99 ? '99+' : $item['badge']); ?></span>
                             <?php endif; ?>
                         </a>
                     <?php endif; ?>
@@ -287,8 +287,8 @@
                    aria-current="<?php echo e($isActive($singleItem) ? 'page' : 'false'); ?>">
                     <i class="bi <?php echo e($singleItem['icon']); ?>"></i>
                     <span><?php echo e($singleItem['title']); ?></span>
-                    <?php if(isset($singleItem['badge']) && $singleItem['badge'] > 0): ?>
-                        <span class="admin-nav__badge <?php echo e(isset($singleItem['badgeType']) ? 'admin-nav__badge--' . $singleItem['badgeType'] : ''); ?>"><?php echo e($singleItem['badge'] > 99 ? '99+' : $singleItem['badge']); ?></span>
+                    <?php if(isset($singleItem['badge'])): ?>
+                        <span id="<?php echo e($singleItem['badgeId'] ?? ''); ?>" class="admin-nav__badge <?php echo e(isset($singleItem['badgeType']) ? 'admin-nav__badge--' . $singleItem['badgeType'] : ''); ?>" style="<?php echo e($singleItem['badge'] > 0 ? '' : 'display:none;'); ?>"><?php echo e($singleItem['badge'] > 99 ? '99+' : $singleItem['badge']); ?></span>
                     <?php endif; ?>
                 </a>
             <?php else: ?>
@@ -312,9 +312,9 @@
                                aria-current="<?php echo e($isActive($item) ? 'page' : 'false'); ?>">
                                 <i class="bi <?php echo e($item['icon']); ?>"></i>
                                 <span><?php echo e($item['title']); ?></span>
-                                <?php if(isset($item['badge']) && $item['badge'] > 0): ?>
-                                    <span class="admin-nav__badge <?php echo e(isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : ''); ?>"><?php echo e($item['badge'] > 99 ? '99+' : $item['badge']); ?></span>
-                                <?php endif; ?>
+<?php if(isset($item['badge'])): ?>
+                                <span id="<?php echo e($item['badgeId'] ?? ''); ?>" class="admin-nav__badge <?php echo e(isset($item['badgeType']) ? 'admin-nav__badge--' . $item['badgeType'] : ''); ?>" style="<?php echo e($item['badge'] > 0 ? '' : 'display:none;'); ?>"><?php echo e($item['badge'] > 99 ? '99+' : $item['badge']); ?></span>
+                            <?php endif; ?>
                             </a>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
@@ -378,14 +378,12 @@
             <div class="admin-dropdown">
                 <button class="admin-icon-btn" type="button" data-dropdown-toggle aria-label="Notifications">
                     <i class="bi bi-bell"></i>
-                    <?php if($unreadNotifs > 0): ?>
-                        <span class="admin-nav__badge" style="position:absolute;top:-4px;right:-4px;"><?php echo e($unreadNotifs > 99 ? '99+' : $unreadNotifs); ?></span>
-                    <?php endif; ?>
+                    <span id="topbarNotifBadge" class="admin-nav__badge" style="position:absolute;top:-4px;right:-4px;<?php echo e($unreadNotifs > 0 ? '' : 'display:none;'); ?>"><?php echo e($unreadNotifs > 99 ? '99+' : $unreadNotifs); ?></span>
                 </button>
                 <div class="admin-dropdown__menu">
                     <div class="admin-dropdown__head">
                         <span>Notifications</span>
-                        <span class="badge-admin badge-admin--neutral badge-admin--plain"><?php echo e($unreadNotifs); ?> unread</span>
+                        <span class="badge-admin badge-admin--neutral badge-admin--plain" id="notifUnreadLabel"><?php echo e($unreadNotifs); ?> unread</span>
                     </div>
                     <div class="admin-dropdown__body">
                         <?php $__empty_1 = true; $__currentLoopData = $recentNotifs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $n): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
@@ -407,7 +405,8 @@
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="admin-dropdown__foot">
+                    <div class="admin-dropdown__foot" style="display:flex;gap:8px;">
+                        <button type="button" class="btn-admin btn-admin--secondary btn-admin--sm" data-mark-all-read>Mark all read</button>
                         <a href="<?php echo e(route('admin.notifications.index')); ?>" class="btn-admin btn-admin--secondary btn-admin--sm">View all notifications</a>
                     </div>
                 </div>
@@ -520,6 +519,10 @@
 <script>
     window.PedalyaStatus = { iot: <?php echo e($iotOnline > 0 ? 'true' : 'false'); ?>, gps: <?php echo e($gpsOnline > 0 ? 'true' : 'false'); ?> };
     window.PedalyaChannels = { notifications: <?php echo json_encode('private-App.Models.User.' . auth()->id()); ?> };
+    window.PedalyaSettings = {
+        unreadCountUrl: <?php echo json_encode(route('admin.notifications.unread-count'), 15, 512) ?>,
+        markAllReadUrl: <?php echo json_encode(route('admin.notifications.mark-all-read'), 15, 512) ?>,
+    };
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

@@ -287,27 +287,35 @@ class AdminOpsTest extends TestCase
     {
         $this->adminAuth();
         $rider = $this->makeRider();
+        $anotherRider = $this->makeRider();
 
-        $this->post(route('admin.notifications.store'), [
+        $this->postJson(route('admin.notifications.store'), [
             'title' => 'Hello',
             'message' => 'World',
+            'type' => 'info',
             'recipientType' => 'broadcast',
-        ])->assertOk()->assertJson(['message' => 'Notification broadcast to all riders.']);
+        ])->assertOk()->assertJson(['message' => 'Notification sent successfully.']);
 
         $this->assertDatabaseHas('notifications', ['userId' => $rider->id, 'title' => 'Hello']);
+        $this->assertDatabaseHas('notifications', ['userId' => $anotherRider->id, 'title' => 'Hello']);
     }
 
     public function test_admin_notification_single(): void
     {
         $this->adminAuth();
         $rider = $this->makeRider();
+        $otherRider = $this->makeRider();
 
-        $this->post(route('admin.notifications.store'), [
+        $this->postJson(route('admin.notifications.store'), [
             'title' => 'Single',
             'message' => 'Msg',
+            'type' => 'info',
             'recipientType' => 'single',
             'user_id' => $rider->id,
         ])->assertOk();
+
+        $this->assertDatabaseHas('notifications', ['userId' => $rider->id, 'title' => 'Single']);
+        $this->assertDatabaseMissing('notifications', ['userId' => $otherRider->id, 'title' => 'Single']);
     }
 
     public function test_admin_notification_multi(): void
@@ -315,20 +323,44 @@ class AdminOpsTest extends TestCase
         $this->adminAuth();
         $r1 = $this->makeRider();
         $r2 = $this->makeRider();
+        $r3 = $this->makeRider();
 
-        $this->post(route('admin.notifications.store'), [
+        $this->postJson(route('admin.notifications.store'), [
             'title' => 'Multi',
             'message' => 'Msg',
+            'type' => 'warning',
             'recipientType' => 'multi',
             'user_ids' => [$r1->id, $r2->id],
         ])->assertOk();
+
+        $this->assertDatabaseHas('notifications', ['userId' => $r1->id, 'title' => 'Multi']);
+        $this->assertDatabaseHas('notifications', ['userId' => $r2->id, 'title' => 'Multi']);
+        $this->assertDatabaseMissing('notifications', ['userId' => $r3->id, 'title' => 'Multi']);
+    }
+
+    public function test_admin_notification_store_form_post_redirects_instead_of_raw_json(): void
+    {
+        $this->adminAuth();
+        $rider = $this->makeRider();
+
+        // A plain (non-AJAX) form post must redirect with a flash message and
+        // must NOT dump a raw JSON body to the browser.
+        $this->post(route('admin.notifications.store'), [
+            'title' => 'Plain',
+            'message' => 'Form',
+            'type' => 'info',
+            'recipientType' => 'single',
+            'user_id' => $rider->id,
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('notifications', ['userId' => $rider->id, 'title' => 'Plain']);
     }
 
     public function test_admin_notification_validation_error(): void
     {
         $this->adminAuth();
         $this->post(route('admin.notifications.store'), ['title' => '', 'recipientType' => 'broadcast'])
-            ->assertSessionHasErrors(['title', 'message']);
+            ->assertSessionHasErrors(['title', 'message', 'type']);
     }
 
     // ---- API Notifications ----
