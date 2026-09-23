@@ -207,14 +207,18 @@ public function store(Request $request): JsonResponse
             'approvedAt' => now(),
         ]);
 
-        // Rental approved: bicycle becomes Rented and the smart lock is
-        // Unlocked because the rider is now authorized to use it.
-        Bicycle::where('id', $rental->bicycleId)->update([
-            'status' => Bicycle::STATUS_RENTED,
-            'currentRider' => $rental->riderId,
-            'currentRentalId' => $rental->id,
-            'lockStatus' => Bicycle::LOCK_UNLOCKED,
-        ]);
+// Rental approved: bicycle becomes Rented and the smart lock is
+        // Unlocked because the rider is now authorized to use it. Updates go
+        // through the model so the bicycle cache observer fires.
+        $bicycle = Bicycle::find($rental->bicycleId);
+        if ($bicycle) {
+            $bicycle->update([
+                'status' => Bicycle::STATUS_RENTED,
+                'currentRider' => $rental->riderId,
+                'currentRentalId' => $rental->id,
+                'lockStatus' => Bicycle::LOCK_UNLOCKED,
+            ]);
+        }
 
         $this->iotService->sendCommand($rental->bicycleId, 'unlock', [], $request->user());
 

@@ -10,6 +10,10 @@
     use App\Models\User;
 
     $unreadNotifs = auth()->user()->notifications()->where('read', false)->count();
+    $unreadRentalNotifs = auth()->user()->notifications()
+        ->where('read', false)
+        ->where('type', 'rental_started')
+        ->count();
     $recentNotifs = auth()->user()->notifications()->with('bicycle')->latest()->take(6)->get();
     $unackTheft = Accident::where('type', 'theft')->where('acknowledged', false)->count();
     $unackAccidents = Accident::whereIn('type', ['accident', 'impact_detected'])->where('acknowledged', false)->count();
@@ -58,7 +62,7 @@
             'label' => 'Rental Management',
             'icon' => 'bi-key',
             'items' => [
-                ['title' => 'Active Rentals', 'icon' => 'bi-play-circle', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index']],
+                ['title' => 'Active Rentals', 'icon' => 'bi-play-circle', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'badge' => $unreadRentalNotifs, 'badgeType' => 'warning'],
                 ['title' => 'Rental History', 'icon' => 'bi-clock-history', 'route' => 'admin.rentals.history', 'active' => ['admin.rentals.history']],
                 ['title' => 'Returns', 'icon' => 'bi-arrow-return-left', 'route' => 'admin.rentals.returns', 'active' => ['admin.rentals.returns']],
                 ['title' => 'Rental Requests', 'icon' => 'bi-inbox', 'route' => 'admin.rentals.index', 'active' => ['admin.rentals.index'], 'query' => '?filter=pending'],

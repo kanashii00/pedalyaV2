@@ -3,12 +3,16 @@
 namespace App\Services;
 
 use App\Models\Notification;
+use App\Services\CacheRegistry;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class NotificationService
 {
     public function create(int $userId, string $title, string $message, string $type, array $extra = []): Notification
     {
+        CacheRegistry::bumpUserVersion($userId);
+
         return Notification::create(array_merge([
             'userId' => $userId,
             'title' => $title,
@@ -41,21 +45,37 @@ class NotificationService
 
         $notification->update(['read' => true, 'readAt' => now()]);
 
+        CacheRegistry::bumpUserVersion($userId);
+
         return true;
     }
 
     public function markAllAsRead(int $userId): int
     {
-        return Notification::where('userId', $userId)
+        $updated = Notification::where('userId', $userId)
             ->where('read', false)
             ->update(['read' => true, 'readAt' => now()]);
+
+        if ($updated > 0) {
+            CacheRegistry::bumpUserVersion($userId);
+        }
+
+        return $updated;
     }
 
+    /**
+     * Unread count, cached briefly per user. Invalidated via the user version
+     * counter whenever notifications are created, read or removed.
+     */
     public function getUnreadCount(int $userId): int
     {
-        return Notification::where('userId', $userId)
-            ->where('read', false)
-            ->count();
+        $key = CacheRegistry::unreadCountKey($userId);
+
+        return (int) Cache::remember($key, CacheRegistry::TTL_UNREAD_COUNT, function () use ($userId) {
+            return Notification::where('userId', $userId)
+                ->where('read', false)
+                ->count();
+        });
     }
 
     public function getUnreadForUser(int $userId): Collection

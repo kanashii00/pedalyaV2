@@ -221,6 +221,19 @@ public function startRental(
             'rental_started'
         );
 
+        $adminIds = User::where('role', User::ROLE_ADMIN)->pluck('id')->all();
+        if (!empty($adminIds)) {
+            $this->notificationService->createForUsers(
+                $adminIds,
+                'New Rental',
+                $isGcash
+                    ? "{$user->name} submitted a rental for bicycle {$bicycle->name} (#{$bicycle->serialNumber}). Rental {$rental->rentalId} is pending payment verification."
+                    : "{$user->name} started a rental for bicycle {$bicycle->name} (#{$bicycle->serialNumber}). Rental {$rental->rentalId} · PHP {$totalFee}.",
+                'rental_started',
+                ['rentalId' => $rental->rentalId, 'bicycleId' => $bicycle->id]
+            );
+        }
+
         return $rental;
     }
 

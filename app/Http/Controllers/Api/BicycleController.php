@@ -5,17 +5,24 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BicycleResource;
 use App\Models\Bicycle;
+use App\Services\CacheRegistry;
 use App\Services\GeofenceService;
 use App\Services\IoTService;
+use App\Services\RiderCacheService;
 use App\Services\TheftDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class BicycleController extends Controller
 {
     private const BICYCLE_NOT_FOUND = 'Bicycle not found';
+
+    public function __construct(
+        private RiderCacheService $riderCacheService,
+    ) {}
 
     public function nearby(Request $request): JsonResponse
     {
@@ -63,6 +70,9 @@ class BicycleController extends Controller
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $status = $validated['status'] ?? 'all';
+
         $query = Bicycle::query();
 
         if (! empty($validated['status'])) {
@@ -81,19 +91,51 @@ class BicycleController extends Controller
             });
         }
 
-        $bicycles = $query->orderByDesc('updated_at')
-            ->paginate($validated['per_page'] ?? 20);
+        // Search/model filters produce unbounded keys, so only the bounded
+        // catalog combinations (status + per_page) are cached. BicycleObserver
+        // invalidates these keys whenever catalog data changes.
+        $cacheable = empty($validated['model']) && empty($validated['search']);
+
+        if ($cacheable) {
+            $cacheKey = CacheRegistry::bicycleIndexKey($status, $perPage);
+            $page = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+
+            [$items, $total] = Cache::remember($cacheKey, CacheRegistry::TTL_AVAILABLE_BICYCLES, function () use ($query, $perPage) {
+                $paginator = $query->orderByDesc('updated_at')->paginate($perPage);
+
+                return [$paginator->items(), $paginator->total()];
+            });
+
+            $bicycles = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                [
+                    'path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath(),
+                    'query' => $request->query(),
+                ]
+            );
+
+            return BicycleResource::collection($bicycles);
+        }
+
+        $bicycles = $query->orderByDesc('updated_at')->paginate($perPage);
 
         return BicycleResource::collection($bicycles);
     }
 
     public function show(int $id): BicycleResource|JsonResponse
     {
-        $bicycle = Bicycle::with(['latestTelemetry', 'latestGpsLog'])->find($id);
+        // Cache the static catalog record; live telemetry / GPS / lock state
+        // are loaded fresh so real-time consumers never see stale data.
+        $bicycle = $this->riderCacheService->bicycleCatalog($id);
 
         if (! $bicycle) {
             return response()->json(['message' => self::BICYCLE_NOT_FOUND], 404);
         }
+
+        $bicycle->load(['latestTelemetry', 'latestGpsLog']);
 
         return new BicycleResource($bicycle);
     }

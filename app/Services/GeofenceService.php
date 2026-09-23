@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Geofence;
+use Illuminate\Support\Facades\Cache;
 
 class GeofenceService
 {
@@ -21,27 +22,36 @@ class GeofenceService
     public const SHAPE_RECTANGLE = 'rectangle';
     public const SHAPE_POLYGON = 'polygon';
 
+    /**
+     * Geofence configuration is static until an admin changes it, so it is
+     * cached. GeofenceObserver clears the key whenever a Geofence row is
+     * created/updated/deleted.
+     */
     public function getConfig(): array
     {
-        $geofence = $this->activeGeofence();
+        $key = CacheRegistry::geofenceConfigKey();
 
-        if ($geofence) {
-            return $this->configFromGeofence($geofence);
-        }
+        return Cache::remember($key, CacheRegistry::TTL_GEOFENCE, function () {
+            $geofence = $this->activeGeofence();
 
-        return [
-            'centerLat' => (float) config('services.geofence.center_lat', 7.0990),
-            'centerLng' => (float) config('services.geofence.center_lng', 125.6470),
-            'radius' => (float) config('services.geofence.default_radius', 500),
-            'shapeType' => self::SHAPE_CIRCLE,
-            'width' => null,
-            'height' => null,
-            'rotation' => null,
-            'points' => [],
-            'alertEnabled' => true,
-            'warningThreshold' => (float) config('services.geofence.warning_threshold', 100),
-            'id' => null,
-        ];
+            if ($geofence) {
+                return $this->configFromGeofence($geofence);
+            }
+
+            return [
+                'centerLat' => (float) config('services.geofence.center_lat', 7.0990),
+                'centerLng' => (float) config('services.geofence.center_lng', 125.6470),
+                'radius' => (float) config('services.geofence.default_radius', 500),
+                'shapeType' => self::SHAPE_CIRCLE,
+                'width' => null,
+                'height' => null,
+                'rotation' => null,
+                'points' => [],
+                'alertEnabled' => true,
+                'warningThreshold' => (float) config('services.geofence.warning_threshold', 100),
+                'id' => null,
+            ];
+        });
     }
 
     public function configFromGeofence(Geofence $geofence): array

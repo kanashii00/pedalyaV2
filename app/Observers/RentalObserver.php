@@ -3,11 +3,23 @@
 namespace App\Observers;
 
 use App\Models\Rental;
+use App\Services\CacheRegistry;
 use App\Services\RentalService;
 use Illuminate\Support\Facades\DB;
 
 class RentalObserver
 {
+    /**
+     * Any new rental changes a rider's dashboard summary (stats + unread
+     * count), and either occupies a bicycle or is awaiting payment approval,
+     * so the shared bicycle catalog is invalidated too.
+     */
+    public function created(Rental $rental): void
+    {
+        CacheRegistry::bumpUserVersion((int) $rental->riderId);
+        CacheRegistry::bumpBicyclesVersion();
+    }
+
     /**
      * Automated status update rule.
      *
@@ -22,6 +34,12 @@ class RentalObserver
      */
     public function updated(Rental $rental): void
     {
+        CacheRegistry::bumpUserVersion((int) $rental->riderId);
+
+        if ($rental->isDirty('status') || $rental->isDirty('bicycleId') || $rental->isDirty('paymentStatus')) {
+            CacheRegistry::bumpBicyclesVersion();
+        }
+
         $settled = in_array($rental->status, [Rental::STATUS_COMPLETED, Rental::STATUS_RETURNED], true)
             && strtolower((string) $rental->paymentStatus) === 'paid';
 

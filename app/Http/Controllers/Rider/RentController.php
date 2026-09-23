@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bicycle;
 use App\Models\Rental;
 use App\Services\RentalService;
+use App\Services\RiderCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,13 +17,12 @@ class RentController extends Controller
 {
     public function __construct(
         protected RentalService $rentalService,
+        protected RiderCacheService $riderCacheService,
     ) {}
 
     public function index(): View
     {
-        $bicycles = Bicycle::available()
-            ->orderBy('batteryLevel', 'desc')
-            ->get();
+        $bicycles = $this->riderCacheService->availableBicycles();
 
         return view('rider.rent', compact('bicycles'));
     }

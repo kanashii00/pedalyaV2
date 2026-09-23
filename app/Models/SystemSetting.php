@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
+use App\Services\CacheRegistry;
 
 class SystemSetting extends Model
 {
@@ -24,18 +26,29 @@ class SystemSetting extends Model
         ];
     }
 
+    /**
+     * Read a setting, caching the value for a short window. The cache is
+     * automatically cleared whenever a SystemSetting is created/updated/
+     * deleted (see SystemSettingObserver), so writes are immediately visible.
+     */
     public static function getValue(string $key, mixed $default = null): mixed
     {
-        $setting = static::where('key', $key)->first();
+        return Cache::remember(CacheRegistry::settingKey($key), CacheRegistry::TTL_SETTINGS, function () use ($key, $default) {
+            $setting = static::where('key', $key)->first();
 
-        return $setting ? $setting->value : $default;
+            return $setting ? $setting->value : $default;
+        });
     }
 
     public static function setValue(string $key, mixed $value): static
     {
-        return static::updateOrCreate(
+        $setting = static::updateOrCreate(
             ['key' => $key],
             ['value' => $value]
         );
+
+        CacheRegistry::bumpSettingsVersion();
+
+        return $setting;
     }
 }

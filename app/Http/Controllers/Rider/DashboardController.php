@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Rider;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bicycle;
-use App\Models\Rental;
+use App\Models\SystemSetting;
+use App\Services\GeofenceService;
+use App\Services\RiderCacheService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,12 +14,15 @@ class DashboardController extends Controller
 {
     public function __construct(
         protected NotificationService $notificationService,
+        protected RiderCacheService $riderCacheService,
     ) {}
 
     public function index(Request $request): View
     {
         $user = $request->user();
 
+        // Live data — never cached: active rental drives the on-page
+        // countdown and battery reading; recent rentals show current status.
         $activeRental = $user->currentRental()
             ->with('bicycle')
             ->first();
@@ -29,30 +33,25 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        $totalRentals = $user->totalRentals ?? 0;
-        $totalSpent = $user->totalSpent ?? 0;
+        // Cached data: user dashboard summary + shared bicycle catalog.
+        $summary = $this->riderCacheService->summary($user->id);
 
-        $bicycles = Bicycle::available()
-            ->whereNotNull('currentLat')
-            ->whereNotNull('currentLng')
-            ->get();
+        $bicycles = $this->riderCacheService->locatedAvailableBicycles();
 
-        $unreadCount = $this->notificationService->getUnreadCount($user->id);
+        $geofenceCenter = app(GeofenceService::class)->getConfig();
 
-        $geofenceCenter = app(\App\Services\GeofenceService::class)->getConfig();
+        $warningMinutes = (int) SystemSetting::getValue('overdueBuzzerMinutes', 5);
 
-        $warningMinutes = (int) \App\Models\SystemSetting::getValue('overdueBuzzerMinutes', 5);
-
-        return view('rider.dashboard', compact(
-            'user',
-            'activeRental',
-            'recentRentals',
-            'totalRentals',
-            'totalSpent',
-            'bicycles',
-            'unreadCount',
-            'geofenceCenter',
-            'warningMinutes',
-        ));
+        return view('rider.dashboard', [
+            'user' => $user,
+            'activeRental' => $activeRental,
+            'recentRentals' => $recentRentals,
+            'bicycles' => $bicycles,
+            'geofenceCenter' => $geofenceCenter,
+            'warningMinutes' => $warningMinutes,
+            'totalRentals' => $summary['totalRentals'],
+            'totalSpent' => $summary['totalSpent'],
+            'unreadCount' => $summary['unreadCount'],
+        ]);
     }
 }

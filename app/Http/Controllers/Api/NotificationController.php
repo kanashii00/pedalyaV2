@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
+use App\Services\CacheRegistry;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class NotificationController extends Controller
 {
+    public function __construct(
+        private NotificationService $notificationService,
+    ) {}
     public function index(Request $request): AnonymousResourceCollection
     {
         $validated = $request->validate([
@@ -38,9 +43,7 @@ class NotificationController extends Controller
 
     public function unreadCount(Request $request): JsonResponse
     {
-        $count = Notification::where('userId', $request->user()->id)
-            ->where('read', false)
-            ->count();
+        $count = $this->notificationService->getUnreadCount($request->user()->id);
 
         return response()->json(['unread_count' => $count]);
     }
@@ -55,6 +58,7 @@ class NotificationController extends Controller
         }
 
         $notification->update(['read' => true, 'readAt' => now()]);
+        CacheRegistry::bumpUserVersion(request()->user()->id);
 
         return response()->json(['message' => 'Notification marked as read']);
     }
@@ -64,6 +68,8 @@ class NotificationController extends Controller
         Notification::where('userId', $request->user()->id)
             ->where('read', false)
             ->update(['read' => true, 'readAt' => now()]);
+
+        CacheRegistry::bumpUserVersion($request->user()->id);
 
         return response()->json(['message' => 'All notifications marked as read']);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rider;
 
 use App\Http\Controllers\Controller;
 use App\Services\DocumentUploadService;
+use App\Services\RiderCacheService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,15 +12,18 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     public function __construct(
-        protected DocumentUploadService $documentUploadService
+        protected DocumentUploadService $documentUploadService,
+        protected RiderCacheService $riderCacheService,
     ) {}
 
     public function show(Request $request): View
     {
         $user = $request->user();
 
-        $totalRentals = $user->totalRentals;
-        $totalSpent = $user->totalSpent;
+        $summary = $this->riderCacheService->summary($user->id);
+
+        $totalRentals = $summary['totalRentals'];
+        $totalSpent = $summary['totalSpent'];
 
         return view('rider.profile', compact('user', 'totalRentals', 'totalSpent'));
     }
